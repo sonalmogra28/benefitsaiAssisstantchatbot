@@ -1,0 +1,47 @@
+name: CodeRabbit Review
+
+on:
+  pull_request:
+    types: 
+      - opened
+      - synchronize
+      - reopened
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+jobs:
+  coderabbit:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: CodeRabbit Review
+        uses: coderabbitai/coderabbit-review@latest
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          config_file: .coderabbit.yml
+          review_type: full
+          enable_auto_review: true
+          enable_summarization: true
+          enable_suggestions: true
+          max_comments: 30
+          language: typescript,javascript,react,nextjs
+          focus_areas: security,performance,maintainability,accessibility
+          ignore_patterns: |
+            node_modules/**
+            .next/**
+            dist/**
+            build/**
+            coverage/**
+            *.log
+            pnpm-lock.yaml
+            package-lock.json
+            yarn.lock

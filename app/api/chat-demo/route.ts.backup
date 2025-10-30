@@ -1,0 +1,1746 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+// Validation schema for chat request
+const chatRequestSchema = z.object({
+  message: z.string().min(1, 'Message is required'),
+  conversationId: z.string().optional(),
+});
+
+// Demo responses based on common benefits questions
+const getDemoResponse = (message: string): string => {
+  const lowerMessage = message.toLowerCase();
+  
+  // Ignore suggestion text and very short messages
+  if (lowerMessage.includes('get answers') || lowerMessage.includes('learn about') || lowerMessage.includes('view your') || lowerMessage.length < 10) {
+    return `Hi there! I'm your AmeriVet Benefits AI Assistant. I can help you with:
+
+🎯 **Plan Comparison** - Compare health, dental, and vision plans
+💰 **Cost Calculator** - Calculate total annual costs and savings  
+📊 **Benefits Dashboard** - View your current enrollment and usage
+🏥 **HSA/FSA Info** - Learn about tax-advantaged accounts
+📚 **Document Analysis** - Upload and analyze your benefits documents
+❓ **General Questions** - Get answers about coverage, claims, and more
+
+This is a demo version, so I'm showing you the interface and capabilities. In production, I'd have access to your actual AmeriVet benefits data and provide personalized, real-time assistance.
+
+What would you like to explore first?`;
+  }
+  
+  // Check for specific questions first (more specific patterns)
+  if (lowerMessage.includes('hsa') || lowerMessage.includes('health savings account')) {
+    return `Ah, HSAs! One of my favorite topics - these accounts are absolute game-changers for healthcare savings. Let me walk you through why they're so powerful:
+
+**2024 HSA Contribution Limits:**
+• Individual: $4,300
+• Family: $8,550  
+• Catch-up (55+): Additional $1,000
+
+**Why HSAs are so powerful:**
+• Pre-tax contributions reduce your taxable income
+• Tax-free growth on investments
+• Tax-free withdrawals for qualified medical expenses
+• It's the only account with this "triple tax advantage"
+
+**To qualify for an HSA, you need:**
+• A High Deductible Health Plan (HDHP)
+• No other health coverage
+• Minimum deductible: $1,600 (individual) / $3,200 (family)
+• Maximum out-of-pocket: $8,050 (individual) / $16,100 (family)
+
+**Investment potential:**
+Once you reach a minimum balance, many HSAs let you invest in mutual funds, ETFs, and other securities. After age 65, you can use funds for non-medical expenses (though you'll pay income tax on those withdrawals).
+
+Would you like me to help you calculate your optimal HSA contribution or compare HDHP options?`;
+  }
+  
+  if (lowerMessage.includes('dashboard') || lowerMessage.includes('my benefits') || lowerMessage.includes('show me my')) {
+    return `Perfect! Let me pull up your personalized benefits dashboard. Here's what I'm seeing:
+
+📊 **Current Enrollment:**
+• Health Insurance: Blue Cross Blue Shield PPO
+• Dental: Delta Dental Premier  
+• Vision: VSP Standard
+• Life Insurance: $50,000 coverage
+• Disability: Short-term and long-term
+
+💰 **Financial Summary:**
+• Monthly Premiums: $487.50
+• YTD Healthcare Spending: $2,340
+• Remaining Deductible: $1,200
+• HSA Balance: $3,450
+• FSA Remaining: $890
+
+📅 **Upcoming Deadlines:**
+• Open Enrollment: November 1-30, 2024
+• HSA Contribution Deadline: December 31, 2024
+• FSA Spending Deadline: March 15, 2025
+
+🎯 **Quick Actions:**
+• View Detailed Benefits Summary
+• Update Dependents
+• Change Coverage Level
+• Submit Claims
+• Find In-Network Providers
+
+📈 **Usage Analytics:**
+• Most Used Benefits: Prescription drugs, preventive care
+• Cost Trends: 15% increase from last year
+• Savings Opportunities: Consider HDHP + HSA
+
+Is there a specific benefit you'd like to explore or update?`;
+  }
+  
+  if (lowerMessage.includes('cost') || lowerMessage.includes('calculator') || lowerMessage.includes('calculate')) {
+    return `Great question! The cost calculator is one of our most powerful tools. Most people only look at monthly premiums, but the real cost is much more complex. Let me show you:
+
+**Here's what we factor in:**
+• Monthly Premiums: Your base monthly cost
+• Deductibles: What you pay before insurance kicks in
+• Copays & Coinsurance: Your share of covered services
+• Out-of-Pocket Maximums: Your maximum annual liability
+• HSA Contributions: Tax-advantaged savings potential
+
+**Here's a quick example:**
+
+Plan A (HMO): $400/month + $1,500 deductible = $6,300/year minimum
+Plan B (PPO): $600/month + $3,000 deductible = $10,200/year minimum  
+Plan C (HDHP): $200/month + $5,000 deductible = $7,400/year minimum
+
+**Key factors to consider:**
+• Your expected healthcare usage (preventive, chronic conditions, emergencies)
+• Prescription drug needs
+• Preferred doctors and hospitals
+• Family size and ages
+• Employer HSA contributions
+
+I can help you run different scenarios - low, medium, or high healthcare usage - and compare family vs. individual calculations. What's your situation like?`;
+  }
+  
+  if (lowerMessage.includes('compare') || lowerMessage.includes('comparison') || lowerMessage.includes('plans')) {
+    return `Excellent! Plan comparison is where most people get overwhelmed, but I'll make it simple. Let me break down the key differences:
+
+**Plan Comparison Matrix:**
+
+| Feature | HMO | PPO | HDHP | EPO |
+|---------|-----|-----|------|-----|
+| Monthly Premium | $400 | $600 | $200 | $500 |
+| Deductible | $1,500 | $3,000 | $5,000 | $2,500 |
+| Out-of-Pocket Max | $6,000 | $8,000 | $7,000 | $7,500 |
+| Primary Care Visit | $20 copay | $30 copay | 100% until deductible | $25 copay |
+| Specialist Visit | $50 copay | $50 copay | 100% until deductible | $50 copay |
+| Emergency Room | $200 copay | $500 copay | 100% until deductible | $300 copay |
+| Prescription Drugs | $10/$30/$50 | $15/$35/$55 | 100% until deductible | $12/$32/$52 |
+
+**Key questions to ask yourself:**
+• Budget: Can you afford higher premiums for lower deductibles?
+• Health Status: Do you expect high medical usage?
+• Provider Network: Are your preferred doctors covered?
+• Flexibility: Do you need referrals or out-of-network options?
+
+Based on your specific situation, I can help you determine which plan type makes the most sense. What's your typical healthcare usage like?`;
+  }
+  
+  if (lowerMessage.includes('health insurance') || lowerMessage.includes('medical plan') || (lowerMessage.includes('coverage') && lowerMessage.length > 15)) {
+    return `Health insurance can be confusing, but I'm here to make it clear! Here's what you need to know:
+
+**Plan Types Available:**
+• HMO (Health Maintenance Organization) - Lower cost, network restrictions
+• PPO (Preferred Provider Organization) - More flexibility, higher cost
+• HDHP (High Deductible Health Plan) - Lower premiums, higher deductibles
+• EPO (Exclusive Provider Organization) - Network only, no referrals needed
+
+**Key Considerations:**
+• Monthly premiums vs. out-of-pocket costs
+• Network coverage (doctors, hospitals, specialists)
+• Prescription drug coverage
+• Mental health and wellness benefits
+• Family coverage options
+
+**Cost Calculator Features:**
+• Compare total annual costs across plans
+• Factor in expected healthcare usage
+• Consider HSA/FSA contributions
+• Account for employer contributions
+
+Would you like me to help you compare specific plans or calculate costs?`;
+  }
+  
+  // Check for specific advantage/benefit questions
+  if (lowerMessage.includes('advantage') || lowerMessage.includes('why use') || lowerMessage.includes('how can you help') || lowerMessage.includes('what are the advantages')) {
+    return `That's a great question! A benefits assistant like me can be incredibly valuable. Here's what makes me different:
+
+🎯 **Personalized Guidance**: Get tailored recommendations based on your specific situation, family size, and health needs.
+
+📊 **Plan Comparison**: Easily compare different insurance plans side-by-side with clear cost breakdowns and coverage details.
+
+💰 **Cost Optimization**: Find the most cost-effective options while ensuring you have adequate coverage for your needs.
+
+📚 **Educational Support**: Learn about complex benefits terminology and make informed decisions about your healthcare.
+
+⏰ **Time Savings**: Get instant answers to benefits questions instead of waiting on hold or searching through lengthy documents.
+
+🔍 **Document Analysis**: Upload your benefits documents and get quick summaries and explanations of key terms.
+
+This demo shows the interface - in production, it would connect to your actual benefits data and provide real-time, personalized assistance.`;
+  }
+  
+  // Check for specific Kaiser Oregon Enhanced HMO questions
+  if (lowerMessage.includes('oregon enhanced') || lowerMessage.includes('nw oregon enhanced') || lowerMessage.includes('enhanced hmo oregon') || lowerMessage.includes('oregon kaiser enhanced')) {
+    return `Excellent choice! The Kaiser Permanente NW Oregon Enhanced HMO is a premium plan with comprehensive coverage. Here's what I can tell you about this specific plan:
+
+**🏥 Kaiser Permanente NW Oregon Enhanced HMO Analysis:**
+
+**Plan Overview:**
+• **Coverage Area**: Oregon-specific network
+• **Plan Type**: Enhanced HMO (Health Maintenance Organization)
+• **Provider Network**: Kaiser Permanente Oregon facilities
+• **Coverage Period**: 2024-2025
+
+**Enhanced Benefits (vs Standard):**
+• **Lower Copays** - Reduced out-of-pocket costs
+• **Expanded Coverage** - More services included
+• **Premium Network** - Access to top-tier providers
+• **Additional Services** - Wellness programs, preventive care
+
+**Typical Enhanced HMO Features:**
+• **Primary Care**: $0-$20 copay
+• **Specialist Visits**: $20-$40 copay
+• **Emergency Room**: $150-$300 copay
+• **Prescription Drugs**: $10-$50 copay tiers
+• **Preventive Care**: 100% covered
+
+**Kaiser Permanente Advantages:**
+• **Integrated Care** - All services under one roof
+• **Electronic Records** - Seamless care coordination
+• **Quality Focus** - Evidence-based medicine
+• **Member Portal** - Online access to health records
+
+**Cost Considerations:**
+• **Higher Premiums** - More expensive than Standard
+• **Lower Out-of-Pocket** - Better coverage when you use services
+• **No Deductible** - Copay-based system
+• **Annual Maximum** - Protection against high costs
+
+**Best For:**
+• Oregon residents who want comprehensive coverage
+• People who prefer Kaiser's integrated model
+• Those who want lower copays and better benefits
+• Families who value coordinated care
+
+Would you like me to compare this with the Standard Oregon HMO or discuss the specific benefits in more detail?`;
+  }
+
+  // Check for specific Kaiser Washington Enhanced HMO questions
+  if (lowerMessage.includes('washington enhanced') || lowerMessage.includes('kp wash enhanced') || lowerMessage.includes('enhanced hmo washington') || lowerMessage.includes('washington kaiser enhanced')) {
+    return `Great question about the Kaiser Permanente Washington Enhanced HMO! This is a premium plan with excellent coverage. Here's the detailed breakdown:
+
+**🏥 Kaiser Permanente Washington Enhanced HMO Analysis:**
+
+**Plan Highlights:**
+• **Coverage Area**: Washington state network
+• **Plan Type**: Enhanced HMO with premium benefits
+• **Provider Network**: Kaiser Permanente Washington facilities
+• **Coverage Period**: 2024-2025
+
+**Enhanced vs Standard Benefits:**
+• **Lower Copays** - Reduced out-of-pocket costs for services
+• **Expanded Coverage** - More preventive and wellness services
+• **Premium Network** - Access to Kaiser's best providers
+• **Additional Benefits** - Enhanced mental health, maternity care
+
+**Typical Coverage Structure:**
+• **Office Visits**: $0-$15 copay (vs $20-$30 Standard)
+• **Specialist Visits**: $15-$25 copay (vs $30-$50 Standard)
+• **Emergency Care**: $100-$200 copay
+• **Prescription Drugs**: $5-$25 copay tiers
+• **Preventive Services**: 100% covered
+
+**Kaiser Washington Advantages:**
+• **Integrated System** - Seamless care coordination
+• **Quality Metrics** - High patient satisfaction scores
+• **Technology** - Advanced electronic health records
+• **Convenience** - Multiple locations across Washington
+
+**Cost Analysis:**
+• **Monthly Premium**: Higher than Standard HMO
+• **Annual Savings**: Lower copays can save hundreds per year
+• **Value Proposition**: Better for frequent healthcare users
+• **Family Plans**: Enhanced benefits for dependents
+
+**Network Coverage:**
+• **Primary Care**: Extensive network across Washington
+• **Specialists**: Full range of medical specialties
+• **Hospitals**: Kaiser hospitals and affiliated facilities
+• **Urgent Care**: Multiple urgent care centers
+
+Would you like me to compare this with the Washington Standard HMO or discuss the specific cost differences?`;
+  }
+
+  // Check for specific Kaiser Washington Standard HMO questions
+  if (lowerMessage.includes('washington standard') || lowerMessage.includes('kp wash standard') || lowerMessage.includes('standard hmo washington') || lowerMessage.includes('washington kaiser standard')) {
+    return `Perfect! The Kaiser Permanente Washington Standard HMO is a solid, cost-effective option. Here's what you need to know:
+
+**🏥 Kaiser Permanente Washington Standard HMO Analysis:**
+
+**Plan Overview:**
+• **Coverage Area**: Washington state network
+• **Plan Type**: Standard HMO with essential benefits
+• **Provider Network**: Kaiser Permanente Washington facilities
+• **Coverage Period**: 2024-2025
+
+**Standard HMO Benefits:**
+• **Essential Coverage** - All required health benefits
+• **Preventive Care** - 100% covered annual checkups
+• **Emergency Care** - Coverage for urgent medical needs
+• **Prescription Drugs** - Tiered copay system
+
+**Typical Coverage Structure:**
+• **Office Visits**: $20-$30 copay
+• **Specialist Visits**: $30-$50 copay
+• **Emergency Room**: $200-$400 copay
+• **Prescription Drugs**: $10-$50 copay tiers
+• **Preventive Services**: 100% covered
+
+**Cost Advantages:**
+• **Lower Premiums** - More affordable monthly cost
+• **Predictable Costs** - Copay-based system
+• **No Deductible** - Pay copays only
+• **Annual Maximum** - Protection against high costs
+
+**Kaiser Washington Network:**
+• **Primary Care**: Extensive network across Washington
+• **Specialists**: Full range of medical specialties
+• **Hospitals**: Kaiser hospitals and affiliated facilities
+• **Urgent Care**: Multiple urgent care centers
+
+**Best For:**
+• Washington residents seeking quality care
+• People who want predictable healthcare costs
+• Those comfortable with Kaiser's integrated model
+• Budget-conscious individuals and families
+
+**Coverage Highlights:**
+• **Mental Health**: Comprehensive behavioral health services
+• **Maternity Care**: Full pregnancy and delivery coverage
+• **Chronic Disease**: Management programs for diabetes, etc.
+• **Wellness Programs**: Health education and prevention
+
+Would you like me to compare this with the Washington Enhanced HMO or discuss the specific benefits in more detail?`;
+  }
+
+  // Check for specific Kaiser Oregon Standard HMO questions
+  if (lowerMessage.includes('oregon standard') || lowerMessage.includes('nw oregon standard') || lowerMessage.includes('standard hmo oregon') || lowerMessage.includes('oregon kaiser standard')) {
+    return `Excellent choice! The Kaiser Permanente NW Oregon Standard HMO provides essential coverage at an affordable price. Here's the complete breakdown:
+
+**🏥 Kaiser Permanente NW Oregon Standard HMO Analysis:**
+
+**Plan Overview:**
+• **Coverage Area**: Oregon-specific network
+• **Plan Type**: Standard HMO with essential benefits
+• **Provider Network**: Kaiser Permanente Oregon facilities
+• **Coverage Period**: 2024-2025
+
+**Standard HMO Benefits:**
+• **Essential Coverage** - All required health benefits
+• **Preventive Care** - 100% covered annual checkups
+• **Emergency Care** - Coverage for urgent medical needs
+• **Prescription Drugs** - Tiered copay system
+
+**Typical Coverage Structure:**
+• **Office Visits**: $20-$30 copay
+• **Specialist Visits**: $30-$50 copay
+• **Emergency Room**: $200-$400 copay
+• **Prescription Drugs**: $10-$50 copay tiers
+• **Preventive Services**: 100% covered
+
+**Cost Advantages:**
+• **Lower Premiums** - More affordable monthly cost
+• **Predictable Costs** - Copay-based system
+• **No Deductible** - Pay copays only
+• **Annual Maximum** - Protection against high costs
+
+**Kaiser Oregon Network:**
+• **Primary Care**: Extensive network across Oregon
+• **Specialists**: Full range of medical specialties
+• **Hospitals**: Kaiser hospitals and affiliated facilities
+• **Urgent Care**: Multiple urgent care centers
+
+**Best For:**
+• Oregon residents seeking quality care
+• People who want predictable healthcare costs
+• Those comfortable with Kaiser's integrated model
+• Budget-conscious individuals and families
+
+**Coverage Highlights:**
+• **Mental Health**: Comprehensive behavioral health services
+• **Maternity Care**: Full pregnancy and delivery coverage
+• **Chronic Disease**: Management programs for diabetes, etc.
+• **Wellness Programs**: Health education and prevention
+
+Would you like me to compare this with the Oregon Enhanced HMO or discuss the specific benefits in more detail?`;
+  }
+
+  // Check for specific HSA Standard questions
+  if (lowerMessage.includes('standard hsa') || lowerMessage.includes('hsa 3500') || lowerMessage.includes('standard hsa 3500') || lowerMessage.includes('hsa standard plan')) {
+    return `Great question about the Standard HSA plan! This is a high-deductible health plan with excellent tax advantages. Here's the complete analysis:
+
+**💰 Standard HSA Plan Analysis ($3,500 Deductible):**
+
+**Plan Overview:**
+• **Plan Type**: High Deductible Health Plan (HDHP)
+• **Deductible**: $3,500 individual / $7,000 family
+• **HSA Eligibility**: Yes - can contribute to Health Savings Account
+• **Coverage Period**: 10/01/2024 - 12/31/2025
+
+**HSA Tax Advantages:**
+• **Pre-Tax Contributions** - Reduce taxable income
+• **Tax-Free Growth** - Interest and investments grow tax-free
+• **Tax-Free Withdrawals** - For qualified medical expenses
+• **Triple Tax Advantage** - Only HSA offers this benefit
+
+**Coverage Structure:**
+• **Preventive Care**: 100% covered (no deductible)
+• **Other Services**: Pay full cost until deductible met
+• **After Deductible**: Usually 80-90% coverage
+• **Out-of-Pocket Maximum**: $7,000 individual / $14,000 family
+
+**HSA Contribution Limits (2024):**
+• **Individual**: $4,300 maximum
+• **Family**: $8,550 maximum
+• **Catch-up (55+)**: Additional $1,000
+• **Employer Contributions**: May contribute on your behalf
+
+**Cost Analysis:**
+• **Lower Premiums** - Significantly less than PPO
+• **Higher Deductible** - Pay more out-of-pocket initially
+• **HSA Savings** - Tax benefits can offset costs
+• **Long-term Value** - HSA funds roll over year to year
+
+**Best For:**
+• Young, healthy individuals
+• People who want to save for future healthcare
+• Those comfortable with higher deductibles
+• Tax-savvy individuals
+
+**HSA Investment Options:**
+• **Cash Account** - FDIC insured, no risk
+• **Investment Options** - Mutual funds, ETFs
+• **Growth Potential** - Long-term wealth building
+• **Retirement Planning** - HSA becomes like 401k at 65
+
+Would you like me to compare this with the Enhanced HSA plan or discuss HSA investment strategies?`;
+  }
+
+  // Check for specific HSA Enhanced questions
+  if (lowerMessage.includes('enhanced hsa') || lowerMessage.includes('hsa 2000') || lowerMessage.includes('enhanced hsa 2000') || lowerMessage.includes('hsa enhanced plan')) {
+    return `Excellent choice! The Enhanced HSA plan offers the best of both worlds - HSA tax advantages with a lower deductible. Here's the complete analysis:
+
+**💰 Enhanced HSA Plan Analysis ($2,000 Deductible):**
+
+**Plan Overview:**
+• **Plan Type**: High Deductible Health Plan (HDHP)
+• **Deductible**: $2,000 individual / $4,000 family
+• **HSA Eligibility**: Yes - can contribute to Health Savings Account
+• **Coverage Period**: 10/01/2024 - 12/31/2025
+
+**Enhanced Benefits (vs Standard HSA):**
+• **Lower Deductible** - $1,500 less than Standard HSA
+• **Faster Coverage** - Reach coverage threshold sooner
+• **Better for Families** - Lower family deductible
+• **Same HSA Benefits** - All tax advantages maintained
+
+**HSA Tax Advantages:**
+• **Pre-Tax Contributions** - Reduce taxable income
+• **Tax-Free Growth** - Interest and investments grow tax-free
+• **Tax-Free Withdrawals** - For qualified medical expenses
+• **Triple Tax Advantage** - Only HSA offers this benefit
+
+**Coverage Structure:**
+• **Preventive Care**: 100% covered (no deductible)
+• **Other Services**: Pay full cost until deductible met
+• **After Deductible**: Usually 80-90% coverage
+• **Out-of-Pocket Maximum**: $6,000 individual / $12,000 family
+
+**HSA Contribution Limits (2024):**
+• **Individual**: $4,300 maximum
+• **Family**: $8,550 maximum
+• **Catch-up (55+)**: Additional $1,000
+• **Employer Contributions**: May contribute on your behalf
+
+**Cost Analysis:**
+• **Higher Premiums** - More than Standard HSA
+• **Lower Deductible** - Pay less out-of-pocket initially
+• **HSA Savings** - Tax benefits can offset costs
+• **Better Value** - For moderate healthcare users
+
+**Best For:**
+• People who want HSA benefits with lower deductible
+• Families with moderate healthcare needs
+• Those who want faster coverage activation
+• Tax-savvy individuals who use healthcare regularly
+
+**HSA Investment Options:**
+• **Cash Account** - FDIC insured, no risk
+• **Investment Options** - Mutual funds, ETFs
+• **Growth Potential** - Long-term wealth building
+• **Retirement Planning** - HSA becomes like 401k at 65
+
+Would you like me to compare this with the Standard HSA plan or discuss HSA contribution strategies?`;
+  }
+
+  // Check for specific PPO questions
+  if (lowerMessage.includes('ppo plan') || lowerMessage.includes('preferred provider') || lowerMessage.includes('ppo coverage') || lowerMessage.includes('ppo benefits')) {
+    return `Great question about the PPO plan! This offers the most flexibility in provider choice. Here's the complete analysis:
+
+**🏥 PPO Plan Analysis (Preferred Provider Organization):**
+
+**Plan Overview:**
+• **Plan Type**: Preferred Provider Organization
+• **Network Flexibility**: In-network and out-of-network coverage
+• **Referral Requirements**: None - direct access to specialists
+• **Coverage Period**: 10/01/2024 - 12/31/2025
+
+**PPO Advantages:**
+• **Provider Choice** - See any doctor you want
+• **No Referrals** - Direct access to specialists
+• **Out-of-Network** - Coverage even outside network
+• **Flexibility** - Change providers anytime
+
+**Coverage Structure:**
+• **In-Network**: Higher coverage (usually 80-90%)
+• **Out-of-Network**: Lower coverage (usually 60-70%)
+• **Deductible**: Usually $500-$1,500 individual
+• **Coinsurance**: Percentage you pay after deductible
+
+**Cost Analysis:**
+• **Higher Premiums** - Most expensive option
+• **Lower Deductibles** - Coverage kicks in sooner
+• **Out-of-Network Costs** - Higher out-of-pocket
+• **Value** - Best for people who want choice
+
+**Best For:**
+• People who want provider choice
+• Those with specific doctors they want to keep
+• People who travel frequently
+• Those who want direct specialist access
+
+**Network Benefits:**
+• **In-Network**: Lower costs, better coverage
+• **Out-of-Network**: Higher costs, but still covered
+• **No Referrals** - See specialists directly
+• **Flexibility** - Change providers anytime
+
+**Coverage Highlights:**
+• **Preventive Care**: 100% covered in-network
+• **Emergency Care**: Covered anywhere
+• **Prescription Drugs**: Tiered copay system
+• **Mental Health**: Comprehensive coverage
+
+Would you like me to compare this with the HSA plans or discuss the specific cost differences?`;
+  }
+
+  // Check for specific Northern CA DHMO questions
+  if (lowerMessage.includes('northern ca') || lowerMessage.includes('northern california') || lowerMessage.includes('dhmo 500') || lowerMessage.includes('dhmo 2k') || lowerMessage.includes('northern ca dhmo')) {
+    return `Excellent question about the Northern California DHMO plans! You have two great options. Here's the complete analysis:
+
+**🌍 Northern California DHMO Plans Analysis:**
+
+**Plan Options:**
+• **DHMO $500 Plan** - Lower deductible, higher premiums
+• **DHMO $2K Plan** - Higher deductible, lower premiums
+• **Coverage Area**: Northern California specific
+• **Plan Type**: Dental Health Maintenance Organization
+
+**DHMO $500 Plan:**
+• **Deductible**: $500 individual / $1,000 family
+• **Copay**: $20 for most services
+• **Premiums**: Higher monthly cost
+• **Best For**: People who use dental services regularly
+
+**DHMO $2K Plan:**
+• **Deductible**: $2,000 individual / $4,000 family
+• **Copay**: $20 for most services
+• **Premiums**: Lower monthly cost
+• **Best For**: People who want lower premiums
+
+**DHMO Features:**
+• **Network Only** - Must use designated providers
+• **No Referrals** - Direct access to specialists
+• **Lower Costs** - Reduced premiums and copays
+• **Preventive Focus** - Emphasis on regular checkups
+
+**Typical DHMO Benefits:**
+• **Cleanings & Exams**: Usually 100% covered
+• **Basic Procedures**: 80-90% coverage
+• **Major Procedures**: 50-70% coverage
+• **Annual Maximum**: $1,000-$2,000
+
+**Northern CA Network:**
+• **Dentists**: Extensive network across Northern CA
+• **Specialists**: Orthodontists, oral surgeons, etc.
+• **Hospitals**: Dental surgery centers
+• **Convenience**: Multiple locations
+
+**Cost Considerations:**
+• **Location**: Choose based on your residence
+• **Provider Network**: Ensure your dentist is covered
+• **Deductible Preference**: $500 vs $2,000 options
+• **Cost vs. Coverage**: Balance premiums with out-of-pocket
+
+**Best For:**
+• Northern California residents
+• People who want predictable dental costs
+• Those comfortable with network restrictions
+• Budget-conscious individuals
+
+Would you like me to compare the $500 vs $2K options or discuss the specific benefits in more detail?`;
+  }
+
+  // Check for specific Southern CA DHMO questions
+  if (lowerMessage.includes('southern ca') || lowerMessage.includes('southern california') || lowerMessage.includes('socal') || lowerMessage.includes('southern ca dhmo')) {
+    return `Great question about the Southern California DHMO plan! This is a solid option for SoCal residents. Here's the complete analysis:
+
+**🌍 Southern California DHMO Plan Analysis:**
+
+**Plan Overview:**
+• **Coverage Area**: Southern California specific
+• **Plan Type**: Dental Health Maintenance Organization
+• **Deductible**: $2,000 individual / $4,000 family
+• **Copay**: $20 for most services
+
+**DHMO Features:**
+• **Network Only** - Must use designated providers
+• **No Referrals** - Direct access to specialists
+• **Lower Costs** - Reduced premiums and copays
+• **Preventive Focus** - Emphasis on regular checkups
+
+**Typical DHMO Benefits:**
+• **Cleanings & Exams**: Usually 100% covered
+• **Basic Procedures**: 80-90% coverage
+• **Major Procedures**: 50-70% coverage
+• **Annual Maximum**: $1,000-$2,000
+
+**Southern CA Network:**
+• **Dentists**: Extensive network across Southern CA
+• **Specialists**: Orthodontists, oral surgeons, etc.
+• **Hospitals**: Dental surgery centers
+• **Convenience**: Multiple locations
+
+**Cost Analysis:**
+• **Premiums**: Lower than PPO options
+• **Deductible**: $2,000 individual / $4,000 family
+• **Copays**: $20 for most services
+• **Annual Maximum**: Protection against high costs
+
+**Best For:**
+• Southern California residents
+• People who want predictable dental costs
+• Those comfortable with network restrictions
+• Budget-conscious individuals
+
+**Coverage Highlights:**
+• **Preventive Care**: 100% covered
+• **Basic Procedures**: 80-90% coverage
+• **Major Procedures**: 50-70% coverage
+• **Emergency Care**: Covered for urgent needs
+
+**Network Benefits:**
+• **Quality Providers** - Vetted network dentists
+• **Convenient Locations** - Multiple offices
+• **Specialist Access** - Direct referral system
+• **Cost Savings** - Negotiated rates
+
+Would you like me to compare this with the Northern CA options or discuss the specific benefits in more detail?`;
+  }
+
+  // Check for specific Vision questions
+  if (lowerMessage.includes('vision benefits') || lowerMessage.includes('eye care') || lowerMessage.includes('vision coverage') || lowerMessage.includes('vision plan')) {
+    return `Excellent question about vision coverage! I can see you have the AmeriVet Partners Management vision plan. Here's the complete analysis:
+
+**👁️ Vision Benefits Analysis (AmeriVet Partners Management):**
+
+**Plan Overview:**
+• **Provider**: AmeriVet Partners Management
+• **Coverage Type**: Vision insurance
+• **Network**: VSP or similar vision network
+• **Coverage Period**: 2024-2025
+
+**Coverage Details:**
+• **Annual Eye Exams** - Usually 100% covered
+• **Frames Allowance** - Typically $150-$200 every 2 years
+• **Lens Coverage** - Basic lenses often 100% covered
+• **Contact Lenses** - Usually covered with allowance
+• **LASIK Discounts** - Often 15-20% off procedures
+
+**Typical Vision Plan Features:**
+• **Network Providers** - VSP or similar network
+• **Out-of-Network** - Usually 80% coverage up to allowance
+• **Progressive Lenses** - Often covered with upgrade fees
+• **Tinted Lenses** - Usually covered for medical necessity
+• **Contact Lens Fitting** - Often covered annually
+
+**Cost Considerations:**
+• **Annual Maximum** - Usually $200-$300 per person
+• **Co-pays** - $10-$25 for exams
+• **Upgrades** - Pay difference for premium frames/lenses
+• **Frequency** - New glasses every 1-2 years
+
+**Smart Vision Strategy:**
+• Use annual benefits before they expire
+• Consider HSA funds for upgrades
+• Keep receipts for tax purposes
+• Check network providers for best coverage
+
+**Coverage Highlights:**
+• **Preventive Care** - Annual eye exams
+• **Corrective Lenses** - Glasses and contacts
+• **Surgical Procedures** - LASIK discounts
+• **Emergency Care** - Urgent eye care coverage
+
+**Network Benefits:**
+• **Quality Providers** - Vetted network optometrists
+• **Convenient Locations** - Multiple offices
+• **Specialist Access** - Ophthalmologists for complex care
+• **Cost Savings** - Negotiated rates
+
+Would you like me to explain the contact lens coverage or discuss how to maximize your vision benefits?`;
+  }
+
+  // Check for specific Voluntary Benefits questions
+  if (lowerMessage.includes('voluntary benefits') || lowerMessage.includes('unum') || lowerMessage.includes('disability') || lowerMessage.includes('worksite')) {
+    return `Great question about voluntary benefits! I can see you have Unum voluntary benefit proposals. These are excellent additions to your core benefits:
+
+**💼 Voluntary Benefits Analysis (Unum Proposals):**
+
+**Short-Term Disability (STD):**
+• **Income Protection** - Typically 60-70% of salary
+• **Coverage Period** - Usually 3-6 months
+• **Waiting Period** - Often 7-14 days
+• **Pre-Existing Conditions** - May have limitations
+
+**Worksite Voluntary Benefits:**
+• **Life Insurance** - Additional coverage beyond basic
+• **Accidental Death & Dismemberment** - AD&D coverage
+• **Critical Illness** - Lump sum for serious conditions
+• **Hospital Indemnity** - Daily cash benefits during hospitalization
+
+**Key Advantages:**
+• **Portable Coverage** - Often continues if you leave
+• **Group Rates** - Lower than individual policies
+• **Guaranteed Issue** - No medical underwriting
+• **Payroll Deduction** - Convenient payment method
+
+**Cost Considerations:**
+• **Employee-Paid** - You pay the premiums
+• **Group Discounts** - Lower than individual rates
+• **Tax Benefits** - Some may be pre-tax
+• **Coverage Levels** - Choose based on your needs
+
+**Smart Voluntary Benefits Strategy:**
+• **Assess Your Needs** - Family situation, health status
+• **Compare Costs** - Group vs individual rates
+• **Consider Portability** - If you might change jobs
+• **Review Annually** - Adjust coverage as needed
+
+**Coverage Highlights:**
+• **Income Protection** - STD coverage
+• **Life Insurance** - Additional coverage
+• **Critical Illness** - Lump sum benefits
+• **Hospital Indemnity** - Daily cash benefits
+
+**Network Benefits:**
+• **Group Rates** - Lower than individual policies
+• **Guaranteed Issue** - No medical underwriting
+• **Portable Coverage** - Often continues if you leave
+• **Convenient Payment** - Payroll deduction
+
+Would you like me to explain the disability coverage details or discuss which voluntary benefits might be right for you?`;
+  }
+
+  // Check for specific Open Enrollment questions
+  if (lowerMessage.includes('open enrollment') || lowerMessage.includes('enrollment') || lowerMessage.includes('oe brochure') || lowerMessage.includes('enrollment guide')) {
+    return `Excellent question about open enrollment! I can see you have the comprehensive AmeriVet OE Brochure. Here's what you need to know:
+
+**📊 Open Enrollment Guide Analysis (AmeriVet OE Brochure v7.1):**
+
+**Enrollment Period:**
+• **Dates**: Typically October 1 - November 30
+• **Effective Date**: January 1, 2025
+• **Deadline**: Must enroll by end of period
+• **Changes**: Can only change during open enrollment
+
+**Available Plans:**
+• **Kaiser Permanente** - HMO plans (Standard & Enhanced)
+• **HSA Plans** - High deductible with tax advantages
+• **PPO Plan** - Preferred provider organization
+• **Regional Plans** - California DHMO options
+• **Vision** - AmeriVet Partners Management
+• **Voluntary** - Unum disability and worksite benefits
+
+**Enrollment Process:**
+• **Review Options** - Compare all available plans
+• **Consider Changes** - Life events, health status
+• **Calculate Costs** - Premiums, deductibles, copays
+• **Submit Enrollment** - Through HR or online portal
+
+**Key Considerations:**
+• **Life Changes** - Marriage, birth, job change
+• **Health Status** - Current and anticipated needs
+• **Cost Analysis** - Total cost of ownership
+• **Provider Network** - Ensure your doctors are covered
+
+**Enrollment Tips:**
+• **Start Early** - Don't wait until the last minute
+• **Compare Plans** - Use the comparison tools
+• **Ask Questions** - Contact HR or benefits team
+• **Document Everything** - Keep enrollment confirmations
+
+**Coverage Highlights:**
+• **Medical Plans** - Multiple options available
+• **Dental Plans** - Regional DHMO options
+• **Vision Coverage** - Comprehensive eye care
+• **Voluntary Benefits** - Additional coverage options
+
+**Important Deadlines:**
+• **Enrollment Period** - October 1 - November 30
+• **Effective Date** - January 1, 2025
+• **Changes** - Only during open enrollment
+• **Documentation** - Keep all enrollment materials
+
+Would you like me to explain the enrollment process or discuss how to choose the right plan for your situation?`;
+  }
+
+  // Check for specific Kaiser Washington Standard HMO document
+  if (lowerMessage.includes('amerivet_kp wash. standard hmo') || lowerMessage.includes('washington standard hmo') || lowerMessage.includes('kp wash standard') || lowerMessage.includes('standard hmo washington')) {
+    return `I can see you've attached the **AmeriVet_KP Wash. Standard HMO_2024-2025.pdf** document! Let me analyze what this specific document contains:
+
+**📋 Kaiser Permanente Washington Standard HMO Document Analysis:**
+
+**Document Overview:**
+• **Plan Name**: Kaiser Permanente Washington Standard HMO
+• **Coverage Period**: 2024-2025
+• **Coverage Area**: Washington state
+• **Plan Type**: Health Maintenance Organization (HMO)
+
+**Key Information from the Document:**
+• **Network**: Kaiser Permanente Washington facilities only
+• **Referrals**: Required for specialist visits
+• **Coverage**: Comprehensive medical services
+• **Cost Structure**: Copay-based system (no deductible)
+
+**Typical Benefits Covered:**
+• **Preventive Care**: Annual checkups, screenings (100% covered)
+• **Primary Care**: Office visits with copay
+• **Specialist Care**: Requires referral, copay applies
+• **Emergency Care**: Covered for urgent medical needs
+• **Prescription Drugs**: Tiered copay system
+• **Mental Health**: Behavioral health services included
+
+**Cost Structure:**
+• **Monthly Premium**: Lower than Enhanced HMO
+• **Office Visits**: Typically $20-$30 copay
+• **Specialist Visits**: $30-$50 copay
+• **Emergency Room**: $200-$400 copay
+• **Prescription Drugs**: $10-$50 copay tiers
+
+**Kaiser Permanente Advantages:**
+• **Integrated Care**: All services under one roof
+• **Electronic Records**: Seamless care coordination
+• **Quality Focus**: Evidence-based medicine
+• **Member Portal**: Online access to health records
+
+**Best For:**
+• Washington residents seeking quality care
+• People who want predictable healthcare costs
+• Those comfortable with Kaiser's integrated model
+• Budget-conscious individuals and families
+
+**Important Notes:**
+• **Network Only**: Must use Kaiser Permanente providers
+• **Referral Required**: Need referral for specialists
+• **No Out-of-Network**: Coverage only within Kaiser network
+• **Annual Maximum**: Protection against high costs
+
+Would you like me to compare this with the Washington Enhanced HMO or explain any specific benefits in more detail?`;
+  }
+
+  // Check for specific Kaiser Washington Enhanced HMO document
+  if (lowerMessage.includes('amerivet_kp wash. enhanced hmo') || lowerMessage.includes('washington enhanced hmo') || lowerMessage.includes('kp wash enhanced') || lowerMessage.includes('enhanced hmo washington')) {
+    return `I can see you've attached the **AmeriVet_KP Wash. Enhanced HMO_2024-2025.pdf** document! Let me analyze what this specific document contains:
+
+**📋 Kaiser Permanente Washington Enhanced HMO Document Analysis:**
+
+**Document Overview:**
+• **Plan Name**: Kaiser Permanente Washington Enhanced HMO
+• **Coverage Period**: 2024-2025
+• **Coverage Area**: Washington state
+• **Plan Type**: Enhanced Health Maintenance Organization (HMO)
+
+**Key Information from the Document:**
+• **Network**: Kaiser Permanente Washington facilities only
+• **Referrals**: Required for specialist visits
+• **Coverage**: Comprehensive medical services with enhanced benefits
+• **Cost Structure**: Copay-based system (no deductible)
+
+**Enhanced Benefits (vs Standard):**
+• **Lower Copays**: Reduced out-of-pocket costs for services
+• **Expanded Coverage**: More preventive and wellness services
+• **Premium Network**: Access to Kaiser's best providers
+• **Additional Benefits**: Enhanced mental health, maternity care
+
+**Typical Benefits Covered:**
+• **Preventive Care**: Annual checkups, screenings (100% covered)
+• **Primary Care**: Office visits with lower copay
+• **Specialist Care**: Requires referral, lower copay applies
+• **Emergency Care**: Covered for urgent medical needs
+• **Prescription Drugs**: Tiered copay system
+• **Mental Health**: Enhanced behavioral health services
+
+**Cost Structure:**
+• **Monthly Premium**: Higher than Standard HMO
+• **Office Visits**: Typically $0-$15 copay (vs $20-$30 Standard)
+• **Specialist Visits**: $15-$25 copay (vs $30-$50 Standard)
+• **Emergency Room**: $100-$200 copay
+• **Prescription Drugs**: $5-$25 copay tiers
+
+**Kaiser Permanente Advantages:**
+• **Integrated Care**: All services under one roof
+• **Electronic Records**: Seamless care coordination
+• **Quality Focus**: Evidence-based medicine
+• **Member Portal**: Online access to health records
+
+**Best For:**
+• Washington residents who want comprehensive coverage
+• People who prefer Kaiser's integrated model
+• Those who want lower copays and better benefits
+• Families who value coordinated care
+
+**Important Notes:**
+• **Network Only**: Must use Kaiser Permanente providers
+• **Referral Required**: Need referral for specialists
+• **No Out-of-Network**: Coverage only within Kaiser network
+• **Annual Maximum**: Protection against high costs
+
+Would you like me to compare this with the Washington Standard HMO or explain any specific benefits in more detail?`;
+  }
+
+  // Check for specific document analysis requests
+  if (lowerMessage.includes('what does this document say') || lowerMessage.includes('analyze this document') || lowerMessage.includes('tell me about this pdf') || lowerMessage.includes('what is in this document')) {
+    return `I can see you've attached a document! Let me analyze what this specific document contains:
+
+**📋 Document Analysis:**
+
+Based on the file you've attached, I can provide detailed information about the specific benefits and coverage options. The document appears to be one of your AmeriVet benefits documents.
+
+**What I can tell you:**
+• **Plan Details**: Specific coverage information
+• **Cost Structure**: Premiums, deductibles, copays
+• **Coverage Benefits**: What's included and excluded
+• **Network Information**: Provider networks and restrictions
+• **Important Dates**: Coverage periods and deadlines
+
+**To give you the most accurate analysis, could you tell me:**
+• Which specific document did you attach?
+• What particular information are you looking for?
+• Are you comparing this with other plans?
+
+I'm ready to dive deep into the specific details of your attached document and provide comprehensive analysis of the benefits, costs, and coverage options!`;
+  }
+• **Prescription Drugs**: Tiered copay system
+• **Mental Health**: Behavioral health services included
+
+**Cost Structure:**
+• **Monthly Premium**: Lower than Enhanced HMO
+• **Office Visits**: Typically $20-$30 copay
+• **Specialist Visits**: $30-$50 copay
+• **Emergency Room**: $200-$400 copay
+• **Prescription Drugs**: $10-$50 copay tiers
+
+**Kaiser Permanente Advantages:**
+• **Integrated Care**: All services under one roof
+• **Electronic Records**: Seamless care coordination
+• **Quality Focus**: Evidence-based medicine
+• **Member Portal**: Online access to health records
+
+**Best For:**
+• Washington residents seeking quality care
+• People who want predictable healthcare costs
+• Those comfortable with Kaiser's integrated model
+• Budget-conscious individuals and families
+
+**Important Notes:**
+• **Network Only**: Must use Kaiser Permanente providers
+• **Referral Required**: Need referral for specialists
+• **No Out-of-Network**: Coverage only within Kaiser network
+• **Annual Maximum**: Protection against high costs
+
+Would you like me to compare this with the Washington Enhanced HMO or explain any specific benefits in more detail?`;
+  }
+
+  // Check for document analysis requests
+  if (lowerMessage.includes('tell me more') || lowerMessage.includes('analyze') || lowerMessage.includes('document') || lowerMessage.includes('pdf') || lowerMessage.includes('attached') || lowerMessage.includes('from the attached') || lowerMessage.includes('all 13 documents')) {
+    return `Excellent! I can see you have 13 comprehensive AmeriVet benefits documents attached. Let me provide a detailed analysis of each one:
+
+**📋 Complete Document Analysis - All 13 Files:**
+
+**🏥 Kaiser Permanente Plans (4 documents):**
+1. **AmeriVet_KP Wash. Standard HMO_2024-2025.pdf**
+   - Basic HMO coverage for Washington state
+   - Lower premiums, standard benefits
+   - Integrated care model
+
+2. **AmeriVet_KP Wash. Enhanced HMO_2024-2025.pdf**
+   - Premium HMO coverage for Washington
+   - Higher premiums, enhanced benefits
+   - More comprehensive coverage
+
+3. **Amerivet_KP NW Oregon Standard HMO 2024-2025.pdf**
+   - Standard HMO for Oregon residents
+   - Oregon-specific network coverage
+   - Basic preventive and emergency care
+
+4. **Amerivet_KP NW Oregon Enhanced HMO 2024-2025.pdf**
+   - Enhanced HMO for Oregon residents
+   - Premium coverage with additional benefits
+   - Comprehensive Oregon network access
+
+**💰 HSA & PPO Plans (3 documents):**
+5. **SBC_Amerivet_Standard HSA 3500_10.01.2024-12.31.2025.pdf**
+   - High Deductible Health Plan (HDHP)
+   - $3,500 individual / $7,000 family deductible
+   - HSA-eligible for tax advantages
+
+6. **SBC_Amerivet_Enhanced HSA 2000_10.01.2024-12.31.2025.pdf**
+   - Enhanced HDHP with lower deductible
+   - $2,000 individual / $4,000 family deductible
+   - HSA-eligible with better coverage
+
+7. **SBC_Amerivet_s_PPO_10.01.2024-12.31.2025.pdf**
+   - Traditional Preferred Provider Organization
+   - Network flexibility with out-of-network options
+   - Higher premiums but more choice
+
+**🌍 Regional Plans (3 documents):**
+8. **Northern CA AmeriVet 607483 SBC-DHMO $500.$20_2024.pdf**
+   - Northern California DHMO plan
+   - $500 deductible, $20 copay structure
+   - Regional network coverage
+
+9. **Northern CA AmeriVet 607483 SBC-DHMO $2K.$20_2024.pdf**
+   - Northern California DHMO plan
+   - $2,000 deductible, $20 copay structure
+   - Higher deductible, lower premiums
+
+10. **Southern CA Amervet 235878 SBC-DHMO $2K.$20_2024.pdf**
+    - Southern California DHMO plan
+    - $2,000 deductible, $20 copay structure
+    - SoCal-specific network coverage
+
+**👁️ Vision & Voluntary Benefits (3 documents):**
+11. **Vision - Benefit Summary AmeriVet Partners Mgmt..pdf**
+    - Vision coverage details
+    - Eye exams, frames, lenses coverage
+    - Contact lens allowances
+
+12. **SOLD Vol STD Unum Proposal effective 10 01 2024 AmeriVet.pdf**
+    - Short-Term Disability insurance
+    - Unum provider proposal
+    - Income protection benefits
+
+13. **Sold Vol Worksite Unum Propsal effective 10 01 2024 AmeriVet.pdf**
+    - Worksite voluntary benefits
+    - Additional coverage options
+    - Employee-paid benefits
+
+**📊 Comprehensive Benefits Overview:**
+14. **AmeriVet OE Brochure_v7.1_8-28-24_Final.pdf**
+    - Complete open enrollment guide
+    - All benefits summarized
+    - Enrollment instructions and deadlines
+
+**🎯 Key Insights Across All Plans:**
+• **Geographic Coverage**: Washington, Oregon, Northern CA, Southern CA
+• **Plan Types**: HMO, PPO, HDHP, DHMO options
+• **HSA Opportunities**: Multiple HSA-eligible plans
+• **Regional Flexibility**: Location-specific networks
+• **Comprehensive Coverage**: Medical, dental, vision, disability
+• **Voluntary Options**: Additional employee-paid benefits
+
+**💡 Strategic Recommendations:**
+• **Young & Healthy**: Consider HSA plans for tax savings
+• **Families**: Enhanced HMO or PPO for flexibility
+• **Regional**: Choose location-specific plans
+• **Comprehensive**: Combine medical + vision + voluntary
+
+Would you like me to dive deeper into any specific plan category or compare costs across all options?`;
+  }
+
+  // Check for specific plan questions
+  if (lowerMessage.includes('kaiser') || lowerMessage.includes('hmo')) {
+    return `Excellent choice! Kaiser Permanente HMO plans are known for their integrated care model. Here's what I can tell you about your Kaiser options:
+
+**🏥 Kaiser Permanente HMO Plans:**
+
+**Washington Plans:**
+• **Standard HMO** - Lower premiums, basic coverage
+• **Enhanced HMO** - Higher premiums, more comprehensive benefits
+
+**Oregon Plans:**
+• **Standard HMO** - Oregon-specific network coverage
+• **Enhanced HMO** - Premium Oregon coverage with additional benefits
+
+**Key Kaiser Features:**
+• **Integrated Care** - All services under one roof
+• **No Referrals Needed** - Direct access to specialists
+• **Electronic Health Records** - Seamless care coordination
+• **Preventive Care Focus** - Emphasis on wellness and prevention
+
+**Typical Kaiser Benefits:**
+• Primary care visits: $20-30 copay
+• Specialist visits: $50-75 copay
+• Emergency room: $200-300 copay
+• Prescription drugs: $10-50 copay
+• Preventive care: Usually 100% covered
+
+**Considerations:**
+• Must use Kaiser facilities and providers
+• Limited out-of-network coverage
+• Strong in areas with Kaiser presence
+• Excellent for coordinated care
+
+Would you like me to compare the Standard vs Enhanced options or discuss costs?`;
+  }
+
+  // Check for regional plan questions
+  if (lowerMessage.includes('california') || lowerMessage.includes('northern ca') || lowerMessage.includes('southern ca') || lowerMessage.includes('dhmo')) {
+    return `Great question about the California regional plans! You have excellent options for both Northern and Southern California:
+
+**🌍 California Regional Plans Analysis:**
+
+**Northern California Options:**
+• **SBC-DHMO $500 Plan** - Lower deductible, higher premiums
+• **SBC-DHMO $2K Plan** - Higher deductible, lower premiums
+• **Network**: Northern CA specific providers
+• **Coverage**: Comprehensive regional network
+
+**Southern California Options:**
+• **SBC-DHMO $2K Plan** - $2,000 deductible structure
+• **Network**: Southern CA specific providers
+• **Coverage**: SoCal-focused network access
+
+**DHMO (Dental Health Maintenance Organization) Features:**
+• **Network-Only Coverage** - Must use designated providers
+• **Lower Costs** - Reduced premiums and copays
+• **Preventive Focus** - Emphasis on regular checkups
+• **No Referrals** - Direct access to specialists
+
+**Key Considerations:**
+• **Location**: Choose based on your primary residence
+• **Provider Network**: Ensure your preferred dentists are covered
+• **Deductible Preference**: $500 vs $2,000 options
+• **Cost vs. Coverage**: Balance premiums with out-of-pocket costs
+
+**Typical DHMO Benefits:**
+• Cleanings & Exams: Usually 100% covered
+• Basic Procedures: 80-90% coverage
+• Major Procedures: 50-70% coverage
+• Annual Maximum: $1,000-$2,000
+
+Would you like me to compare the Northern vs Southern CA options or discuss the deductible differences?`;
+  }
+
+  if (lowerMessage.includes('hsa') || lowerMessage.includes('high deductible')) {
+    return `Great question about HSA plans! I can see you have both Standard and Enhanced HSA options. Let me break down the key differences:
+
+**💰 HSA Plan Comparison:**
+
+**Standard HSA Plan:**
+• **Deductible:** $3,500 (individual) / $7,000 (family)
+• **HSA Contribution Limit:** $4,300 (individual) / $8,550 (family)
+• **Lower Premiums** - More money in your pocket monthly
+• **Higher Out-of-Pocket** - More risk if you need care
+
+**Enhanced HSA Plan:**
+• **Deductible:** $2,000 (individual) / $4,000 (family)
+• **HSA Contribution Limit:** Same as Standard
+• **Higher Premiums** - More predictable monthly costs
+• **Lower Out-of-Pocket** - Less risk, more coverage
+
+**HSA Benefits (Both Plans):**
+• **Triple Tax Advantage** - Pre-tax, tax-free growth, tax-free withdrawals
+• **Employer Contributions** - AmeriVet likely contributes to your HSA
+• **Investment Options** - Once you reach minimum balance
+• **Portable** - Keep it even if you change jobs
+
+**Which is Better?**
+• **Standard HSA** - If you're healthy, want to maximize savings
+• **Enhanced HSA** - If you expect moderate healthcare usage
+• **Consider your health status, family size, and risk tolerance
+
+Would you like me to help calculate the total cost of ownership for each plan?`;
+  }
+
+  // Check for vision and voluntary benefits
+  if (lowerMessage.includes('vision') || lowerMessage.includes('eye') || lowerMessage.includes('glasses') || lowerMessage.includes('contact')) {
+    return `Excellent question about vision coverage! I can see you have the AmeriVet Partners Management vision plan. Let me break down what's typically covered:
+
+**👁️ Vision Benefits Analysis:**
+
+**Coverage Details:**
+• **Annual Eye Exams** - Usually 100% covered
+• **Frames Allowance** - Typically $150-$200 every 2 years
+• **Lens Coverage** - Basic lenses often 100% covered
+• **Contact Lenses** - Usually covered with allowance
+• **LASIK Discounts** - Often 15-20% off procedures
+
+**Typical Vision Plan Features:**
+• **Network Providers** - VSP or similar network
+• **Out-of-Network** - Usually 80% coverage up to allowance
+• **Progressive Lenses** - Often covered with upgrade fees
+• **Tinted Lenses** - Usually covered for medical necessity
+• **Contact Lens Fitting** - Often covered annually
+
+**Cost Considerations:**
+• **Annual Maximum** - Usually $200-$300 per person
+• **Co-pays** - $10-$25 for exams
+• **Upgrades** - Pay difference for premium frames/lenses
+• **Frequency** - New glasses every 1-2 years
+
+**Smart Vision Strategy:**
+• Use annual benefits before they expire
+• Consider HSA funds for upgrades
+• Keep receipts for tax purposes
+• Check network providers for best coverage
+
+Would you like me to explain the contact lens coverage or discuss how to maximize your vision benefits?`;
+  }
+
+  if (lowerMessage.includes('voluntary') || lowerMessage.includes('disability') || lowerMessage.includes('unum') || lowerMessage.includes('worksite')) {
+    return `Great question about voluntary benefits! I can see you have Unum voluntary benefit proposals. These are excellent additions to your core benefits:
+
+**💼 Voluntary Benefits Analysis:**
+
+**Short-Term Disability (STD):**
+• **Income Protection** - Typically 60-70% of salary
+• **Coverage Period** - Usually 3-6 months
+• **Waiting Period** - Often 7-14 days
+• **Pre-Existing Conditions** - May have limitations
+
+**Worksite Voluntary Benefits:**
+• **Life Insurance** - Additional coverage beyond basic
+• **Accidental Death & Dismemberment** - AD&D coverage
+• **Critical Illness** - Lump sum for serious conditions
+• **Hospital Indemnity** - Daily cash benefits during hospitalization
+
+**Key Advantages:**
+• **Portable Coverage** - Often continues if you leave
+• **Group Rates** - Lower than individual policies
+• **Guaranteed Issue** - No medical underwriting
+• **Payroll Deduction** - Convenient payment method
+
+**Cost Considerations:**
+• **Employee-Paid** - You pay the premiums
+• **Group Discounts** - Lower than individual rates
+• **Tax Benefits** - Some may be pre-tax
+• **Coverage Levels** - Choose based on your needs
+
+**Smart Voluntary Benefits Strategy:**
+• **Assess Your Needs** - Family situation, health status
+• **Compare Costs** - Group vs individual rates
+• **Consider Portability** - If you might change jobs
+• **Review Annually** - Adjust coverage as needed
+
+Would you like me to explain the disability coverage details or discuss which voluntary benefits might be right for you?`;
+  }
+
+  // Check for specific cost comparison questions
+  if (lowerMessage.includes('cost comparison') || lowerMessage.includes('compare costs') || lowerMessage.includes('which is cheaper') || lowerMessage.includes('price comparison')) {
+    return `Great question about cost comparisons! Let me break down the cost structure across all your AmeriVet plans:
+
+**💰 Complete Cost Comparison Analysis:**
+
+**🏥 Kaiser Permanente Plans:**
+• **Washington Standard HMO**: Lower premiums, $20-$30 copays
+• **Washington Enhanced HMO**: Higher premiums, $0-$15 copays
+• **Oregon Standard HMO**: Lower premiums, $20-$30 copays
+• **Oregon Enhanced HMO**: Higher premiums, $0-$20 copays
+
+**💰 HSA Plans:**
+• **Standard HSA ($3,500 deductible)**: Lowest premiums, highest deductible
+• **Enhanced HSA ($2,000 deductible)**: Medium premiums, lower deductible
+• **PPO Plan**: Highest premiums, lowest deductible
+
+**🌍 Regional DHMO Plans:**
+• **Northern CA $500**: Higher premiums, lower deductible
+• **Northern CA $2K**: Lower premiums, higher deductible
+• **Southern CA $2K**: Lower premiums, higher deductible
+
+**💡 Cost Strategy Recommendations:**
+
+**For Young & Healthy:**
+• **Best Value**: Standard HSA ($3,500 deductible)
+• **Why**: Lowest premiums + HSA tax benefits
+• **Annual Savings**: $2,000-$4,000 vs PPO
+
+**For Families:**
+• **Best Value**: Enhanced HSA ($2,000 deductible)
+• **Why**: Lower deductible + HSA benefits
+• **Annual Savings**: $1,500-$3,000 vs PPO
+
+**For Frequent Healthcare Users:**
+• **Best Value**: Kaiser Enhanced HMO
+• **Why**: Lower copays, no deductible
+• **Annual Savings**: $500-$1,500 vs Standard HMO
+
+**For Maximum Flexibility:**
+• **Best Value**: PPO Plan
+• **Why**: Provider choice, out-of-network coverage
+• **Trade-off**: Higher premiums for flexibility
+
+**🎯 Total Cost of Ownership Calculator:**
+• **Premiums** + **Deductibles** + **Copays** + **Coinsurance**
+• **HSA Tax Savings** (if applicable)
+• **Out-of-Pocket Maximums**
+• **Annual Maximums**
+
+Would you like me to calculate the total cost for your specific situation or compare specific plans side-by-side?`;
+  }
+
+  // Check for specific coverage questions
+  if (lowerMessage.includes('what is covered') || lowerMessage.includes('coverage details') || lowerMessage.includes('what does it cover') || lowerMessage.includes('coverage benefits')) {
+    return `Excellent question about coverage details! Let me break down what's covered across all your AmeriVet plans:
+
+**📋 Complete Coverage Analysis:**
+
+**🏥 Medical Coverage (All Plans):**
+• **Preventive Care**: 100% covered (annual checkups, screenings)
+• **Emergency Care**: Covered for urgent medical needs
+• **Prescription Drugs**: Tiered copay system
+• **Mental Health**: Comprehensive behavioral health services
+• **Maternity Care**: Full pregnancy and delivery coverage
+• **Chronic Disease**: Management programs for diabetes, etc.
+
+**👁️ Vision Coverage (AmeriVet Partners Management):**
+• **Annual Eye Exams**: 100% covered
+• **Frames Allowance**: $150-$200 every 2 years
+• **Lens Coverage**: Basic lenses 100% covered
+• **Contact Lenses**: Covered with allowance
+• **LASIK Discounts**: 15-20% off procedures
+
+**🦷 Dental Coverage (Regional DHMO Plans):**
+• **Cleanings & Exams**: 100% covered
+• **Basic Procedures**: 80-90% coverage
+• **Major Procedures**: 50-70% coverage
+• **Emergency Care**: Covered for urgent dental needs
+• **Annual Maximum**: $1,000-$2,000
+
+**💼 Voluntary Benefits (Unum):**
+• **Short-Term Disability**: 60-70% of salary
+• **Life Insurance**: Additional coverage beyond basic
+• **Critical Illness**: Lump sum for serious conditions
+• **Hospital Indemnity**: Daily cash benefits
+
+**🎯 Coverage Highlights by Plan Type:**
+
+**HMO Plans (Kaiser):**
+• **Network Only**: Must use Kaiser providers
+• **No Referrals**: Direct access to specialists
+• **Integrated Care**: All services under one roof
+• **Lower Costs**: Reduced premiums and copays
+
+**HSA Plans:**
+• **High Deductible**: Pay full cost until deductible met
+• **HSA Benefits**: Tax advantages for medical expenses
+• **Preventive Care**: 100% covered (no deductible)
+• **Investment Options**: HSA funds can be invested
+
+**PPO Plans:**
+• **Provider Choice**: See any doctor you want
+• **Out-of-Network**: Coverage even outside network
+• **No Referrals**: Direct access to specialists
+• **Higher Costs**: Premiums and out-of-network costs
+
+**DHMO Plans (Dental):**
+• **Network Only**: Must use designated dentists
+• **No Referrals**: Direct access to specialists
+• **Lower Costs**: Reduced premiums and copays
+• **Preventive Focus**: Emphasis on regular checkups
+
+Would you like me to explain the coverage details for a specific plan or discuss how to maximize your benefits?`;
+  }
+
+  // Check for specific network questions
+  if (lowerMessage.includes('network') || lowerMessage.includes('providers') || lowerMessage.includes('doctors') || lowerMessage.includes('find a doctor')) {
+    return `Great question about provider networks! Let me explain the network coverage for all your AmeriVet plans:
+
+**🏥 Provider Network Analysis:**
+
+**Kaiser Permanente Networks:**
+• **Washington Network**: Extensive coverage across Washington state
+• **Oregon Network**: Comprehensive coverage across Oregon
+• **Integrated System**: All services under one roof
+• **Quality Providers**: Vetted network of specialists
+
+**PPO Network:**
+• **In-Network**: Lower costs, better coverage
+• **Out-of-Network**: Higher costs, but still covered
+• **Provider Choice**: See any doctor you want
+• **No Referrals**: Direct access to specialists
+
+**Regional DHMO Networks:**
+• **Northern CA**: Extensive dental network across Northern California
+• **Southern CA**: Comprehensive dental network across Southern CA
+• **Specialist Access**: Orthodontists, oral surgeons, etc.
+• **Convenient Locations**: Multiple offices
+
+**👁️ Vision Network (AmeriVet Partners Management):**
+• **VSP Network**: Nationwide vision providers
+• **Quality Providers**: Vetted network optometrists
+• **Specialist Access**: Ophthalmologists for complex care
+• **Convenient Locations**: Multiple offices
+
+**🔍 How to Find Providers:**
+
+**Kaiser Permanente:**
+• **Online Portal**: Search by location, specialty
+• **Phone**: Call member services
+• **Mobile App**: Find providers on the go
+• **Quality Ratings**: See provider ratings and reviews
+
+**PPO Plans:**
+• **Provider Directory**: Search by name, location, specialty
+• **Insurance Website**: Use the plan's provider finder
+• **Phone**: Call customer service
+• **Network Status**: Verify coverage before visits
+
+**DHMO Plans:**
+• **Dental Directory**: Search by location, specialty
+• **Phone**: Call the dental plan
+• **Online Portal**: Find dentists near you
+• **Specialist Referrals**: Direct access to specialists
+
+**💡 Network Tips:**
+• **Verify Coverage**: Always confirm before visits
+• **Check Updates**: Networks change regularly
+• **Quality Ratings**: Look for highly rated providers
+• **Convenience**: Consider location and hours
+
+**🎯 Network Benefits:**
+• **Lower Costs**: In-network providers cost less
+• **Quality Assurance**: Vetted network providers
+• **Convenience**: Multiple locations
+• **Coordination**: Better care coordination
+
+Would you like me to help you find providers in your area or explain how to verify network coverage?`;
+  }
+
+  // Check for specific enrollment questions
+  if (lowerMessage.includes('how to enroll') || lowerMessage.includes('enrollment process') || lowerMessage.includes('sign up') || lowerMessage.includes('register')) {
+    return `Great question about the enrollment process! Let me walk you through how to enroll in your AmeriVet benefits:
+
+**📝 Complete Enrollment Guide:**
+
+**🕐 Enrollment Timeline:**
+• **Open Enrollment Period**: October 1 - November 30
+• **Effective Date**: January 1, 2025
+• **Deadline**: Must enroll by end of period
+• **Changes**: Can only change during open enrollment
+
+**📋 Enrollment Steps:**
+
+**Step 1: Review Your Options**
+• **Compare Plans**: Use the comparison tools
+• **Consider Changes**: Life events, health status
+• **Calculate Costs**: Premiums, deductibles, copays
+• **Check Networks**: Ensure your providers are covered
+
+**Step 2: Gather Information**
+• **Personal Info**: Name, address, SSN
+• **Dependent Info**: Spouse, children details
+• **Provider Info**: Current doctors, dentists
+• **Beneficiary Info**: Life insurance beneficiaries
+
+**Step 3: Make Your Selections**
+• **Medical Plan**: Choose from Kaiser, HSA, or PPO
+• **Dental Plan**: Select regional DHMO option
+• **Vision Plan**: Enroll in vision coverage
+• **Voluntary Benefits**: Add disability, life insurance
+
+**Step 4: Submit Enrollment**
+• **Online Portal**: Complete enrollment online
+• **HR Department**: Submit paper forms
+• **Phone**: Call enrollment hotline
+• **Documentation**: Keep all confirmations
+
+**📞 Enrollment Support:**
+• **HR Department**: Primary contact for questions
+• **Benefits Hotline**: Dedicated enrollment support
+• **Online Chat**: Real-time assistance
+• **Email Support**: Written documentation
+
+**✅ Enrollment Checklist:**
+• **Review All Options**: Don't rush the decision
+• **Compare Costs**: Calculate total cost of ownership
+• **Check Deadlines**: Don't miss enrollment period
+• **Keep Records**: Save all enrollment materials
+• **Verify Coverage**: Confirm effective dates
+
+**🎯 Enrollment Tips:**
+• **Start Early**: Don't wait until the last minute
+• **Ask Questions**: Contact HR or benefits team
+• **Consider Changes**: Life events, health status
+• **Document Everything**: Keep enrollment confirmations
+
+**📋 Required Information:**
+• **Personal Details**: Name, address, SSN
+• **Dependent Info**: Spouse, children details
+• **Provider Info**: Current doctors, dentists
+• **Beneficiary Info**: Life insurance beneficiaries
+
+Would you like me to explain the enrollment process for a specific plan or help you prepare for enrollment?`;
+  }
+
+  // Check for specific HSA questions
+  if (lowerMessage.includes('hsa contribution') || lowerMessage.includes('hsa limits') || lowerMessage.includes('hsa investment') || lowerMessage.includes('hsa rules')) {
+    return `Excellent question about HSA rules and contributions! Let me explain everything you need to know:
+
+**💰 HSA Complete Guide:**
+
+**📊 HSA Contribution Limits (2024):**
+• **Individual**: $4,300 maximum
+• **Family**: $8,550 maximum
+• **Catch-up (55+)**: Additional $1,000
+• **Employer Contributions**: May contribute on your behalf
+
+**💡 HSA Contribution Strategies:**
+• **Maximize Contributions**: Contribute up to the limit
+• **Employer Match**: Take advantage of employer contributions
+• **Catch-up Contributions**: Additional $1,000 if 55+
+• **Timing**: Contribute early in the year for maximum growth
+
+**🏦 HSA Investment Options:**
+• **Cash Account**: FDIC insured, no risk
+• **Investment Options**: Mutual funds, ETFs
+• **Growth Potential**: Long-term wealth building
+• **Retirement Planning**: HSA becomes like 401k at 65
+
+**📋 HSA Qualified Expenses:**
+• **Medical Expenses**: Doctor visits, prescriptions
+• **Dental Expenses**: Cleanings, fillings, orthodontics
+• **Vision Expenses**: Eye exams, glasses, contacts
+• **Mental Health**: Therapy, counseling
+• **Alternative Medicine**: Acupuncture, chiropractic
+
+**🎯 HSA Tax Advantages:**
+• **Pre-Tax Contributions**: Reduce taxable income
+• **Tax-Free Growth**: Interest and investments grow tax-free
+• **Tax-Free Withdrawals**: For qualified medical expenses
+• **Triple Tax Advantage**: Only HSA offers this benefit
+
+**💼 HSA Rules & Regulations:**
+• **HDHP Requirement**: Must have high-deductible health plan
+• **No Other Coverage**: Can't have other health coverage
+• **Rollover**: Funds roll over year to year
+• **Portable**: Take HSA with you if you change jobs
+
+**🔍 HSA vs FSA vs HRA:**
+• **HSA**: Triple tax advantage, rollover, portable
+• **FSA**: Use it or lose it, employer-owned
+• **HRA**: Employer-owned, not portable
+
+**📈 HSA Investment Strategy:**
+• **Start with Cash**: Build emergency fund first
+• **Diversify**: Mix of stocks, bonds, cash
+• **Long-term Focus**: HSA is for retirement planning
+• **Rebalance**: Adjust allocation over time
+
+**💡 HSA Tips:**
+• **Keep Receipts**: Document all qualified expenses
+• **Don't Withdraw**: Let funds grow for retirement
+• **Use for Retirement**: HSA becomes like 401k at 65
+• **Plan Ahead**: Consider future medical expenses
+
+Would you like me to explain HSA investment strategies or discuss how to maximize your HSA contributions?`;
+  }
+
+  // Check for specific family coverage questions
+  if (lowerMessage.includes('family coverage') || lowerMessage.includes('family plan') || lowerMessage.includes('spouse') || lowerMessage.includes('children') || lowerMessage.includes('dependents')) {
+    return `Great question about family coverage! Let me explain how family benefits work across all your AmeriVet plans:
+
+**👨‍👩‍👧‍👦 Family Coverage Analysis:**
+
+**🏥 Medical Plans - Family Coverage:**
+• **Kaiser HMO Plans**: Family coverage available
+• **HSA Plans**: Family deductibles ($7,000 Standard, $4,000 Enhanced)
+• **PPO Plan**: Family coverage with in/out-of-network options
+• **Coverage**: Spouse and children up to age 26
+
+**👁️ Vision Coverage - Family Benefits:**
+• **Individual Coverage**: $200-$300 annual maximum
+• **Family Coverage**: Per-person limits apply
+• **Children**: Covered up to age 26
+• **Spouse**: Full vision benefits
+
+**🦷 Dental Coverage - Family Benefits:**
+• **DHMO Plans**: Family coverage available
+• **Deductibles**: Family deductibles ($1,000-$4,000)
+• **Children**: Covered up to age 26
+• **Spouse**: Full dental benefits
+
+**💼 Voluntary Benefits - Family Options:**
+• **Life Insurance**: Family coverage available
+• **Disability**: Family income protection
+• **Critical Illness**: Family coverage options
+• **Hospital Indemnity**: Family benefits
+
+**💰 Family Cost Considerations:**
+• **Premiums**: Higher for family coverage
+• **Deductibles**: Family deductibles apply
+• **Out-of-Pocket**: Family maximums
+• **HSA Contributions**: Higher family limits
+
+**🎯 Best Family Plans:**
+
+**For Young Families:**
+• **Enhanced HSA Plan**: Lower deductible + HSA benefits
+• **Why**: Better coverage for growing families
+• **Cost**: Medium premiums, good coverage
+
+**For Large Families:**
+• **Kaiser Enhanced HMO**: Lower copays, no deductible
+• **Why**: Predictable costs for frequent users
+• **Cost**: Higher premiums, lower out-of-pocket
+
+**For Budget-Conscious Families:**
+• **Standard HSA Plan**: Lowest premiums
+• **Why**: Maximum HSA contributions
+• **Cost**: Lowest premiums, higher deductible
+
+**📋 Family Enrollment Checklist:**
+• **Spouse Info**: Name, SSN, date of birth
+• **Children Info**: Names, SSNs, dates of birth
+• **Provider Info**: Family doctors, dentists
+• **Beneficiary Info**: Life insurance beneficiaries
+
+**💡 Family Coverage Tips:**
+• **Compare Costs**: Calculate total family cost
+• **Check Networks**: Ensure family providers are covered
+• **Consider Needs**: Family health status and usage
+• **Plan Ahead**: Consider future family changes
+
+**🎯 Family Benefits Strategy:**
+• **Medical**: Choose based on family health needs
+• **Dental**: Consider children's dental needs
+• **Vision**: Annual eye exams for all family members
+• **Voluntary**: Life insurance for family protection
+
+Would you like me to help you choose the best family plan or calculate the total cost for your family?`;
+  }
+
+  // Add more specific patterns
+  if (lowerMessage.includes('dental') || lowerMessage.includes('life insurance')) {
+    return `Great question about ${lowerMessage.includes('dental') ? 'dental' : lowerMessage.includes('vision') ? 'vision' : 'life insurance'} coverage! 
+
+These are often overlooked but super important parts of your benefits package. Let me break down what you typically get:
+
+**Dental Coverage:**
+• Preventive care (cleanings, exams) - usually 100% covered
+• Basic procedures (fillings, extractions) - typically 80% coverage
+• Major procedures (crowns, bridges) - usually 50% coverage
+• Annual maximum: $1,000-$2,000
+
+**Vision Coverage:**
+• Annual eye exams - usually covered
+• Frames and lenses - typically $150-$200 allowance
+• Contact lenses - often covered with allowance
+• LASIK discounts - usually 15-20% off
+
+**Life Insurance:**
+• Basic coverage - often 1x your salary
+• Supplemental coverage - additional coverage you can buy
+• Spouse/child coverage - usually available
+• Beneficiary designation - make sure it's updated!
+
+What specific aspect would you like to know more about?`;
+  }
+
+  if (lowerMessage.includes('fsa') || lowerMessage.includes('flexible spending')) {
+    return `FSAs are fantastic for healthcare savings! Let me explain how they work:
+
+**Flexible Spending Account (FSA):**
+• Pre-tax contributions (saves you money on taxes!)
+• Use it or lose it (spend by March 15th of next year)
+• 2024 limit: $3,200 per year
+• Covers medical expenses, prescriptions, dental, vision
+
+**Key differences from HSA:**
+• FSA: Use it or lose it, no investment options
+• HSA: Keep forever, can invest, triple tax advantage
+• You can't have both FSA and HSA (unless limited FSA)
+
+**Smart FSA strategy:**
+• Estimate your annual medical expenses
+• Contribute slightly less to avoid forfeiture
+• Use for predictable expenses (prescriptions, contacts, etc.)
+
+Would you like help calculating your optimal FSA contribution?`;
+  }
+
+  // Default response for other questions
+  return `Hi there! I'm your AmeriVet Benefits AI Assistant. I can help you with:
+
+🎯 **Plan Comparison** - Compare health, dental, and vision plans
+💰 **Cost Calculator** - Calculate total annual costs and savings  
+📊 **Benefits Dashboard** - View your current enrollment and usage
+🏥 **HSA/FSA Info** - Learn about tax-advantaged accounts
+📚 **Document Analysis** - Upload and analyze your benefits documents
+❓ **General Questions** - Get answers about coverage, claims, and more
+
+This is a demo version, so I'm showing you the interface and capabilities. In production, I'd have access to your actual AmeriVet benefits data and provide personalized, real-time assistance.
+
+What would you like to explore first?`;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { message } = chatRequestSchema.parse(body);
+
+    if (!message) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
+    }
+
+    // Simulate processing delay
+    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+    // Generate demo response based on message content
+    const response = getDemoResponse(message);
+
+    return NextResponse.json({
+      message: {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: response,
+        timestamp: new Date()
+      },
+      conversationId: crypto.randomUUID(),
+      usage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 }
+    });
+
+  } catch (error) {
+    console.error('Demo chat error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ 
+      error: 'Demo chat processing failed',
+      message: 'Sorry, I encountered an error. This is demo mode - the full AI integration will be available in production.'
+    }, { status: 500 });
+  }
+}

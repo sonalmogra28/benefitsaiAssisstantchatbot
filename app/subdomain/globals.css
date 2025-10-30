@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Subdomain-specific styles */
+.subdomain-container {
+  @apply min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100;
+}
+
+.subdomain-card {
+  @apply bg-white rounded-lg shadow-lg border border-gray-200;
+}
+
+.subdomain-button {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors;
+}
+
+.subdomain-input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+/* Chat specific styles */
+.chat-message {
+  @apply max-w-[80%] rounded-lg px-4 py-2;
+}
+
+.chat-message-user {
+  @apply bg-blue-600 text-white;
+}
+
+.chat-message-assistant {
+  @apply bg-gray-100 text-gray-900;
+}
+
+/* Loading animations */
+.loading-dots {
+  @apply inline-flex space-x-1;
+}
+
+.loading-dots > div {
+  @apply w-2 h-2 bg-current rounded-full animate-pulse;
+}
+
+.loading-dots > div:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots > div:nth-child(3) {
+  animation-delay: 0.4s;
+}

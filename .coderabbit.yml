@@ -1,0 +1,88 @@
+# CodeRabbit Configuration for Benefits AI Assistant
+reviews:
+  enabled: true
+  path_inclusions:
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.md"
+    - "**/*.json"
+    - "**/*.yml"
+    - "**/*.yaml"
+  path_exclusions:
+    - "node_modules/**"
+    - ".next/**"
+    - "dist/**"
+    - "build/**"
+    - "coverage/**"
+    - "*.log"
+    - "pnpm-lock.yaml"
+    - "package-lock.json"
+    - "yarn.lock"
+  review_on:
+    - pull_request
+    - pull_request_target
+  summarization: brief
+  suggestions: true
+  high_level_feedback: true
+  max_comments: 30
+  label_control:
+    required_any_of: []   # leave empty to always review
+  auto_review:
+    draft_prs: true
+    when_new_commits: true
+    when_new_files: true
+  ignore_whitespace: true
+  ignore_generated_files: true
+
+# Language-specific configurations
+typescript:
+  enabled: true
+  strict_mode: true
+  check_types: true
+  check_imports: true
+  check_exports: true
+
+react:
+  enabled: true
+  check_hooks: true
+  check_jsx: true
+  check_props: true
+  check_state: true
+
+nextjs:
+  enabled: true
+  check_app_router: true
+  check_api_routes: true
+  check_middleware: true
+  check_ssr: true
+
+# Security checks
+security:
+  enabled: true
+  check_secrets: true
+  check_dependencies: true
+  check_permissions: true
+
+# Performance checks
+performance:
+  enabled: true
+  check_bundle_size: true
+  check_rendering: true
+  check_memory_leaks: true
+
+# Code quality
+quality:
+  enabled: true
+  check_complexity: true
+  check_duplication: true
+  check_naming: true
+  check_formatting: true
+
+# Documentation
+documentation:
+  enabled: true
+  check_readme: true
+  check_api_docs: true
+  check_comments: true
