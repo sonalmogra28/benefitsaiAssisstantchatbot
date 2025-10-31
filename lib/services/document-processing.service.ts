@@ -3,12 +3,7 @@
  * Handles actual file parsing and text extraction from uploaded documents
  */
 
-<<<<<<< HEAD
-=======
-// Import polyfills first to ensure browser APIs are available
-import '@/lib/polyfills/global-polyfills';
 
->>>>>>> main
 import { logger } from '@/lib/logger';
 import { getStorageServices } from '@/lib/azure/storage';
 import { getRepositories } from '@/lib/azure/cosmos';

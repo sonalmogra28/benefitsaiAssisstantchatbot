@@ -20,15 +20,7 @@ interface DocumentAnalysisPipeline {
   recommendations: string[];
   confidence: number;
   processingTime: number;
-<<<<<<< HEAD
-=======
-  documentAnalysis: {
-    contentLength: number;
-    hasCosts: boolean;
-    hasCoverage: boolean;
-    documentType: string;
-  };
->>>>>>> main
+
 }
 
 interface CostCalculationPipeline {
@@ -143,23 +135,7 @@ export class DataPipelineService {
         5
       );
 
-<<<<<<< HEAD
-      // Step 6: ML-based Analysis
-      const mlAnalysis = await mlAnalytics.analyzeUserProfile({
-        documentType: this.classifyDocumentType(fileName, documentContent),
-        contentLength: documentContent.length,
-        hasCosts: documentContent.toLowerCase().includes('cost') || documentContent.toLowerCase().includes('premium'),
-        hasCoverage: documentContent.toLowerCase().includes('coverage') || documentContent.toLowerCase().includes('benefits'),
-      });
-=======
-      // Step 6: Document Analysis (ML analysis moved to user-specific processing)
-      const documentAnalysis = {
-        contentLength: documentContent.length,
-        hasCosts: documentContent.toLowerCase().includes('cost') || documentContent.toLowerCase().includes('premium'),
-        hasCoverage: documentContent.toLowerCase().includes('coverage') || documentContent.toLowerCase().includes('benefits'),
-        documentType: this.classifyDocumentType(fileName, documentContent)
-      };
->>>>>>> main
+
 
       const endTime = process.hrtime.bigint();
       const processingTime = Number(endTime - startTime) / 1_000_000;
@@ -176,10 +152,7 @@ export class DataPipelineService {
         recommendations: langChainAnalysis.recommendations,
         confidence: langChainAnalysis.confidence,
         processingTime,
-<<<<<<< HEAD
-=======
-        documentAnalysis, // Add document analysis results
->>>>>>> main
+
       };
 
       logger.info(`Document analysis pipeline complete. Processing time: ${processingTime}ms`);
@@ -283,11 +256,7 @@ export class DataPipelineService {
         query,
         textAnalysis,
         mlAnalysis,
-<<<<<<< HEAD
-        vectorSearchResults
-=======
-        vectorSearchResults.results
->>>>>>> main
+
       );
 
       const endTime = process.hrtime.bigint();
@@ -316,11 +285,7 @@ export class DataPipelineService {
 
   // HELPER METHODS
   private extractEntities(text: string): any[] {
-<<<<<<< HEAD
-    const entities = [];
-=======
-    const entities: any[] = [];
->>>>>>> main
+
     
     // Extract plan types
     const planTypes = ['HSA', 'Kaiser', 'PPO', 'HMO', 'DHMO', 'DPPO'];
@@ -457,12 +422,7 @@ export class DataPipelineService {
       high: { doctor: 6, specialist: 3, emergency: 1 }
     };
     
-<<<<<<< HEAD
-    return baseVisits[userProfile.healthUsage] || baseVisits.moderate;
-=======
-    const healthUsage = userProfile.healthUsage as keyof typeof baseVisits;
-    return baseVisits[healthUsage] || baseVisits.moderate;
->>>>>>> main
+
   }
 
   private calculateOutOfPocket(plan: any, usage: any): number {
@@ -512,11 +472,7 @@ export class DataPipelineService {
     
     // Based on ML analysis
     if (mlAnalysis.recommendations) {
-<<<<<<< HEAD
-      recommendations.push(...mlAnalysis.recommendations.map(rec => ({
-=======
-      recommendations.push(...mlAnalysis.recommendations.map((rec: any) => ({
->>>>>>> main
+
         type: 'ml_recommendation',
         content: rec.reasoning,
         confidence: rec.score,

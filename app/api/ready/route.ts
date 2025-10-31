@@ -1,6 +1,4 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { getContainer } from '@/lib/azure/cosmos-db';
-import { logger } from '@/lib/services/logger.service';
 
 /**
  * GET /api/ready
@@ -9,6 +7,17 @@ import { logger } from '@/lib/services/logger.service';
  * Returns 503 when the application is not ready
  */
 export async function GET(req: NextRequest) {
+  // Fast path for local/dev environments: return 200-OK without external checks
+  // Enable unless explicitly disabled via FAST_HEALTH=0
+  if (process.env.NODE_ENV !== 'production' && process.env.FAST_HEALTH !== '0') {
+    return NextResponse.json({
+      ready: true,
+      fast: true,
+      reason: 'dev-short-circuit',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   const checks = {
     cosmos: false,
     azureAuth: false,
@@ -16,15 +25,15 @@ export async function GET(req: NextRequest) {
   };
 
   try {
-    // Check Azure Cosmos DB is accessible
+    // Check Azure Cosmos DB is accessible (production only; dynamic import)
     try {
+      const { getContainer }: any = await import('@/lib/azure/cosmos-db');
       const container = await getContainer('system');
       await container.items.query('SELECT TOP 1 * FROM c').fetchAll();
       checks.cosmos = true;
     } catch (error) {
-      logger.warn('Cosmos DB not ready', { 
-        metadata: { error: (error as Error).message }
-      });
+      // Avoid tight coupling to logger in readiness path
+      console.warn('Cosmos DB not ready', (error as Error)?.message);
     }
 
     // Check Azure AD B2C configuration
@@ -34,9 +43,7 @@ export async function GET(req: NextRequest) {
         process.env.AZURE_AD_TENANT_ID
       );
     } catch (error) {
-      logger.warn('Azure AD B2C not ready', { 
-        metadata: { error: (error as Error).message }
-      });
+      console.warn('Azure AD B2C not ready', (error as Error)?.message);
     }
 
     // Check required environment variables
@@ -56,7 +63,7 @@ export async function GET(req: NextRequest) {
         timestamp: new Date().toISOString(),
       });
     } else {
-      logger.warn('Application not ready', { metadata: { checks } });
+  console.warn('Application not ready', { checks });
       return NextResponse.json(
         {
           ready: false,
@@ -67,7 +74,7 @@ export async function GET(req: NextRequest) {
       );
     }
   } catch (error) {
-    logger.error('Readiness check failed', error as Error);
+  console.error('Readiness check failed', error);
     return NextResponse.json(
       {
         ready: false,

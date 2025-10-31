@@ -1,9 +1,6 @@
 // lib/services/advanced-ml-service.ts
 import { HfInference } from '@huggingface/inference';
-<<<<<<< HEAD
-import { pipeline, Pipeline } from '@xenova/transformers';
-=======
->>>>>>> main
+
 import { logger } from '@/lib/logger';
 
 interface MLPrediction {
@@ -13,24 +10,7 @@ interface MLPrediction {
   recommendedResponse: string;
 }
 
-<<<<<<< HEAD
-interface TextAnalysis {
-  sentiment: 'positive' | 'negative' | 'neutral';
-  intent: string;
-  entities: Array<{ text: string; label: string; confidence: number }>;
-  keywords: string[];
-  complexity: 'simple' | 'moderate' | 'complex';
-=======
-type Sentiment = 'positive' | 'negative' | 'neutral';
-type Complexity = 'simple' | 'moderate' | 'complex';
 
-interface TextAnalysis {
-  sentiment: Sentiment;
-  intent: string;
-  entities: Array<{ text: string; label: string; confidence: number }>;
-  keywords: string[];
-  complexity: Complexity;
->>>>>>> main
 }
 
 interface EmbeddingResult {
@@ -50,11 +30,7 @@ type TextPipe<I = string, O = unknown> = {
 };
 
 export class AdvancedMLService {
-<<<<<<< HEAD
-  private hf: HfInference;
-=======
-  private readonly hf: HfInference;
->>>>>>> main
+
   private sentimentPipeline: TextPipe | null = null;
   private nerPipeline: TextPipe | null = null;
   private classificationPipeline: TextPipe | null = null;
@@ -62,14 +38,7 @@ export class AdvancedMLService {
 
   constructor() {
     this.hf = new HfInference(process.env.HUGGINGFACE_API_KEY || 'hf_dummy_key');
-<<<<<<< HEAD
-    this.initializeModels();
-=======
-    // Initialize models asynchronously to avoid blocking constructor
-    this.initializeModels().catch(error => {
-      logger.error('Failed to initialize ML models:', error);
-    });
->>>>>>> main
+
   }
 
   private async initializeModels() {
@@ -203,11 +172,7 @@ export class AdvancedMLService {
     }
 
     try {
-<<<<<<< HEAD
-      const result = await this.sentimentPipeline(text);
-=======
-      const result = await this.sentimentPipeline.run(text);
->>>>>>> main
+
       return (result as any)[0]?.label?.toLowerCase() || 'neutral';
     } catch (error) {
       logger.warn('Sentiment analysis failed', { error });
@@ -221,13 +186,7 @@ export class AdvancedMLService {
     }
 
     try {
-<<<<<<< HEAD
-      const result = await this.nerPipeline(text);
-      return result.map((entity: any) => ({
-=======
-          const result = await this.nerPipeline.run(text);
-      return (result as any[]).map((entity: any) => ({
->>>>>>> main
+
         text: entity.word,
         label: entity.entity,
         confidence: entity.score
@@ -244,13 +203,7 @@ export class AdvancedMLService {
     }
 
     try {
-<<<<<<< HEAD
-      const result = await this.classificationPipeline(text);
-      return this.mapToIntent(result[0]?.label || 'general_inquiry');
-=======
-      const result = await this.classificationPipeline.run(text);
-      return this.mapToIntent((result as any[])[0]?.label || 'general_inquiry');
->>>>>>> main
+
     } catch (error) {
       logger.warn('Intent classification failed', { error });
       return 'general_inquiry';
@@ -318,25 +271,7 @@ export class AdvancedMLService {
         inputs: text,
       });
       
-<<<<<<< HEAD
-      return {
-        embedding: Array.isArray(result) ? result[0] : result,
-=======
-      // Ensure we have a proper number array
-      let embedding: number[];
-      if (Array.isArray(result)) {
-        if (Array.isArray(result[0])) {
-          embedding = result[0] as number[];
-        } else {
-          embedding = result as number[];
-        }
-      } else {
-        embedding = [result] as number[];
-      }
 
-      return {
-        embedding,
->>>>>>> main
         model: 'sentence-transformers/all-MiniLM-L6-v2',
         dimensions: 384
       };
@@ -560,11 +495,7 @@ export class AdvancedMLService {
     });
     
     const bestCategory = Object.keys(categories).reduce((a, b) => 
-<<<<<<< HEAD
-      categories[a] > categories[b] ? a : b
-=======
-      categories[a] > categories[b] ? a : b, Object.keys(categories)[0] || ''
->>>>>>> main
+
     );
     
     return {

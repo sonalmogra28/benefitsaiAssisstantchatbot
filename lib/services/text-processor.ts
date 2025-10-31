@@ -19,15 +19,7 @@ interface TextAnalysisResult {
 }
 
 export class TextProcessor {
-<<<<<<< HEAD
-  private stopWords: Set<string>;
-  private benefitKeywords: Set<string>;
-  private medicalTerms: Set<string>;
-=======
-  private stopWords!: Set<string>;
-  private benefitKeywords!: Set<string>;
-  private medicalTerms!: Set<string>;
->>>>>>> main
+
 
   constructor() {
     this.initializeDictionaries();
