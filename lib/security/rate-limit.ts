@@ -10,9 +10,7 @@
  * - Redis-compatible (with in-memory fallback for dev)
  * - Standard rate limit headers (X-RateLimit-*)
  */
-
 import { NextRequest, NextResponse } from 'next/server';
-
 /**
  * Rate limit configuration
  */
