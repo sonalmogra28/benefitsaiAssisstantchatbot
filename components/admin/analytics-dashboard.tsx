@@ -377,7 +377,7 @@ export function AnalyticsDashboard({
               <Activity className="size-4 mr-2" />
               {realTimeEnabled ? 'Live' : 'Paused'}
             </Button>
-            <Select value={refreshInterval.toString()} onValueChange={(value) => setRefreshInterval(parseInt(value))}>
+            <Select value={refreshInterval.toString()} onValueChange={(value: string) => setRefreshInterval(parseInt(value))}>
               <SelectTrigger className="w-24">
                 <SelectValue />
               </SelectTrigger>
@@ -390,7 +390,7 @@ export function AnalyticsDashboard({
             </Select>
           </div>
           
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <Select value={timeRange} onValueChange={(v: string) => setTimeRange(v)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>

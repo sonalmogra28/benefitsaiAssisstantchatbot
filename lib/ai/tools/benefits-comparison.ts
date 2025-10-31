@@ -32,17 +32,23 @@ export const benefitsComparisonTools = {
       coverageTier?: string;
       region?: string;
     }) => {
-      const plans = planIds.map(id => AMERIVET_BENEFIT_PLANS.find(plan => plan.id === id)).filter(Boolean);
+      const plans = planIds
+  .map((id) => AMERIVET_BENEFIT_PLANS.find((p: typeof AMERIVET_BENEFIT_PLANS[number]) => p.id === id))
+        .filter(Boolean) as typeof AMERIVET_BENEFIT_PLANS[number][];
       
       if (plans.length === 0) {
         return { error: 'No valid plans found' };
       }
 
       // Filter by region if specified
-      const filteredPlans = region ? getPlansByRegion(region) : plans;
-      const availablePlans = filteredPlans.filter(plan => plan && planIds.includes(plan.id));
+      const filteredPlans: typeof AMERIVET_BENEFIT_PLANS[number][] = region
+        ? getPlansByRegion(region)
+        : plans;
+      const availablePlans = filteredPlans.filter(
+        (plan) => plan && planIds.includes(plan.id)
+      );
 
-      const comparison = availablePlans.map(plan => {
+      const comparison = availablePlans.map((plan) => {
         if (!plan) return null;
         return {
           id: plan.id,
@@ -58,7 +64,11 @@ export const benefitsComparisonTools = {
           exclusions: plan.exclusions,
           regionalRestrictions: plan.regionalRestrictions,
         };
-      }).filter(Boolean);
+      }).filter(Boolean) as Array<{
+        id: string; name: string; type: string; provider: string;
+        monthlyCost: number; deductibles: any; coinsurance: any; copays: any;
+        outOfPocketMax: any; features: any; exclusions: any; regionalRestrictions: any;
+      }>;
 
       return {
         comparison,
@@ -87,17 +97,17 @@ export const benefitsComparisonTools = {
       required: ['planType'],
     },
     execute: async ({ planType, region }: { planType: string; region?: string }) => {
-      let plans = getPlansByType(planType as any);
+      let plans = getPlansByType(planType as any) as typeof AMERIVET_BENEFIT_PLANS[number][];
       
       if (region) {
-        plans = plans.filter(plan => 
+        plans = plans.filter((plan) => 
           !plan.regionalRestrictions || 
-          plan.regionalRestrictions.some(r => r.toLowerCase().includes(region.toLowerCase()))
+          plan.regionalRestrictions.some((r: string) => r.toLowerCase().includes(region.toLowerCase()))
         );
       }
 
       return {
-        plans: plans.map(plan => ({
+        plans: plans.map((plan) => ({
           id: plan.id,
           name: plan.name,
           provider: plan.provider,
@@ -134,7 +144,7 @@ export const benefitsComparisonTools = {
     },
     execute: async ({ selectedPlans }: { selectedPlans: Array<{ planId: string; coverageTier: string }> }) => {
       const costs = selectedPlans.map(({ planId, coverageTier }) => {
-        const plan = AMERIVET_BENEFIT_PLANS.find(p => p.id === planId);
+  const plan = AMERIVET_BENEFIT_PLANS.find((p: typeof AMERIVET_BENEFIT_PLANS[number]) => p.id === planId);
         if (!plan) return { planId, cost: 0, error: 'Plan not found' };
         
         return {
@@ -177,7 +187,7 @@ export const benefitsComparisonTools = {
     execute: async ({ employeeType, hoursPerWeek }: { employeeType: string; hoursPerWeek: number }) => {
       const isEligible = employeeType === 'full-time' && hoursPerWeek >= 30;
       const eligiblePlans = isEligible ? AMERIVET_BENEFIT_PLANS : [];
-      const voluntaryPlans = AMERIVET_BENEFIT_PLANS.filter(plan => 
+      const voluntaryPlans = AMERIVET_BENEFIT_PLANS.filter((plan: typeof AMERIVET_BENEFIT_PLANS[number]) => 
         plan.type === 'voluntary' && hoursPerWeek >= 20
       );
 
@@ -185,12 +195,12 @@ export const benefitsComparisonTools = {
         isEligible,
         employeeType,
         hoursPerWeek,
-        eligiblePlans: eligiblePlans.map(plan => ({
+        eligiblePlans: eligiblePlans.map((plan: typeof AMERIVET_BENEFIT_PLANS[number]) => ({
           id: plan.id,
           name: plan.name,
           type: plan.type,
         })),
-        voluntaryPlans: voluntaryPlans.map(plan => ({
+        voluntaryPlans: voluntaryPlans.map((plan: typeof AMERIVET_BENEFIT_PLANS[number]) => ({
           id: plan.id,
           name: plan.name,
           type: plan.type,
