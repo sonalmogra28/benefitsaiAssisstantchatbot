@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "eastus"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "cosmosAccountName": {
+      "value": "amerivetcdbprod"
+    },
+    "cosmosDatabaseName": {
+      "value": "benefits-assistant"
+    },
+    "openAiAccountName": {
+      "value": "amerivetopenai"
+    },
+    "searchServiceName": {
+      "value": "amerivetsearch"
+    },
+    "storageAccountName": {
+      "value": "amerivetdocsprod"
+    },
+    "appInsightsName": {
+      "value": "amerivet-appinsights"
+    },
+    "logAnalyticsName": {
+      "value": "amerivet-law-prod"
+    },
+    "redisCacheName": {
+      "value": "amerivetcacheredis"
+    },
+    "redisSkuFamily": {
+      "value": "Standard"
+    },
+    "redisSkuCapacity": {
+      "value": "C2"
+    },
+    "searchReplicaCount": {
+      "value": 2
+    },
+    "searchPartitionCount": {
+      "value": 1
+    },
+    "cosmosMaxAutoscaleThroughput": {
+      "value": 10000
+    }
+  }
+}

@@ -1,0 +1,163 @@
+version: 1
+metadata:
+  title: Benefits AI Assistant UAT & A/B Test Matrix
+  environment: production
+  build: 3.1.0
+  test_window: '2025-11-01 -> 2025-11-07'
+  owners:
+    product: sonal.mogra@amerivet.com
+    qa_lead: qa-lead@amerivet.com
+  prerequisites:
+    - vercel_production_deploy_verified
+    - azure_infra_provisioned
+    - load_test_baseline_passed
+  acceptance_criteria:
+    performance:
+      - http_req_duration_p95 < 3000
+      - grounding_score >= 85
+      - csat_avg >= 4.0
+    business:
+      - enrollment_path_success_rate >= 0.9
+      - admin_kpi_accuracy >= 0.98
+
+roles:
+  - name: Employee
+    credentials:
+      email: employee@amerivet.com
+      password: amerivet2024!
+    journeys:
+      - id: chat-basic
+        description: Ask three benefits questions and review citations
+        steps:
+          - navigate: '/login'
+          - login: true
+          - chat:
+              questions:
+                - 'What is my medical deductible?'
+                - 'How much does vision coverage cost for a family?'
+                - 'Can I change plans mid-year?'
+          - assert:
+              response_status: 200
+              has_citations: true
+              satisfaction_prompted: true
+      - id: calculator
+        description: Calculate monthly cost with spouse + 2 dependents
+        steps:
+          - navigate: '/cost-calculator'
+          - set_inputs:
+              family_members: 4
+              coverage_level: gold
+              plan: medical
+          - assert:
+              employer_contribution_visible: true
+              export_button_enabled: true
+      - id: plan-comparison
+        description: Compare PPO vs HMO plans and export summary
+        steps:
+          - navigate: '/benefits/compare'
+          - select_plans:
+              - Gold PPO
+              - Silver HMO
+          - assert:
+              comparison_table_visible: true
+              recommendation_banner_visible: true
+
+  - name: HR Admin
+    credentials:
+      email: hradmin@amerivet.com
+      password: amerivet2024!
+    journeys:
+      - id: analytics-readonly
+        description: Validate dashboard metrics load and filters work
+        steps:
+          - navigate: '/company-admin'
+          - open_tab: 'Analytics'
+          - assert:
+              quality_dashboard_loaded: true
+              observability_dashboard_loaded: true
+              export_disabled: true
+
+  - name: Company Admin
+    credentials:
+      email: admin@amerivet.com
+      password: admin2024!
+    journeys:
+      - id: cms-document-publish
+        description: Publish updated medical plan summary and verify in chat
+        steps:
+          - navigate: '/company-admin/documents'
+          - create_document:
+              template: benefit_plan_summary
+              title: '2026 Medical Benefits - Gold PPO'
+              category: medical
+          - save_document: true
+          - wait_for_processing: 120
+          - switch_role: Employee
+          - chat:
+              question: 'What is covered in the 2026 Gold PPO plan?'
+          - assert:
+              response_mentions: '2026 Medical Benefits - Gold PPO'
+              citation_matches_document: true
+      - id: user-management
+        description: Promote HR admin to company admin and revert
+        steps:
+          - navigate: '/company-admin/employees'
+          - update_role:
+              target_email: hradmin@amerivet.com
+              new_role: company_admin
+          - assert:
+              toast_success: true
+          - revert_role: hradmin@amerivet.com
+
+  - name: Super Admin
+    credentials:
+      email: superadmin@platform.com
+      password: admin2024!
+    journeys:
+      - id: multi-tenant-kpi
+        description: Validate cross-company analytics and cost controls
+        steps:
+          - navigate: '/super-admin'
+          - open_widget: 'Executive Dashboard'
+          - assert:
+              global_metrics_loaded: true
+              cost_alert_threshold_editable: true
+      - id: ai-configuration
+        description: Update tier thresholds and ensure persisted
+        steps:
+          - navigate: '/super-admin/ai-config'
+          - update_settings:
+              l1_confidence: 0.75
+              l2_documents: 6
+          - save: true
+          - refresh: true
+          - assert:
+              settings_persisted: true
+
+ab_testing:
+  experiments:
+    - id: chat-suggestion-buttons
+      hypothesis: 'Adding top-five question buttons increases first-response satisfaction by 10%.'
+      variants:
+        control: existing_quick_actions
+        treatment: ai_personalized_suggestions
+      metrics:
+        - name: csat_avg
+          goal: increase
+        - name: response_time_p50
+          goal: no_regression
+      sample_size: 500_sessions
+      launch_criteria:
+        - load_tests_passed
+        - analytics_dashboards_green
+
+sign_off:
+  approvers:
+    product: 'product-director@amerivet.com'
+    engineering: 'vp-engineering@amerivet.com'
+    security: 'ciso@amerivet.com'
+  required_artifacts:
+    - k6_summary_report
+    - uat_execution_log
+    - vercel_deploy_audit
+    - azure_monitor_dashboard_export
