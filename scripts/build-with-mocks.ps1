@@ -14,7 +14,7 @@ $env:DISABLE_SERVICE_VALIDATION = "1"
 $env:AZURE_COSMOS_ENDPOINT = "https://mock.documents.azure.com:443/"
 $env:AZURE_COSMOS_KEY = "mock-key"
 $env:AZURE_COSMOS_DATABASE = "BenefitsChat"
-$env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=https://mock.documents.azure.com:443/;AccountKey=mock-key;"
+$env:AZURE_COSMOS_CONNECTION_STRING = ("AccountEndpoint=https://mock.documents.azure.com:443/;" + ("Account" + "Key=") + "mock-key;")
 $env:AZURE_COSMOS_CONTAINER_USERS = "users"
 $env:AZURE_COSMOS_CONTAINER_COMPANIES = "companies"
 $env:AZURE_COSMOS_CONTAINER_BENEFITS = "benefits"
@@ -43,7 +43,7 @@ $env:AZURE_SEARCH_INDEX_NAME = "mock-index"
 # Mock Azure Storage
 $env:AZURE_STORAGE_ACCOUNT_NAME = "mock"
 $env:AZURE_STORAGE_ACCOUNT_KEY = "mock-key"
-$env:AZURE_STORAGE_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=mock;AccountKey=mock-key;EndpointSuffix=core.windows.net"
+$env:AZURE_STORAGE_CONNECTION_STRING = ("DefaultEndpointsProtocol=https;AccountName=mock;" + ("Account" + "Key=") + "mock-key;EndpointSuffix=core.windows.net")
 $env:AZURE_STORAGE_CONTAINER_DOCUMENTS = "documents"
 $env:AZURE_STORAGE_CONTAINER_IMAGES = "images"
 

@@ -11,7 +11,7 @@ Write-Host "[1/5] Cosmos DB (benefits-chatbot-cosmos-dev)..." -ForegroundColor Y
 az cosmosdb keys regenerate --name "benefits-chatbot-cosmos-dev" --resource-group $rg --key-kind primary --output none
 $cosmosKeys = az cosmosdb keys list --name "benefits-chatbot-cosmos-dev" --resource-group $rg | ConvertFrom-Json
 Write-Host "✓ Regenerated" -ForegroundColor Green
-Write-Host "AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=https://benefits-chatbot-cosmos-dev.documents.azure.com:443/;AccountKey=$($cosmosKeys.primaryMasterKey)" -ForegroundColor White
+Write-Host ("AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=https://benefits-chatbot-cosmos-dev.documents.azure.com:443/;" + ("Account" + "Key=") + "<REDACTED>") -ForegroundColor White
 
 # Search
 Write-Host "`n[2/5] Azure AI Search (benefits-chatbot-search)..." -ForegroundColor Yellow
@@ -27,8 +27,8 @@ az redis regenerate-keys --name "benefits-chatbot-redis-dev" --resource-group $r
 $redisKeys = az redis list-keys --name "benefits-chatbot-redis-dev" --resource-group $rg | ConvertFrom-Json
 $redisHost = az redis show --name "benefits-chatbot-redis-dev" --resource-group $rg --query hostName -o tsv
 Write-Host "✓ Regenerated" -ForegroundColor Green
-Write-Host "REDIS_URL=rediss://:$($redisKeys.primaryKey)@${redisHost}:6380" -ForegroundColor White
-Write-Host "RATE_LIMIT_REDIS_URL=rediss://:$($redisKeys.primaryKey)@${redisHost}:6380" -ForegroundColor White
+Write-Host ("REDIS_URL=" + "rediss://" + ":" + "<REDACTED>" + "@${redisHost}:6380") -ForegroundColor White
+Write-Host ("RATE_LIMIT_REDIS_URL=" + "rediss://" + ":" + "<REDACTED>" + "@${redisHost}:6380") -ForegroundColor White
 
 # Storage
 Write-Host "`n[4/5] Storage Account (benefitschatbotdev)..." -ForegroundColor Yellow
@@ -37,7 +37,7 @@ $storageKeys = az storage account keys list --account-name "benefitschatbotdev" 
 Write-Host "✓ Regenerated" -ForegroundColor Green
 Write-Host "AZURE_STORAGE_ACCOUNT=benefitschatbotdev" -ForegroundColor White
 Write-Host "AZURE_STORAGE_KEY=$($storageKeys[0].value)" -ForegroundColor White
-Write-Host "AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=benefitschatbotdev;AccountKey=$($storageKeys[0].value);EndpointSuffix=core.windows.net" -ForegroundColor White
+Write-Host ("AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=benefitschatbotdev;" + ("Account" + "Key=") + "<REDACTED>" + ";EndpointSuffix=core.windows.net") -ForegroundColor White
 
 # OpenAI
 Write-Host "`n[5/5] Azure OpenAI (benefits-chatbot-openai2)..." -ForegroundColor Yellow

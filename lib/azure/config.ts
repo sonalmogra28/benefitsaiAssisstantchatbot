@@ -143,7 +143,9 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
       // Azure Blob Storage
       storageAccountName: process.env.AZURE_STORAGE_ACCOUNT_NAME || 'teststorage',
       storageAccountKey: process.env.AZURE_STORAGE_ACCOUNT_KEY || 'test-key',
-      storageConnectionString: process.env.AZURE_STORAGE_CONNECTION_STRING || 'DefaultEndpointsProtocol=https;AccountName=test;AccountKey=test;EndpointSuffix=core.windows.net',
+  // Avoid embedding any default storage connection string with AccountKey in source.
+  // Require it to be provided via environment variable.
+  storageConnectionString: process.env.AZURE_STORAGE_CONNECTION_STRING || '',
       storageContainerDocuments: process.env.AZURE_STORAGE_CONTAINER_DOCUMENTS || 'documents',
       storageContainerImages: process.env.AZURE_STORAGE_CONTAINER_IMAGES || 'images',
 
