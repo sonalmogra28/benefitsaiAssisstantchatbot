@@ -346,3 +346,4 @@ Write-Host "  3. Verify Azure service connections" -ForegroundColor White
 Write-Host "  4. Proceed to Bootstrap Step 4 (if defined)" -ForegroundColor White
 Write-Host ""
 Write-Host "============================================================================" -ForegroundColor Cyan
+Write-Host ""

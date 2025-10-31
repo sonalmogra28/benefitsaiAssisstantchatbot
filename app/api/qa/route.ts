@@ -32,7 +32,8 @@ import {
   getTTLForTier,
   findMostSimilar,
 } from '../../../lib/rag/cache-utils';
-import type { QARequest, QAResponse, Tier, Citation } from '../../../types/rag';
+import { QualityTracker } from '../../../lib/analytics/quality-tracker';
+import type { QARequest, QAResponse, Tier, Citation, ConversationQuality } from '../../../types/rag';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -328,6 +329,34 @@ export async function POST(req: NextRequest) {
       totalLatency: Date.now() - startTime + 'ms',
     });
 
+    // Step 11: Record conversation quality metrics
+    const conversationId = request.context?.sessionId || `conv-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const qualityMetrics: ConversationQuality = {
+      conversationId,
+      responseTime: Date.now() - startTime,
+      groundingScore: validationResult!.grounding.score * 100, // Convert to percentage
+      escalationCount: retryCount,
+      resolvedFirstContact: retryCount === 0,
+      tier: currentTier,
+      cacheHit: false,
+      timestamp: Date.now(),
+      companyId: request.companyId,
+      userId: request.userId,
+      queryLength: request.query.length,
+      answerLength: qaResponse.answer.length,
+    };
+
+    // Record quality metrics for analytics
+    QualityTracker.recordConversation(qualityMetrics);
+
+    console.log('[QA] Quality metrics recorded:', {
+      conversationId,
+      responseTime: qualityMetrics.responseTime + 'ms',
+      groundingScore: qualityMetrics.groundingScore.toFixed(1) + '%',
+      escalationCount: qualityMetrics.escalationCount,
+      resolvedFirstContact: qualityMetrics.resolvedFirstContact,
+    });
+
     // Return response
     return NextResponse.json({
       ...qaResponse,
@@ -335,6 +364,7 @@ export async function POST(req: NextRequest) {
         ...qaResponse.metadata,
         fromCache: false,
         tier: currentTier,
+        conversationId,
         latencyBreakdown: {
           total: Date.now() - startTime,
           cacheCheck: cacheCheckTime,

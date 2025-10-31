@@ -2,15 +2,12 @@
  * Core type definitions for Production RAG System
  * Bootstrap Step 4: Types, Interfaces, and Schemas
  */
-
 // ============================================================================
 // API Request/Response Types
 // ============================================================================
-
 export type Tier = "L1" | "L2" | "L3";
 export type LLMTier = Tier;  // Alias for backward compatibility
 export type Persona = "employee" | "hr" | "admin";
-
 export interface QARequest {
   companyId: string;
   userId: string;
@@ -58,6 +55,38 @@ export interface ResponseMetadata {
   escalated: boolean;
   cacheKey?: string;
   retrievalMethod?: "vector" | "bm25" | "hybrid";
+}
+
+// ============================================================================
+// Conversation Quality Tracking
+// ============================================================================
+
+export interface ConversationQuality {
+  conversationId: string;
+  responseTime: number;                       // Total response time in ms
+  groundingScore: number;                     // Percentage of grounded tokens (0-100)
+  userSatisfactionRating?: number;            // 1-5 stars (optional, post-conversation)
+  escalationCount: number;                    // Number of tier escalations
+  resolvedFirstContact: boolean;              // Whether query was resolved without escalation
+  tier: Tier;                                 // Final tier used
+  cacheHit: boolean;                          // Whether response came from cache
+  timestamp: number;                          // Unix timestamp in ms
+  companyId: string;                          // Multi-tenant tracking
+  userId: string;                             // User identifier
+  queryLength: number;                        // Length of original query in characters
+  answerLength: number;                       // Length of generated answer in characters
+}
+
+export interface UserSatisfactionSurvey {
+  surveyId: string;
+  conversationId: string;
+  userId: string;
+  companyId: string;
+  csatRating: number;                         // Customer Satisfaction (1-5 stars)
+  npsScore: number;                           // Net Promoter Score (0-10)
+  feedback?: string;                          // Optional text feedback
+  timestamp: number;                          // Unix timestamp in ms
+  tags?: string[];                            // Optional categorization (e.g., ["helpful", "fast"])
 }
 
 // ============================================================================
