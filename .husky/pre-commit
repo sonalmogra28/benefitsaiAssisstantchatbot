@@ -1,8 +1,3 @@
 #!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
-
-# cross-platform: no sed/jq
-node -e "console.log('pre-commit ok')"
-
-# if you use lint-staged:
-# npx lint-staged
+node -e "console.log(\"pre-commit ok\")"
