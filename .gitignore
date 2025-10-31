@@ -101,3 +101,71 @@ scripts/upload-pdfs.ps1
 scripts/upload-training-data.ps1
 *.msi
 .firebase/hosting.Lm5leHQ.cache
+
+# Documentation (exclude large guides from version control)
+docs/COMPLETE_APP_OVERVIEW.md
+docs/USER_ACCESS_GUIDE.md
+docs/IMPLEMENTATION_SUMMARY.md
+docs/REPOSITORY_ARCHITECTURE.md
+
+# Deployment scripts with potential credentials
+deploy-production*.ps1
+deploy-production*.sh
+update-vercel-env.ps1
+
+# Bootstrap completion markers (internal tracking)
+BOOTSTRAP_*.md
+MELODIE_SETUP_PACKAGE.md
+TECHNICAL_PROOF_OF_COMPLETION.md
+DEPLOYMENT_SUMMARY.md
+SUBDOMAIN_DEPLOYMENT.md
+VERCEL_DEPLOYMENT_GUIDE.md
+
+# Environment examples (keep .example files)
+!env.production.example
+!.env.example
+
+# Test data and fixtures
+tests/fixtures/
+tests/__snapshots__/
+*.test.log
+
+# Build artifacts
+*.tsbuildinfo
+.turbo/
+.swc/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE settings
+.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Package manager lock files (keep package-lock.json, ignore others)
+pnpm-lock.yaml
+bun.lockb
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
