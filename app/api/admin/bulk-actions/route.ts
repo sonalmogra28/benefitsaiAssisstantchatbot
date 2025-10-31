@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
@@ -240,3 +242,4 @@ function convertEmployeesToCSV(employees: any[]): string {
     row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
   ).join('\n');
 }
+

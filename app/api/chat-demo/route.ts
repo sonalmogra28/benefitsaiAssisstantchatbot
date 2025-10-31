@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 import { smartChatRouter } from '@/lib/services/smart-chat-router';
@@ -36,3 +38,4 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (req: 
     );
   }
 });
+

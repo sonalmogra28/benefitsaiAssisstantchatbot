@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireSuperAdmin } from '@/lib/auth/unified-auth';
 import { SuperAdminService } from '@/lib/services/super-admin.service';

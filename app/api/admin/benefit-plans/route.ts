@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { withAuth, PERMISSIONS } from '@/lib/auth/unified-auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
@@ -139,3 +141,4 @@ export const GET = withAuth(undefined, [PERMISSIONS.VIEW_BENEFITS])(async (reque
     );
   }
 });
+

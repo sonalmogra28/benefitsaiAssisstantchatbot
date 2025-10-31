@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withCompanyAdminAuth } from '@/lib/auth/unified-auth';
 import { userService } from '@/lib/services/user-service';

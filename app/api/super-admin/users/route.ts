@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 // app/api/super-admin/users/route.ts
 import { NextResponse } from 'next/server';
 import { getContainer } from '@/lib/azure/cosmos-db';
@@ -171,3 +173,4 @@ export const GET = requireSuperAdmin(async (request: Request) => {
     );
   }
 });
+

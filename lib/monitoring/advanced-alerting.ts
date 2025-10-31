@@ -3,7 +3,7 @@
  * Phase 3: Production Readiness with Real-time Dashboards and Circuit Breakers
  */
 
-import { logger } from '@/lib/logger';
+import logger from '@/lib/logger';
 import { productionMonitor, SystemHealth } from './production-monitor';
 
 export interface AlertRule {
@@ -699,5 +699,20 @@ export class AdvancedAlertingSystem {
   }
 }
 
-// Export singleton instance
-export const alertingSystem = new AdvancedAlertingSystem();
+// Lazy singleton instance
+let alertingSystemInstance: AdvancedAlertingSystem | null = null;
+
+function isBuild() {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+export function getAlertingSystem(): AdvancedAlertingSystem | null {
+  if (isBuild()) return null;
+  if (!alertingSystemInstance) {
+    alertingSystemInstance = new AdvancedAlertingSystem();
+  }
+  return alertingSystemInstance;
+}
+
+// For backwards compatibility
+export const alertingSystem = { get current() { return getAlertingSystem(); } };

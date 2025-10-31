@@ -1,5 +1,7 @@
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
+
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
 
 export interface UploadResult {
   id: string;
@@ -10,13 +12,24 @@ export interface UploadResult {
 }
 
 class DocumentUploadService {
-  private container = cosmosClient.database('BenefitsDB').container('documents');
+  private container: any = null;
+
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.container) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.container = client.database('BenefitsDB').container('documents');
+  }
 
   async uploadDocument(
     file: File,
     companyId: string,
     metadata: Record<string, any> = {}
   ): Promise<UploadResult> {
+    await this.ensureInitialized();
     try {
       const documentId = crypto.randomUUID();
       const filename = file.name;
@@ -59,6 +72,7 @@ class DocumentUploadService {
   }
 
   async getDocument(documentId: string): Promise<any> {
+    await this.ensureInitialized();
     try {
       const { resource } = await this.container.item(documentId).read();
       return resource;
@@ -72,6 +86,7 @@ class DocumentUploadService {
   }
 
   async deleteDocument(documentId: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       await this.container.item(documentId).delete();
       logger.info({ documentId }, 'Document deleted');

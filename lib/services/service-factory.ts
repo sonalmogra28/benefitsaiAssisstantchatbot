@@ -12,8 +12,12 @@
  * - Performance optimization
  */
 
-import { logger } from '@/lib/logger';
+import logger from '@/lib/logger';
 import { environmentManager, isServiceRequired, shouldUseMockService } from '@/lib/config/environment';
+
+function isBuild(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
 
 // Service state management
 interface ServiceState {
@@ -37,7 +41,7 @@ class ServiceFactory {
   private setupServiceInitializers() {
     // Cosmos DB initializer
     this.initializers.set('cosmos', async () => {
-      if (shouldUseMockService('cosmos')) {
+      if (isBuild() || shouldUseMockService('cosmos')) {
         return this.createMockCosmosClient();
       }
       
@@ -56,7 +60,7 @@ class ServiceFactory {
 
     // Redis initializer
     this.initializers.set('redis', async () => {
-      if (shouldUseMockService('redis')) {
+      if (isBuild() || shouldUseMockService('redis')) {
         return this.createMockRedisClient();
       }
       
@@ -71,7 +75,7 @@ class ServiceFactory {
 
     // OpenAI initializer
     this.initializers.set('openai', async () => {
-      if (shouldUseMockService('openai')) {
+      if (isBuild() || shouldUseMockService('openai')) {
         return this.createMockOpenAIClient();
       }
       

@@ -1,17 +1,34 @@
-import OpenAI from 'openai';
-import { azureConfig, getOpenAIConfig } from './config';
-import { logger } from '@/lib/logger';
+import type OpenAI from 'openai';
+import { getOpenAIConfig } from './config';
+import logger from '@/lib/logger';
 
-// Initialize OpenAI client
-const openaiConfig = getOpenAIConfig();
-const client = new OpenAI({
-  apiKey: openaiConfig.apiKey,
-  baseURL: openaiConfig.endpoint,
-});
+// Lazy client initialization
+let client: OpenAI | null = null;
+
+async function getOpenAIClient(): Promise<OpenAI> {
+  if (client) return client;
+
+  const openaiConfig = getOpenAIConfig();
+  const { default: OpenAIClass } = await import('openai');
+  
+  client = new OpenAIClass({
+    apiKey: (getOpenAIConfig()).apiKey,
+    baseURL: (getOpenAIConfig()).endpoint,
+  });
+  
+  return client;
+}
 
 // Azure OpenAI service class
 export class AzureOpenAIService {
-  constructor(private client: OpenAI) {}
+  private client: OpenAI | null = null;
+  
+  private async ensureClient(): Promise<OpenAI> {
+    if (!this.client) {
+      this.client = await getOpenAIClient();
+    }
+    return this.client;
+  }
 
   async generateText(
     prompt: string,
@@ -24,6 +41,8 @@ export class AzureOpenAIService {
       stop?: string[];
     } = {}
   ): Promise<string> {
+    const client = await this.ensureClient();
+    const openaiConfig = getOpenAIConfig();
     try {
       const {
         maxTokens = 1000,
@@ -34,8 +53,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const response = await this.client.chat.completions.create({
-        model: openaiConfig.deploymentName || 'gpt-3.5-turbo',
+      const response = await client.chat.completions.create({
+        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
         messages: [
           {
             role: 'user',
@@ -97,8 +116,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const response = await this.client.chat.completions.create({
-        model: openaiConfig.deploymentName || 'gpt-3.5-turbo',
+      const response = await client.chat.completions.create({
+        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
         messages: messages,
         max_tokens: maxTokens,
         temperature,
@@ -159,8 +178,8 @@ export class AzureOpenAIService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const response = await this.client.embeddings.create({
-        model: openaiConfig.embeddingDeployment,
+      const response = await client.embeddings.create({
+        model: (getOpenAIConfig()).embeddingDeployment,
         input: text
       });
 
@@ -186,8 +205,8 @@ export class AzureOpenAIService {
 
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     try {
-      const response = await this.client.embeddings.create({
-        model: openaiConfig.embeddingDeployment,
+      const response = await client.embeddings.create({
+        model: (getOpenAIConfig()).embeddingDeployment,
         input: texts
       });
 
@@ -232,8 +251,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const stream = await this.client.chat.completions.create({
-        model: openaiConfig.deploymentName,
+      const stream = await client.chat.completions.create({
+        model: (getOpenAIConfig()).deploymentName,
         messages,
         max_tokens: maxTokens,
         temperature,
@@ -325,7 +344,7 @@ export class AzureOpenAIService {
 
       return [
         {
-          id: openaiConfig.deploymentName,
+          id: (getOpenAIConfig()).deploymentName,
           object: 'model',
           created: Date.now(),
           ownedBy: 'azure'
@@ -339,7 +358,8 @@ export class AzureOpenAIService {
 }
 
 // Create service instance
-export const azureOpenAIService = new AzureOpenAIService(client);
+export const azureOpenAIService = new AzureOpenAIService();
 
-// Export the client for advanced operations
-export { client as openaiClient, OpenAI };
+// Export the client getter for advanced operations
+export { getOpenAIClient };
+

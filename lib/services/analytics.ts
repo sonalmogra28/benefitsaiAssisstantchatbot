@@ -1,7 +1,9 @@
 // lib/services/analytics.ts - Real-time Analytics Implementation
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
 import { ApplicationInsights } from '@microsoft/applicationinsights-web';
+
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
 
 export interface LLMUsageEvent {
   userId: string;
@@ -34,7 +36,7 @@ export interface AnalyticsMetrics {
 }
 
 class AnalyticsService {
-  private container = cosmosClient.database('BenefitsDB').container('analytics');
+  private container: any = null;
   private appInsights: ApplicationInsights;
 
   constructor() {
@@ -54,7 +56,18 @@ class AnalyticsService {
     }
   }
 
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.container) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.container = client.database('BenefitsDB').container('analytics');
+  }
+
   async trackLLMUsage(event: LLMUsageEvent): Promise<void> {
+    await this.ensureInitialized();
     try {
       // Store in Cosmos DB for detailed analytics
       await this.container.items.create({
@@ -102,6 +115,7 @@ class AnalyticsService {
   }
 
   async trackUserInteraction(event: UserInteractionEvent): Promise<void> {
+    await this.ensureInitialized();
     try {
       await this.container.items.create({
         ...event,
@@ -131,6 +145,7 @@ class AnalyticsService {
     endDate: Date,
     companyId?: string
   ): Promise<AnalyticsMetrics> {
+    await this.ensureInitialized();
     try {
       const baseQuery = `
         SELECT *
@@ -207,7 +222,8 @@ class AnalyticsService {
     };
   }
 
-  async getDailyCosts(days: number = 30): Promise<Array<{ date: string; cost: number }>> {
+  async getDailyCosts(days: number = 30): Promise<Array<{
+    await this.ensureInitialized(); date: string; cost: number }>> {
     try {
       const endDate = new Date();
       const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000));

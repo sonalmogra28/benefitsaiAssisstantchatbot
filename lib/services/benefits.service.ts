@@ -34,15 +34,19 @@ export interface PremiumCalculation {
 }
 
 export class BenefitsService {
-  private benefitsRepository: any;
-
-  constructor() {
-    this.initializeRepository();
-  }
+  private benefitsRepository: any = null;
 
   private async initializeRepository() {
+    if (this.messagesRepository || this.benefitsRepository || this.auditRepository || this.trackingRepository) return;
+    try {
     const repositories = await getRepositories();
     this.benefitsRepository = repositories.benefits;
+
+    } catch (error) {
+
+      // Graceful degradation during build
+
+    }
   }
 
   /**

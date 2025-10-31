@@ -1,24 +1,17 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
-import { type NextRequest } from 'next/server';
+import { appRouter } from '@/lib/trpc/app-router';
 
-import { env } from '@/lib/env';
-import { appRouter } from '@/lib/trpc/root';
-import { createTRPCContext } from '@/lib/trpc/context';
+const createContext = async () => ({});
 
-const handler = (req: NextRequest) =>
+const handler = (req: Request) =>
   fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => createTRPCContext({ req }),
-    onError:
-      env.NODE_ENV === 'development'
-        ? ({ path, error }) => {
-            console.error(
-              `❌ tRPC failed on ${path ?? '<no-path>'}: ${error.message}`
-            );
-          }
-        : undefined,
+    createContext,
   });
 
 export { handler as GET, handler as POST };

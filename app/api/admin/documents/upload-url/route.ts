@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
@@ -71,3 +73,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

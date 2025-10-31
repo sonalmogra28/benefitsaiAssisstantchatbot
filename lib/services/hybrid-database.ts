@@ -7,27 +7,37 @@ import { CosmosClient, Database, Container } from '@azure/cosmos';
 import { SimpleLogger } from './simple-logger';
 import { getErrorCode, isErrorWithCode } from '../utils/error-handler';
 
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
+
 export interface DatabaseItem {
   id: string;
   [key: string]: any;
 }
 
 export class HybridDatabaseService {
-  private client: CosmosClient;
-  private database: Database;
+  private client: CosmosClient | null = null;
+  private database: Database | null = null;
   private containers: Map<string, Container> = new Map();
 
-  constructor() {
+  private async ensureInitialized() {
+    if (isBuild()) return false;
+    if (this.client && this.database) return true;
+
     const connectionString = process.env.AZURE_COSMOS_CONNECTION_STRING;
     if (!connectionString) {
-      throw new Error('AZURE_COSMOS_CONNECTION_STRING environment variable is required');
+      SimpleLogger.warn('AZURE_COSMOS_CONNECTION_STRING not available');
+      return false;
     }
 
     this.client = new CosmosClient(connectionString);
     this.database = this.client.database('benefits-db');
+    return true;
   }
 
-  private async getContainer(containerName: string): Promise<Container> {
+  private async getContainer(containerName: string): Promise<Container | null> {
+    const initialized = await this.ensureInitialized();
+    if (!initialized || !this.database) return null;
+
     if (!this.containers.has(containerName)) {
       const container = this.database.container(containerName);
       this.containers.set(containerName, container);
@@ -41,6 +51,8 @@ export class HybridDatabaseService {
   ): Promise<T> {
     try {
       const container = await this.getContainer(containerName);
+      if (!container) throw new Error('Database not available');
+      
       const itemWithId = { ...item, id: crypto.randomUUID() } as T;
       
       const { resource } = await container.items.create(itemWithId);
@@ -60,6 +72,8 @@ export class HybridDatabaseService {
   ): Promise<T | null> {
     try {
       const container = await this.getContainer(containerName);
+      if (!container) return null;
+      
       const { resource } = await container.item(id, partitionKey).read();
       
       return resource as T || null;
@@ -80,6 +94,8 @@ export class HybridDatabaseService {
   ): Promise<T> {
     try {
       const container = await this.getContainer(containerName);
+      if (!container) throw new Error('Database not available');
+      
       const { resource } = await container.item(id, partitionKey).replace({
         ...updates,
         id,
@@ -101,6 +117,8 @@ export class HybridDatabaseService {
   ): Promise<void> {
     try {
       const container = await this.getContainer(containerName);
+      if (!container) return;
+      
       await container.item(id, partitionKey).delete();
       
       SimpleLogger.info('Item deleted', { containerName, id });
@@ -117,6 +135,8 @@ export class HybridDatabaseService {
   ): Promise<T[]> {
     try {
       const container = await this.getContainer(containerName);
+      if (!container) return [];
+      
       const { resources: resources } = await container.items.query({
         query,
         parameters: parameters || []

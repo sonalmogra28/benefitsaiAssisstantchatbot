@@ -1,23 +1,32 @@
-import OpenAI from 'openai';
-import { logError } from '@/lib/logger';
+import type OpenAI from 'openai';
+import logger from '@/lib/logger';
 
-const AZURE_OPENAI_ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT || '';
-const AZURE_OPENAI_API_KEY = process.env.AZURE_OPENAI_API_KEY || '';
-const AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT =
-  process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || 'text-embedding-3-small';
+let openaiClient: OpenAI | null = null;
 
-function getAzureOpenAIClient(): OpenAI {
-  if (!AZURE_OPENAI_ENDPOINT || !AZURE_OPENAI_API_KEY) {
+async function getAzureOpenAIClient(): Promise<OpenAI> {
+  if (openaiClient) return openaiClient;
+  if (typeof window !== 'undefined') throw new Error('Server-only module');
+
+  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const apiKey = process.env.AZURE_OPENAI_API_KEY;
+
+  if (!endpoint || !apiKey) {
     throw new Error('Azure OpenAI endpoint or API key not configured');
   }
-  return new OpenAI({
-    apiKey: AZURE_OPENAI_API_KEY,
-    baseURL: `${AZURE_OPENAI_ENDPOINT}/openai/deployments`,
+
+  const OpenAIModule = await import('openai');
+  const OpenAI = OpenAIModule.default;
+
+  openaiClient = new OpenAI({
+    apiKey,
+    baseURL: `${endpoint}/openai/deployments`,
     defaultHeaders: {
-      'api-key': AZURE_OPENAI_API_KEY,
+      'api-key': apiKey,
     },
     defaultQuery: { 'api-version': '2024-05-01-preview' },
   });
+
+  return openaiClient;
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -29,15 +38,17 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   const truncatedText =
     text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 
+  const deployment = process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || 'text-embedding-3-small';
+
   try {
-    const client = getAzureOpenAIClient();
+    const client = await getAzureOpenAIClient();
     const result = await client.embeddings.create({
-      model: AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT,
+      model: deployment,
       input: truncatedText,
     });
     return result.data?.[0]?.embedding || [];
   } catch (error) {
-    logError('Azure OpenAI embedding error:', error);
+    logger.error('Azure OpenAI embedding error:', error);
     throw new Error('Failed to generate embedding');
   }
 }
@@ -46,15 +57,18 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   if (!texts || texts.length === 0) {
     return [];
   }
+
+  const deployment = process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || 'text-embedding-3-small';
+
   try {
-    const client = getAzureOpenAIClient();
+    const client = await getAzureOpenAIClient();
     const result = await client.embeddings.create({
-      model: AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT,
+      model: deployment,
       input: texts,
     });
-    return result.data?.map((d) => d.embedding) || [];
+    return result.data?.map((d: any) => d.embedding) || [];
   } catch (error) {
-    logError('Azure OpenAI batch embedding error:', error);
+    logger.error('Azure OpenAI batch embedding error:', error);
     throw new Error('Failed to generate embeddings');
   }
 }

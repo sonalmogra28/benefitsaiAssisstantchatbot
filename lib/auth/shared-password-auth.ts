@@ -3,9 +3,10 @@
  * Simple authentication system using shared password for demo/testing purposes
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { createHash, timingSafeEqual } from 'crypto';
-import { logger } from '@/lib/logger';
+import logger from '@/lib/logger';
 
 export interface SharedPasswordUser {
   id: string;
@@ -16,18 +17,19 @@ export interface SharedPasswordUser {
   permissions: string[];
   isSharedPassword: boolean;
 }
-
 export interface SharedPasswordAuthResult {
   user: SharedPasswordUser | null;
   error: NextResponse | null;
   isAuthenticated: boolean;
 }
-
 export class SharedPasswordAuth {
 
   private static readonly SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly MAX_ATTEMPTS = 5;
   private static readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+  
+  // Track failed authentication attempts by IP
+  private static failedAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
   /**
    * Hash password using SHA-256
@@ -74,7 +76,11 @@ export class SharedPasswordAuth {
         };
       }
 
+      // Validate password against stored hash
+      const storedPasswordHash = process.env.SHARED_PASSWORD_HASH;
+      const providedPasswordHash = this.hashPassword(password);
 
+      if (!storedPasswordHash || providedPasswordHash !== storedPasswordHash) {
         await this.recordFailedAttempt(request);
         return {
           user: null,
@@ -89,7 +95,11 @@ export class SharedPasswordAuth {
       // Create user session
       const user: SharedPasswordUser = {
         id: `shared-${Date.now()}`,
-
+        email: userInfo?.email || 'shared@company.local',
+        name: userInfo?.name || 'Shared User',
+        companyId: userInfo?.companyId || 'default',
+        roles: ['user'],
+        permissions: ['read'],
         isSharedPassword: true,
       };
 

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Subdomain shared password authentication endpoint
  */
@@ -125,3 +127,4 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+

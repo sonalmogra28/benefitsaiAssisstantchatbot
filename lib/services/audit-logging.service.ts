@@ -20,15 +20,19 @@ export interface AuditLog {
 }
 
 export class AuditLoggingService {
-  private documentsRepository: any;
-
-  constructor() {
-    this.initializeRepository();
-  }
+  private documentsRepository: any = null;
 
   private async initializeRepository() {
+    if (this.messagesRepository || this.benefitsRepository || this.auditRepository || this.trackingRepository) return;
+    try {
     const repositories = await getRepositories();
     this.documentsRepository = repositories.documents;
+
+    } catch (error) {
+
+      // Graceful degradation during build
+
+    }
   }
 
   /**

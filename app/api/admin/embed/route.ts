@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { protectAdminEndpoint } from '@/lib/middleware/auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
@@ -83,3 +85,4 @@ export async function OPTIONS(request: NextRequest) {
     },
   });
 }
+

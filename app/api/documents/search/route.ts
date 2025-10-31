@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Document Search API
  * Handles document search and retrieval
@@ -86,3 +88,4 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

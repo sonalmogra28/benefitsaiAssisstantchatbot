@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 
 /**
@@ -94,3 +96,4 @@ export async function GET(req: NextRequest) {
 export async function HEAD(req: NextRequest) {
   return new NextResponse(null, { status: 200 });
 }
+

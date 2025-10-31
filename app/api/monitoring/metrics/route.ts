@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Monitoring Metrics API
  * Real-time system metrics endpoint
@@ -44,3 +46,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

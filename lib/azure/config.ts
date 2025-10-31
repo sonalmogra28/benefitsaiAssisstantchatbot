@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isBuild } from '@/lib/runtime/is-build';
 
 // Azure configuration schema
 const azureConfigSchema = z.object({
@@ -94,9 +95,22 @@ const azureConfigSchema = z.object({
   debugMode: z.boolean().default(false),
 });
 
-// Parse and validate environment variables
-const parseAzureConfig = () => {
+let cached: z.infer<typeof azureConfigSchema> | null = null;
 
+// Parse and validate environment variables
+const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
+  if (cached) return cached;
+  
+  // Build mode: return minimal stub without strict validation
+  if (isBuild) {
+    cached = {} as AzureConfig;
+    return cached;
+  }
+  
+  // Development mode: return defaults without strict validation
+  const isDev = process.env.NODE_ENV !== 'production';
+  
+  if (isDev) {
     return {
       // Azure Core
       tenantId: process.env.AZURE_TENANT_ID || 'test-tenant',
@@ -186,6 +200,7 @@ const parseAzureConfig = () => {
     } as z.infer<typeof azureConfigSchema>;
   }
 
+  // Production mode: strict validation
   const rawConfig = {
     // Azure Core
     tenantId: process.env.AZURE_TENANT_ID,
@@ -283,7 +298,7 @@ const parseAzureConfig = () => {
     return azureConfigSchema.parse(rawConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const missingFields = error.errors.map(err => `${err.path.join('.')}: ${err.message}`);
+      const missingFields = error.issues.map((err) => `${err.path.join('.')}: ${err.message}`);
       throw new Error(`Azure configuration validation failed:\n${missingFields.join('\n')}`);
     }
     throw error;

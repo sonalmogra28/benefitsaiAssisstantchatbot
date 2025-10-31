@@ -1,5 +1,7 @@
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
+
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
 
 export interface User {
   id: string;
@@ -14,9 +16,20 @@ export interface User {
 }
 
 class UserService {
-  private container = cosmosClient.database('BenefitsDB').container('users');
+  private container: any = null;
+
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.container) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.container = client.database('BenefitsDB').container('users');
+  }
 
   async getUserById(id: string): Promise<User | null> {
+    await this.ensureInitialized();
     try {
       const { resource } = await this.container.item(id).read<User>();
       return resource || null;
@@ -30,6 +43,7 @@ class UserService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.email = @email';
       const { resources } = await this.container.items.query<User>({
@@ -45,6 +59,7 @@ class UserService {
   }
 
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+    await this.ensureInitialized();
     try {
       const user: User = {
         ...userData,
@@ -62,6 +77,7 @@ class UserService {
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    await this.ensureInitialized();
     try {
       const existingUser = await this.getUserById(id);
       if (!existingUser) {
@@ -83,6 +99,7 @@ class UserService {
   }
 
   async deleteUser(id: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       await this.container.item(id).delete();
     } catch (error) {
@@ -92,6 +109,7 @@ class UserService {
   }
 
   async getUsersByCompany(companyId: string): Promise<User[]> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.companyId = @companyId AND c.isActive = true';
       const { resources } = await this.container.items.query<User>({

@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { benefitsService } from '@/lib/services/benefits.service';
 import { rateLimiters } from '@/lib/middleware/rate-limit';

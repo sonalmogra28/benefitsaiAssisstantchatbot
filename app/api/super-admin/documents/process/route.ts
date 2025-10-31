@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 // app/api/super-admin/documents/process/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { getContainerClient, DOCUMENTS_CONTAINER_NAME } from '@/lib/azure/blob-storage';
@@ -54,3 +56,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Failed to process document' }, { status: 500 });
   }
 });
+

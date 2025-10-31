@@ -1,19 +1,16 @@
 import { BlobServiceClient } from '@azure/storage-blob';
 
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
+
 export interface StorageFile {
   url: string;
   fileName: string;
   name: string;
 }
 
-export const getStorageServices = () => {
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!connectionString) {
-    throw new Error('AZURE_STORAGE_CONNECTION_STRING is not defined in environment variables.');
-  }
-  
-  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-  
+let cachedServices: ReturnType<typeof createStorageServices> | null = null;
+
+function createStorageServices(blobServiceClient: BlobServiceClient) {
   return {
     documents: {
       uploadFile: async (file: Buffer, fileName: string, contentType: string): Promise<StorageFile> => {
@@ -81,4 +78,21 @@ export const getStorageServices = () => {
       },
     },
   };
+}
+
+export const getStorageServices = () => {
+  if (isBuild()) {
+    throw new Error('Storage services unavailable during build');
+  }
+  
+  if (cachedServices) return cachedServices;
+  
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  if (!connectionString) {
+    throw new Error('AZURE_STORAGE_CONNECTION_STRING is not defined in environment variables.');
+  }
+  
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  cachedServices = createStorageServices(blobServiceClient);
+  return cachedServices;
 };

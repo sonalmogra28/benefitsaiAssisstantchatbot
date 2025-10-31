@@ -22,15 +22,17 @@ export interface ChatMessageDocument {
 }
 
 export class ChatMessagesService {
-  private messagesRepository: any;
-
-  constructor() {
-    this.initializeRepository();
-  }
+  private messagesRepository: any = null;
 
   private async initializeRepository() {
-    const repositories = await getRepositories();
-    this.messagesRepository = repositories.chats; // Using chats container for messages
+    if (this.messagesRepository) return;
+    try {
+      const repositories = await getRepositories();
+      this.messagesRepository = repositories.chats; // Using chats container for messages
+    } catch (error) {
+      // Graceful degradation during build
+      logger.warn('ChatMessages repository unavailable');
+    }
   }
 
   async getChatMessages(chatId: string, userId: string): Promise<ChatMessage[]> {

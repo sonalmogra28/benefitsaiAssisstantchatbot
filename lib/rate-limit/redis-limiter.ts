@@ -3,8 +3,12 @@
  */
 
 import { Redis } from 'ioredis';
-import { logger } from '@/lib/logger';
+import logger from '@/lib/logger';
 import { getRedisConfig } from '@/lib/azure/config';
+
+function isBuild(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
 
 interface RateLimitConfig {
   windowMs: number;
@@ -22,12 +26,17 @@ interface RateLimitResult {
 class RedisRateLimiter {
   private redis: Redis | null = null;
   private isConnected: boolean = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
-    this.initializeRedis();
+    // Don't initialize during build
+    if (!isBuild()) {
+      this.initPromise = this.initializeRedis();
+    }
   }
 
   private async initializeRedis(): Promise<void> {
+    if (isBuild()) return;
     try {
       // Use Azure Redis Cache configuration
       const redisConfig = getRedisConfig();
@@ -91,6 +100,11 @@ class RedisRateLimiter {
     key: string,
     config: RateLimitConfig
   ): Promise<RateLimitResult> {
+    // Ensure initialization is complete
+    if (this.initPromise) {
+      await this.initPromise;
+    }
+    
     const now = Date.now();
     const windowStart = now - config.windowMs;
 

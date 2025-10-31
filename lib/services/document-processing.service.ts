@@ -10,8 +10,19 @@ import { getRepositories } from '@/lib/azure/cosmos';
 import { azureOpenAIService } from '@/lib/azure/openai';
 import { Document } from '@/lib/schemas/unified';
 
-// PDF parsing
-import * as pdfjsLib from 'pdfjs-dist';
+// PDF parsing - lazy loaded
+let pdfjsLib: any = null;
+
+async function getPdfJs() {
+  if (pdfjsLib) return pdfjsLib;
+  pdfjsLib = await import('pdfjs-dist');
+  
+  // Configure worker for Node.js
+  if (typeof window === 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/build/pdf.worker.min.js';
+  }
+  return pdfjsLib;
+}
 
 // DOC/DOCX parsing
 import * as mammoth from 'mammoth';
@@ -46,13 +57,6 @@ export interface DocumentChunk {
 export class DocumentProcessingService {
   private readonly maxChunkSize = 1000; // characters per chunk
   private readonly chunkOverlap = 200; // characters overlap between chunks
-
-  constructor() {
-    // Configure PDF.js worker
-    if (typeof window === 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/build/pdf.worker.min.js';
-    }
-  }
 
   /**
    * Process uploaded document and extract text content
@@ -155,7 +159,8 @@ export class DocumentProcessingService {
    */
   private async extractTextFromPDF(buffer: Buffer): Promise<{ text: string; pageCount: number }> {
     try {
-      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      const pdfLib = await getPdfJs();
+      const pdf = await pdfLib.getDocument({ data: buffer }).promise;
       const pageCount = pdf.numPages;
       let fullText = '';
 

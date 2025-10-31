@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { getContainer } from '@/lib/azure/cosmos-db';
 import { adminAuth } from '@/lib/auth/admin-auth';
@@ -49,3 +51,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

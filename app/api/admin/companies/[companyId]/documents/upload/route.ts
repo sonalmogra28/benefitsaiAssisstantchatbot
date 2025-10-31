@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 
 // Import polyfills first to ensure browser APIs are available
 import '@/lib/polyfills/global-polyfills';

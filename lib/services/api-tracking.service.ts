@@ -31,15 +31,19 @@ export interface APICallMetrics {
 }
 
 export class APITrackingService {
-  private apiCallsRepository: any;
-
-  constructor() {
-    this.initializeRepository();
-  }
+  private apiCallsRepository: any = null;
 
   private async initializeRepository() {
+    if (this.messagesRepository || this.benefitsRepository || this.auditRepository || this.trackingRepository) return;
+    try {
     const repositories = await getRepositories();
-    this.apiCallsRepository = repositories.documents; // Using documents container for API calls
+    this.apiCallsRepository = repositories.documents;
+
+    } catch (error) {
+
+      // Graceful degradation during build
+
+    } // Using documents container for API calls
   }
 
   async trackAPICall(callData: Omit<APICall, 'id' | 'timestamp'>): Promise<void> {

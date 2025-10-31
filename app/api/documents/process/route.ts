@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Document Processing API
  * Handles document upload and processing
@@ -126,3 +128,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

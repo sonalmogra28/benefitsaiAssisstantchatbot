@@ -1,9 +1,10 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // app/api/super-admin/companies/[id]/documents/upload/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
 import { getStorageServices } from '@/lib/azure/storage';
 import { requireSuperAdmin } from '@/lib/auth/unified-auth';
-
-const storageServices = getStorageServices();
 
 export const POST = requireSuperAdmin(
   async (request: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -16,6 +17,7 @@ export const POST = requireSuperAdmin(
     }
 
     // Upload to Azure Blob Storage
+    const storageServices = getStorageServices();
     const fileBuffer = await file.arrayBuffer();
     const fileName = `${id}/${file.name}`;
     

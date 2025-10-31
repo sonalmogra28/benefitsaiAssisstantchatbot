@@ -2,7 +2,6 @@
  * Benefits Comparison AI Tools
  * Integrates with real Amerivet benefits data
  */
-
 import { AMERIVET_BENEFIT_PLANS, getPlansByType, getPlansByRegion, calculateEmployeeCost } from '@/lib/data/amerivet-benefits';
 
 export const benefitsComparisonTools = {

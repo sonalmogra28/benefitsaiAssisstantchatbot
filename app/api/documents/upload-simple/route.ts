@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
 import { getRepositories } from '@/lib/azure/cosmos';
@@ -128,3 +130,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

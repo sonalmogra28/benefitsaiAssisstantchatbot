@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 // app/api/files/upload/route.ts
 import { type NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/unified-auth';
@@ -116,3 +118,4 @@ export const POST = withAuth(USER_ROLES.EMPLOYEE)(
     );
   }
 });
+

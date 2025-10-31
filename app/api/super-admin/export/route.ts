@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireSuperAdmin } from '@/lib/auth/unified-auth';
 import { SuperAdminService } from '@/lib/services/super-admin.service';
@@ -146,3 +148,4 @@ async function convertExportDataToExcel(exportData: any): Promise<Buffer> {
     includeHeaders: true
   });
 }
+

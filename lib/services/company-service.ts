@@ -1,5 +1,7 @@
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
+
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
 
 export interface Company {
   id: string;
@@ -13,9 +15,20 @@ export interface Company {
 }
 
 class CompanyService {
-  private container = cosmosClient.database('BenefitsDB').container('companies');
+  private container: any = null;
+
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.container) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.container = client.database('BenefitsDB').container('companies');
+  }
 
   async getCompanies(options: { page: number; limit: number; adminId?: string }): Promise<Company[]> {
+    await this.ensureInitialized();
     try {
       let query = 'SELECT * FROM c WHERE c.isActive = true';
       const parameters: any[] = [];
@@ -41,6 +54,7 @@ class CompanyService {
   }
 
   async createCompany(companyData: Omit<Company, 'id' | 'createdAt' | 'updatedAt'>): Promise<Company> {
+    await this.ensureInitialized();
     try {
       const company: Company = {
         ...companyData,
@@ -58,6 +72,7 @@ class CompanyService {
   }
 
   async getCompanyById(id: string): Promise<Company | null> {
+    await this.ensureInitialized();
     try {
       const { resource } = await this.container.item(id).read<Company>();
       return resource || null;
@@ -71,6 +86,7 @@ class CompanyService {
   }
 
   async updateCompany(id: string, updates: Partial<Company>): Promise<Company> {
+    await this.ensureInitialized();
     try {
       const existingCompany = await this.getCompanyById(id);
       if (!existingCompany) {

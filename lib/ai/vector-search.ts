@@ -1,55 +1,52 @@
 // lib/ai/vector-search.ts
 
-import { SearchClient, AzureKeyCredential } from '@azure/search-documents';
+import type { SearchClient } from '@azure/search-documents';
+import { isBuild } from '@/lib/runtime/is-build';
+import { DISABLE_AZURE } from '@/lib/runtime/feature-flags';
 import { getContainer } from '@/lib/azure/cosmos-db';
 import { generateEmbedding, generateEmbeddings } from './embeddings';
-import { DefaultAzureCredential } from '@azure/identity';
 
-const AZURE_SEARCH_ENDPOINT = process.env.AZURE_SEARCH_ENDPOINT || '';
-const AZURE_SEARCH_API_KEY = process.env.AZURE_SEARCH_API_KEY || '';
-const AZURE_SEARCH_INDEX_NAME = process.env.AZURE_SEARCH_INDEX_NAME || 'document-chunks';
+let searchClient: SearchClient<any> | null = null;
 
-class VectorSearchService {
-  private searchClient: any;
+async function ensureInitialized() {
+  if (isBuild || DISABLE_AZURE) return null;
+  if (searchClient) return searchClient;
+  if (typeof window !== 'undefined') throw new Error('Server-only module');
 
-  constructor() {
-    if (!AZURE_SEARCH_ENDPOINT) {
-      throw new Error('AZURE_SEARCH_ENDPOINT not configured');
-    }
-    if (process.env.NODE_ENV === 'production') {
-      const credential = new DefaultAzureCredential();
-      this.searchClient = new SearchClient(
-        AZURE_SEARCH_ENDPOINT,
-        AZURE_SEARCH_INDEX_NAME,
-        credential,
-      );
-    } else {
-      if (!AZURE_SEARCH_API_KEY) {
-        throw new Error('AZURE_SEARCH_API_KEY not configured for development');
-      }
-      this.searchClient = new SearchClient(
-        AZURE_SEARCH_ENDPOINT,
-        AZURE_SEARCH_INDEX_NAME,
-        new AzureKeyCredential(AZURE_SEARCH_API_KEY),
-      );
-    }
+  const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
+  const apiKey = process.env.AZURE_SEARCH_API_KEY;
+  const indexName = process.env.AZURE_SEARCH_INDEX_NAME || 'document-chunks';
+
+  if (!endpoint || !apiKey) {
+    throw new Error('AZURE_SEARCH not configured');
   }
 
+  const { SearchClient, AzureKeyCredential } = await import('@azure/search-documents');
+  searchClient = new SearchClient(endpoint, indexName, new AzureKeyCredential(apiKey));
+  
+  return searchClient;
+}
+
+class VectorSearchService {
   async upsertChunks(
     chunks: { id: string; embedding: number[]; companyId: string }[],
   ) {
+    const client = await ensureInitialized();
+    if (!client) return;
     const docs = chunks.map((c) => ({
       id: c.id,
       embedding: c.embedding,
       companyId: c.companyId,
     }));
-    await this.searchClient.mergeOrUploadDocuments(docs);
+    await client.mergeOrUploadDocuments(docs);
   }
 
   async upsertDocumentChunks(
     companyId: string,
     chunks: { id: string; text: string; metadata: { documentId: string } }[],
   ) {
+    const client = await ensureInitialized();
+    if (!client) return;
     try {
       const texts = chunks.map((c) => c.text);
       const embeddings = await generateEmbeddings(texts);
@@ -80,7 +77,7 @@ class VectorSearchService {
         content: chunk.text,
         embedding: embeddings[i],
       }));
-      await this.searchClient.mergeOrUploadDocuments(docs as any);
+      await searchClient!.mergeOrUploadDocuments(docs as any);
       return docs.length;
     } catch (error) {
       console.error('Error upserting document chunks to Azure AI Search:', error);
@@ -89,9 +86,10 @@ class VectorSearchService {
   }
 
   async removeDatapoints(datapointIds: string[]) {
+    await ensureInitialized();
     if (!datapointIds.length) return;
     const docs = datapointIds.map((id) => ({ id }));
-    await this.searchClient.deleteDocuments(docs as any);
+    await searchClient!.deleteDocuments(docs as any);
   }
 
   async findNearestNeighbors(
@@ -99,6 +97,7 @@ class VectorSearchService {
     companyId: string,
     numNeighbors = 5,
   ) {
+    await ensureInitialized();
     const vectorQuery = {
       kind: 'vector',
       fields: ['embedding'],
@@ -106,7 +105,7 @@ class VectorSearchService {
       vector: queryEmbedding,
     } as const;
 
-    const results = await this.searchClient.search('', {
+    const results = await searchClient!.search('', {
       vectorSearchOptions: {
         queries: [vectorQuery],
       },

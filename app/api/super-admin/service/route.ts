@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 // app/api/super-admin/service/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { requireSuperAdmin, requireCompanyAdmin } from '@/lib/auth/unified-auth';
@@ -127,3 +129,4 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

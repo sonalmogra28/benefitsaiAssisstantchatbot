@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Monitoring Alerts API
  * Alert management endpoints
@@ -77,3 +79,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

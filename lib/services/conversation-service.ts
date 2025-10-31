@@ -1,5 +1,5 @@
-import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import logger from '@/lib/logger';
+import { getClient } from '@/lib/azure/cosmos';
 
 export interface Message {
   id: string;
@@ -20,9 +20,16 @@ export interface Conversation {
 }
 
 class ConversationService {
-  private container = cosmosClient.database('BenefitsDB').container('conversations');
+  private container: any = null;
+
+  private async ensureInitialized() {
+    if (this.container) return;
+    const client = await getClient();
+    this.container = client.database('BenefitsDB').container('conversations');
+  }
 
   async addMessage(conversationId: string, message: Message): Promise<void> {
+    await this.ensureInitialized();
     try {
       const conversation = await this.getConversation(conversationId);
       if (!conversation) {
@@ -34,12 +41,13 @@ class ConversationService {
 
       await this.container.item(conversationId).replace(conversation);
     } catch (error) {
-      logger.error({ error, conversationId, messageId: message.id }, 'Error adding message to conversation');
+      logger.error('Error adding message to conversation', { error, conversationId, messageId: message.id }, error as Error);
       throw error;
     }
   }
 
   async getConversation(conversationId: string): Promise<Conversation | null> {
+    await this.ensureInitialized();
     try {
       const { resource } = await this.container.item(conversationId).read<Conversation>();
       return resource || null;
@@ -53,6 +61,7 @@ class ConversationService {
   }
 
   async createConversation(userId: string, companyId: string): Promise<Conversation> {
+    await this.ensureInitialized();
     try {
       const conversation: Conversation = {
         id: crypto.randomUUID(),
@@ -72,6 +81,7 @@ class ConversationService {
   }
 
   async getUserConversations(userId: string, companyId: string): Promise<Conversation[]> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.userId = @userId AND c.companyId = @companyId ORDER BY c.updatedAt DESC';
       const { resources } = await this.container.items.query<Conversation>({

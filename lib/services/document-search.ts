@@ -1,5 +1,7 @@
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
+
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
 
 export interface DocumentSearchResult {
   id: string;
@@ -10,9 +12,20 @@ export interface DocumentSearchResult {
 }
 
 class DocumentSearchService {
-  private container = cosmosClient.database('BenefitsDB').container('documents');
+  private container: any = null;
+
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.container) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.container = client.database('BenefitsDB').container('documents');
+  }
 
   async searchDocuments(query: string, companyId: string, limit: number = 10): Promise<DocumentSearchResult[]> {
+    await this.ensureInitialized();
     try {
       // Simple text search implementation
       const searchQuery = {

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireSuperAdmin, requireCompanyAdmin } from '@/lib/auth/unified-auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
@@ -209,3 +211,4 @@ export const PUT = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+

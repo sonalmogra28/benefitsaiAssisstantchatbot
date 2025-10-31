@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth/unified-auth';
 import { USER_ROLES } from '@/lib/constants/roles';
@@ -102,3 +104,4 @@ export const DELETE = withAuth(USER_ROLES.EMPLOYEE)(
     }
   },
 );
+

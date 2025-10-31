@@ -1,13 +1,31 @@
-import { CosmosClient, Database, Container, ItemResponse } from '@azure/cosmos';
-import { azureConfig, getCosmosDbConfig } from './config';
-import { logger } from '@/lib/logger';
+import type { CosmosClient, Database, Container, ItemResponse } from '@azure/cosmos';
+import { getCosmosDbConfig } from './config';
+import logger from '@/lib/logger';
 
-// Initialize Cosmos DB client
-const cosmosConfig = getCosmosDbConfig();
-const client = new CosmosClient({
-  endpoint: cosmosConfig.endpoint,
-  key: cosmosConfig.key,
-});
+function isBuild(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+// Lazy client initialization
+let client: CosmosClient | null = null;
+
+async function getCosmosClient(): Promise<CosmosClient | null> {
+  if (isBuild()) {
+    return null; // Return null during build instead of throwing
+  }
+  
+  if (client) return client;
+
+  const { CosmosClient: CosmosClientClass } = await import('@azure/cosmos');
+  const cosmosConfig = getCosmosDbConfig();
+  
+  client = new CosmosClientClass({
+    endpoint: cosmosConfig.endpoint,
+    key: cosmosConfig.key,
+  });
+  
+  return client;
+}
 
 let database: Database;
 let containers: {
@@ -26,7 +44,16 @@ let containers: {
 // Initialize database and containers
 export const initializeCosmosDb = async () => {
   try {
-    database = await client.database(cosmosConfig.databaseId);
+    const { azureConfig } = await import('./config');
+    const cosmosConfig = getCosmosDbConfig();
+    const cosmosClient = await getCosmosClient();
+    
+    if (!cosmosClient) {
+      logger.warn('Cosmos DB client unavailable');
+      return { database: null, containers: {} as any };
+    }
+    
+    database = cosmosClient.database(cosmosConfig.databaseId);
     
     // Create containers if they don't exist
     containers = {
@@ -373,5 +400,16 @@ export const getRepositories = async () => {
   return repositories;
 };
 
-// Export the client for advanced operations
-export { client as cosmosClient, database, containers };
+// Export getter for advanced operations
+export async function getClient(): Promise<CosmosClient | null> {
+  return getCosmosClient();
+}
+
+// Synchronous export for backward compatibility - returns mock during build
+export const cosmosClient = isBuild() ? null : ({
+  database: (name: string) => ({
+    container: (containerName: string) => null
+  })
+}) as any;
+
+export { database, containers };

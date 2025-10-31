@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { withAdminAuth } from '@/lib/auth/unified-auth';
 import { companyService } from '@/lib/services/company-service';
@@ -49,3 +51,4 @@ export const POST = withAdminAuth(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 });
+

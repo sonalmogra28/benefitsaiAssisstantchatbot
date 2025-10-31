@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { emailService } from '@/lib/services/email.service.server'; // Import singleton instance
 import { requireSuperAdmin } from '@/lib/auth/unified-auth';
@@ -41,3 +43,4 @@ export const POST = requireSuperAdmin(async (request: NextRequest) => {
     );
   }
 });
+

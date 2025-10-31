@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Health Check API
  * Production health monitoring endpoint
@@ -66,3 +68,4 @@ export async function GET(request: NextRequest) {
     }, { status: 503 });
   }
 }
+

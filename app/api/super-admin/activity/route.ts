@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { superAdminService } from '@/lib/services/super-admin.service';
 import { getContainer } from '@/lib/azure/cosmos-db';
@@ -47,3 +49,4 @@ export const GET = requireSuperAdmin(async (request: NextRequest) => {
     );
   }
 });
+

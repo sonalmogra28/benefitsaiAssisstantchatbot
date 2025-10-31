@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * Service Status API
  * Service health monitoring endpoint
@@ -27,3 +29,4 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { type NextRequest, NextResponse } from 'next/server';
 import { getContainer } from '@/lib/azure/cosmos-db';
 import { validateToken } from '@/lib/azure/token-validation';
@@ -91,3 +93,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 /**
  * Acknowledge Alert API
  * Individual alert acknowledgment endpoint

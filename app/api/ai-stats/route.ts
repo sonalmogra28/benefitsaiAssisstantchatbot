@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 
 import { smartChatRouter } from '@/lib/services/smart-chat-router';
@@ -20,5 +22,6 @@ export const GET = withAuth([USER_ROLES.SUPER_ADMIN, USER_ROLES.PLATFORM_ADMIN])
     return NextResponse.json({ ok: false, error: 'stats_unavailable' }, { status: 500 });
   }
 });
+
 
 

@@ -1,12 +1,26 @@
 import { logger } from '@/lib/logger';
-import { cosmosClient } from '@/lib/azure/cosmos';
+import { getClient } from '@/lib/azure/cosmos';
 import { BenefitPlan, BenefitEnrollment } from '@/lib/schemas/benefits';
 
+const isBuild = () => process.env.NEXT_PHASE === 'phase-production-build';
+
 class BenefitService {
-  private plansContainer = cosmosClient.database('BenefitsDB').container('benefit_plans');
-  private enrollmentsContainer = cosmosClient.database('BenefitsDB').container('benefit_enrollments');
+  private plansContainer: any = null;
+  private enrollmentsContainer: any = null;
+
+  private async ensureInitialized() {
+    if (isBuild()) return;
+    if (this.plansContainer && this.enrollmentsContainer) return;
+    
+    const client = await getClient();
+    if (!client) return;
+    
+    this.plansContainer = client.database('BenefitsDB').container('benefit_plans');
+    this.enrollmentsContainer = client.database('BenefitsDB').container('benefit_enrollments');
+  }
 
   async getBenefitPlans(companyId: string): Promise<BenefitPlan[]> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.companyId = @companyId AND c.isActive = true';
       const { resources } = await this.plansContainer.items.query<BenefitPlan>({
@@ -22,6 +36,7 @@ class BenefitService {
   }
 
   async getTotalBenefitPlansCount(): Promise<number> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT VALUE COUNT(1) FROM c WHERE c.isActive = true';
       const { resources } = await this.plansContainer.items.query({
@@ -37,6 +52,7 @@ class BenefitService {
   }
 
   async getBenefitPlan(planId: string): Promise<BenefitPlan | null> {
+    await this.ensureInitialized();
     try {
       const { resource } = await this.plansContainer.item(planId).read<BenefitPlan>();
       return resource || null;
@@ -50,6 +66,7 @@ class BenefitService {
   }
 
   async createBenefitPlan(plan: Omit<BenefitPlan, 'id'>): Promise<BenefitPlan> {
+    await this.ensureInitialized();
     try {
       const newPlan: BenefitPlan = {
         ...plan,
@@ -65,6 +82,7 @@ class BenefitService {
   }
 
   async updateBenefitPlan(planId: string, updates: Partial<BenefitPlan>): Promise<BenefitPlan> {
+    await this.ensureInitialized();
     try {
       const existingPlan = await this.getBenefitPlan(planId);
       if (!existingPlan) {
@@ -85,6 +103,7 @@ class BenefitService {
   }
 
   async deleteBenefitPlan(planId: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       await this.plansContainer.item(planId).delete();
     } catch (error) {
@@ -94,6 +113,7 @@ class BenefitService {
   }
 
   async enrollInBenefit(enrollment: BenefitEnrollment): Promise<string> {
+    await this.ensureInitialized();
     try {
       const enrollmentRecord = {
         id: crypto.randomUUID(),
@@ -112,6 +132,7 @@ class BenefitService {
   }
 
   async getEmployeeEnrollments(employeeId: string): Promise<any[]> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.employeeId = @employeeId';
       const { resources } = await this.enrollmentsContainer.items.query({
@@ -127,6 +148,7 @@ class BenefitService {
   }
 
   async cancelEnrollment(employeeId: string, enrollmentId: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       const query = 'SELECT * FROM c WHERE c.id = @enrollmentId AND c.employeeId = @employeeId';
       const { resources } = await this.enrollmentsContainer.items.query({
@@ -152,6 +174,7 @@ class BenefitService {
   }
 
   async compareBenefitPlans(planIds: string[], criteria: string[]): Promise<any> {
+    await this.ensureInitialized();
     try {
       const plans = await Promise.all(planIds.map(id => this.getBenefitPlan(id)));
       const validPlans = plans.filter(plan => plan !== null) as BenefitPlan[];
