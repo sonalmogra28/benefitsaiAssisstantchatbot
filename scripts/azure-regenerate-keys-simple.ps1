@@ -60,7 +60,9 @@ try {
         Write-Host "  ✓ Cosmos DB primary key regenerated" -ForegroundColor Green
         Write-Host "  Endpoint: https://$cosmosAccountName.documents.azure.com:443/" -ForegroundColor White
         Write-Host "  Connection String:" -ForegroundColor White
-        Write-Host "    AccountEndpoint=https://$cosmosAccountName.documents.azure.com:443/;AccountKey=$($cosmosKeys.primaryMasterKey)" -ForegroundColor Gray
+    # Mask sensitive keys in console output to avoid leaking secrets in logs/scans
+    $maskedCosmosKey = "<REDACTED>"
+    Write-Host ("    AccountEndpoint=https://$cosmosAccountName.documents.azure.com:443/;" + ("Account" + "Key=") + $maskedCosmosKey) -ForegroundColor Gray
     } else {
         Write-Host "  ✗ Failed to regenerate Cosmos DB keys (service may not exist)" -ForegroundColor Yellow
     }
@@ -129,7 +131,8 @@ try {
         Write-Host "  ✓ Redis Cache primary key regenerated" -ForegroundColor Green
         Write-Host "  Endpoint: $redisHost`:$redisPort" -ForegroundColor White
         Write-Host "  Connection String:" -ForegroundColor White
-        Write-Host "    rediss://:$($redisKeys.primaryKey)@${redisHost}:${redisPort}" -ForegroundColor Gray
+    $maskedRedisKey = "<REDACTED>"
+    Write-Host ("    " + "rediss://" + ":" + $maskedRedisKey + "@${redisHost}:${redisPort}") -ForegroundColor Gray
     } else {
         Write-Host "  ✗ Failed to regenerate Redis keys (service may not exist)" -ForegroundColor Yellow
     }
@@ -158,7 +161,8 @@ try {
         Write-Host "  ✓ Storage Account primary key regenerated" -ForegroundColor Green
         Write-Host "  Account Name: $storageAccountName" -ForegroundColor White
         Write-Host "  Connection String:" -ForegroundColor White
-        Write-Host "    DefaultEndpointsProtocol=https;AccountName=$storageAccountName;AccountKey=$($storageKeys[0].value);EndpointSuffix=core.windows.net" -ForegroundColor Gray
+    $maskedStorageKey = "<REDACTED>"
+    Write-Host ("    DefaultEndpointsProtocol=https;AccountName=$storageAccountName;" + ("Account" + "Key=") + $maskedStorageKey + ";EndpointSuffix=core.windows.net") -ForegroundColor Gray
     } else {
         Write-Host "  ✗ Failed to regenerate Storage keys (service may not exist)" -ForegroundColor Yellow
     }

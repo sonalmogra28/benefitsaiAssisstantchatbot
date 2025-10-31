@@ -45,7 +45,7 @@ AZURE_COSMOS_CONTAINER_DOCUMENT_CHUNKS=document-chunks
 # Azure Blob Storage Configuration (will be filled after Azure setup)
 AZURE_STORAGE_ACCOUNT_NAME=benefitschatbotdev
 AZURE_STORAGE_ACCOUNT_KEY=your-storage-key
-AZURE_STORAGE_CONNECTION_STRING=your-storage-connection-string
+AZURE_STORAGE_CONNECTION_STRING=<paste-from-portal>
 AZURE_STORAGE_CONTAINER_DOCUMENTS=documents
 AZURE_STORAGE_CONTAINER_IMAGES=images
 
@@ -54,7 +54,7 @@ AZURE_REDIS_HOST=benefits-chatbot-redis-dev.redis.cache.windows.net
 AZURE_REDIS_PORT=6380
 AZURE_REDIS_PASSWORD=your-redis-password
 AZURE_REDIS_SSL=true
-REDIS_URL=rediss://:your-redis-password@benefits-chatbot-redis-dev.redis.cache.windows.net:6380
+REDIS_URL=rediss://benefits-chatbot-redis-dev.redis.cache.windows.net:6380
 
 # Azure OpenAI Service Configuration (will be filled after Azure setup)
 AZURE_OPENAI_ENDPOINT=your-openai-endpoint
@@ -87,7 +87,7 @@ JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters-long
 ENCRYPTION_KEY=your-32-character-encryption-key
 
 # Rate Limiting Configuration
-RATE_LIMIT_REDIS_URL=rediss://:your-redis-password@benefits-chatbot-redis-dev.redis.cache.windows.net:6380
+RATE_LIMIT_REDIS_URL=rediss://benefits-chatbot-redis-dev.redis.cache.windows.net:6380
 
 # File Upload Configuration
 MAX_FILE_SIZE=10485760

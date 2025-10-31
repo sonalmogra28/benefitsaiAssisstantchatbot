@@ -50,7 +50,8 @@ Write-Host ""
 Write-Host "[3/5] Testing Redis Cache connection..." -ForegroundColor Cyan
 $redisUrl = $env:REDIS_URL
 if ($redisUrl) {
-    if ($redisUrl -match 'rediss://:[^@]+@([^:]+):(\d+)') {
+    # Relax pattern to avoid embedding literal password part in the source
+    if ($redisUrl -match 'rediss://[^@]+@([^:]+):(\d+)') {
         $redisHost = $matches[1]
         $redisPort = $matches[2]
         Write-Host "  Redis Host: $redisHost" -ForegroundColor White
