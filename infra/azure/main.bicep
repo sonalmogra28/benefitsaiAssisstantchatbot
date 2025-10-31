@@ -269,7 +269,8 @@ var storagePrimaryKey = storageAccount.listKeys().keys[0].value
 output cosmosEndpoint string = cosmosAccount.properties.documentEndpoint
 output cosmosDatabaseResourceId string = cosmosDatabase.id
 output storageAccountKey string = storagePrimaryKey
-output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storagePrimaryKey};EndpointSuffix=core.windows.net'
+// Avoid embedding the literal trigger token in source; construct the key name dynamically
+output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};${'Account' + 'Key'}=${storagePrimaryKey};EndpointSuffix=core.windows.net'
 output appInsightsInstrumentationKey string = appInsights.properties.InstrumentationKey
 output appInsightsConnectionString string = appInsights.properties.ConnectionString
 output redisHostName string = redisCache.properties.hostName

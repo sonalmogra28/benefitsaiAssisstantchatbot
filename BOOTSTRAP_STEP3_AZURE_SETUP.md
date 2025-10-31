@@ -87,19 +87,20 @@ Update **`.env.production`** (and Vercel environment UI) with the freshly regene
 
 ```bash
 # Cosmos DB
-AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=https://benefitsai-cosmos.documents.azure.com:443/;AccountKey=<NEW_PRIMARY_KEY>
+AZURE_COSMOS_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 
 # Azure AI Search
 AZURE_SEARCH_ENDPOINT=https://benefitsai-search.search.windows.net
 AZURE_SEARCH_API_KEY=<NEW_ADMIN_KEY>
 
 # Redis Cache
-AZURE_REDIS_URL=rediss://:NEW_PRIMARY_KEY@benefitsai-redis.redis.cache.windows.net:6380
+AZURE_REDIS_URL=rediss://benefitsai-redis.redis.cache.windows.net:6380
+Note: set the Redis password via your secret manager or environment, not in the URL.
 
 # Storage Account
 AZURE_STORAGE_ACCOUNT=benefitsaistorage
 AZURE_STORAGE_KEY=<NEW_PRIMARY_KEY>
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName=benefitsaistorage;AccountKey=<NEW_PRIMARY_KEY>;EndpointSuffix=core.windows.net
+AZURE_STORAGE_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 
 # Azure OpenAI
 AZURE_OPENAI_ENDPOINT=https://benefitsai-openai.openai.azure.com/
