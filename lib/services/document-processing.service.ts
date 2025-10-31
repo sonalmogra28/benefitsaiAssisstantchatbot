@@ -153,7 +153,6 @@ export class DocumentProcessingService {
       throw error;
     }
   }
-
   /**
    * Extract text from PDF files
    */

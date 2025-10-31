@@ -20,6 +20,12 @@ const chatRequestSchema = z.object({
 
 export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (request: NextRequest) => {
   try {
+    // Ensure Authorization header present for tests that bypass auth wrapper
+    const auth = request.headers.get('authorization');
+    if (!auth) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Extract user context injected by withAuth
     const userId = request.headers.get('x-user-id')!;
     const companyId = request.headers.get('x-company-id')!;

@@ -235,13 +235,17 @@ export class UnifiedAuth {
    * Get user permissions for a specific role
    */
   static getPermissionsForRole(role: string): string[] {
-    const ROLE_PERMISSIONS = {
+    const normalized = role.replace(/-/g, '_');
+    const ROLE_PERMISSIONS_MAP: Record<string, string[]> = {
       employee: ['view_benefits', 'chat_with_ai'],
       admin: ['view_benefits', 'chat_with_ai', 'manage_users'],
       super_admin: ['view_benefits', 'chat_with_ai', 'manage_users', 'manage_companies'],
-    } as const
+      platform_admin: ['manage_users', 'manage_benefits', 'view_analytics', 'manage_settings'],
+      company_admin: ['manage_employees', 'view_company_analytics', 'manage_company_benefits', 'view_benefits', 'chat_with_ai', 'view_documents'],
+      hr_admin: ['manage_employees', 'view_company_analytics', 'view_benefits', 'chat_with_ai', 'view_documents'],
+    };
 
-    return (ROLE_PERMISSIONS as any)[role] ?? []
+    return ROLE_PERMISSIONS_MAP[normalized] ?? [];
   }
 
   /**
@@ -283,6 +287,42 @@ export class UnifiedAuth {
   }
 }
 
+// Helper to safely extract path/method from both NextRequest and plain Request
+function getReqMeta(req: Request | NextRequest) {
+  let path = '';
+  let method = 'GET';
+  try {
+    const nx = (req as any).nextUrl?.pathname;
+    path = nx ?? new URL((req as any).url ?? '').pathname ?? '';
+  } catch {
+    path = '';
+  }
+  method = (req as any).method ?? method;
+  return { path, method };
+}
+
+// Exportable authenticator for tests to spy on; delegates to class method
+export async function authenticateRequest(
+  req: Request | NextRequest
+): Promise<{
+  user: { userId: string; email?: string; roles: string[]; companyId?: string; permissions?: string[] } | null;
+  error: Response | null;
+}> {
+  const result = await UnifiedAuth.authenticateRequest(req as NextRequest);
+  return {
+    user: result.user
+      ? {
+          userId: result.user.id,
+          email: result.user.email,
+          roles: result.user.roles,
+          companyId: result.user.companyId,
+          permissions: result.user.permissions,
+        }
+      : null,
+    error: (result.error as unknown as Response) ?? null,
+  };
+}
+
 /**
  * Higher-order function to protect API routes
  */
@@ -294,25 +334,37 @@ export function withAuth(
     handler: (request: NextRequest, ...args: T) => Promise<NextResponse>
   ) {
     return async (request: NextRequest, ...args: T): Promise<NextResponse> => {
-      const authResult = await UnifiedAuth.authenticateRequest(request);
-      
-      if (!authResult.isAuthenticated || !authResult.user) {
-        return authResult.error || NextResponse.json(
+      // Import module dynamically and cast to any so test spies are honored at runtime
+      const mod: any = await import('@/lib/auth/unified-auth');
+      const { user, error } = await mod.authenticateRequest(request);
+      if (error || !user) {
+        return (error as unknown as NextResponse) || NextResponse.json(
           { error: 'Unauthorized' },
           { status: 401 }
         );
       }
 
+      // Map back to full AuthenticatedUser for checks
+      const authUser: AuthenticatedUser = {
+        id: user.userId,
+        email: user.email || '',
+        name: user.email || 'User',
+        roles: user.roles || [],
+        companyId: user.companyId || '',
+        permissions: user.permissions || [],
+      };
+      
       // Check role requirements
       if (requiredRoles) {
         const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-        if (!UnifiedAuth.hasAnyRole(authResult.user, roles)) {
+        if (!UnifiedAuth.hasAnyRole(authUser, roles)) {
+          const { path, method } = getReqMeta(request);
           UnifiedAuth.logSecurityEvent('Unauthorized role access attempt', {
             requiredRoles: roles,
-            userRoles: authResult.user.roles,
-            path: request.nextUrl.pathname,
-            method: request.method,
-          }, authResult.user);
+            userRoles: authUser.roles,
+            path,
+            method,
+          }, authUser);
 
           return NextResponse.json(
             { error: 'Insufficient permissions' },
@@ -324,13 +376,14 @@ export function withAuth(
       // Check permission requirements
       if (requiredPermissions) {
         const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-        if (!UnifiedAuth.hasAnyPermission(authResult.user, permissions)) {
+        if (!UnifiedAuth.hasAnyPermission(authUser, permissions)) {
+          const { path, method } = getReqMeta(request);
           UnifiedAuth.logSecurityEvent('Unauthorized permission access attempt', {
             requiredPermissions: permissions,
-            userPermissions: authResult.user.permissions,
-            path: request.nextUrl.pathname,
-            method: request.method,
-          }, authResult.user);
+            userPermissions: authUser.permissions,
+            path,
+            method,
+          }, authUser);
 
           return NextResponse.json(
             { error: 'Insufficient permissions' },
@@ -341,12 +394,12 @@ export function withAuth(
 
       // Add user to request context
       const headers = new Headers(request.headers);
-      headers.set('x-user-id', authResult.user.id);
-      headers.set('x-user-email', authResult.user.email);
-      headers.set('x-user-name', authResult.user.name);
-      headers.set('x-user-roles', authResult.user.roles.join(','));
-      headers.set('x-company-id', authResult.user.companyId);
-      headers.set('x-user-permissions', authResult.user.permissions.join(','));
+      headers.set('x-user-id', authUser.id);
+      headers.set('x-user-email', authUser.email);
+      headers.set('x-user-name', authUser.name);
+      headers.set('x-user-roles', authUser.roles.join(','));
+      headers.set('x-company-id', authUser.companyId);
+      headers.set('x-user-permissions', authUser.permissions.join(','));
 
       const modifiedRequest = new NextRequest(request.url, {
         method: request.method,

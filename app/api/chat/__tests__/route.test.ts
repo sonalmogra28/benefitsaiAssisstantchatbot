@@ -1,8 +1,48 @@
+// Hoisted auth/token mocks so the route sees them
+vi.mock('@/lib/auth/unified-auth', () => {
+  const PERMISSIONS = { CHAT_WITH_AI: 'chat_with_ai' };
+  const withAuth = (_roles?: string[] | undefined, _perms?: string[] | undefined) => (handler: any) => async (req: any) => {
+    // If no authorization header, simulate auth failure
+    if (!req?.headers?.get?.('authorization')) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+    // simulate successful auth and attach user to request
+    (req as any).user = {
+      userId: 'u1',
+      email: 'user@example.com',
+      roles: ['employee'],
+      companyId: 'c1',
+    };
+    return handler(req);
+  };
+  const authenticateRequest = vi.fn().mockResolvedValue({
+    user: { userId: 'u1', roles: ['employee'], companyId: 'c1' },
+    error: null,
+  });
+  return { PERMISSIONS, withAuth, authenticateRequest };
+});
+
+vi.mock('@/lib/azure/token-validation', () => ({
+  validateToken: vi.fn().mockResolvedValue({
+    valid: true,
+    user: {
+      id: 'u1',
+      email: 'user@example.com',
+      name: 'Test User',
+      roles: ['employee'],
+      companyId: 'c1',
+      permissions: ['chat_with_ai']
+    }
+  }),
+}));
+
 import { describe, it, expect, vi } from 'vitest';
 import { POST } from '../route';
 import { NextResponse } from 'next/server';
 import { streamText } from 'ai';
 import { ragSystem } from '@/lib/ai/rag-system';
+import * as ChatMod from '@/lib/ai/chat';
+import { simpleChatRouter } from '@/lib/services/simple-chat-router';
 
 const { mockCollection, mockDoc } = vi.hoisted(() => {
   return {
@@ -55,6 +95,12 @@ vi.mock('ai', () => ({
 }));
 
 describe('chat route POST', () => {
+  const makeReq = (body: any = {}) =>
+    new Request('http://localhost/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: 'Bearer fake' },
+      body: JSON.stringify(body),
+    });
   it('returns 401 when headers missing', async () => {
     const req = new Request('http://localhost', {
       method: 'POST',
@@ -65,58 +111,20 @@ describe('chat route POST', () => {
   });
 
   it('returns streamed response when headers present', async () => {
-    const req = new Request('http://localhost', {
-      method: 'POST',
-      headers: {
-        'x-user-id': 'u1',
-        'x-company-id': 'c1',
-        'authorization': 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: 'hi',
-        conversationId: 'conv1',
-      }),
-    });
-    const res = await POST(req as any);
+    const res = await POST(makeReq({ message: 'hi', conversationId: 'conv1' }) as any);
     expect(res.status).toBe(200);
   });
 
   it('returns response without context when RAG empty', async () => {
     (ragSystem.search as any).mockResolvedValueOnce([]);
-    const req = new Request('http://localhost', {
-      method: 'POST',
-      headers: {
-        'x-user-id': 'u1',
-        'x-company-id': 'c1',
-        'authorization': 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: 'hi',
-        conversationId: 'conv1',
-      }),
-    });
-    const res = await POST(req as any);
+    const res = await POST(makeReq({ message: 'hi', conversationId: 'conv1' }) as any);
     expect(res.status).toBe(200);
   });
 
   it('returns 500 on internal error', async () => {
-    (streamText as any).mockRejectedValueOnce(new Error('fail'));
-    const req = new Request('http://localhost', {
-      method: 'POST',
-      headers: {
-        'x-user-id': 'u1',
-        'x-company-id': 'c1',
-        'authorization': 'Bearer test-token',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: 'hi',
-        conversationId: 'conv1',
-      }),
-    });
-    const res = await POST(req as any);
+    // Force the chat layer to throw once in this spec
+    vi.spyOn(simpleChatRouter as any, 'routeMessage').mockRejectedValueOnce(new Error('boom'));
+    const res = await POST(makeReq({ message: 'hi', conversationId: 'conv1' }) as any);
     expect(res.status).toBe(500);
   });
 });

@@ -2,7 +2,6 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
 import { URL } from 'node:url';
-import path from 'path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
@@ -15,41 +14,25 @@ export default defineConfig({
     ],
   },
   test: {
+    environment: 'node',
     globals: true,
-    projects: [
-      {
-        test: {
-          name: 'node',
-          environment: 'node',
-          globals: true,
-          include: [
-            'app/api/**/__tests__/**/*.test.ts',
-            'tests/**/?(*.)+(test).[tj]s',
-          ],
-          exclude: [
-            'tests/routes/**',
-            'tests/e2e/**',
-            'tests/pages/**',
-          ],
-          setupFiles: ['tests/setup.node.ts', 'tests/setup.mocks.ts'],
-        },
-      },
-      {
-        test: {
-          name: 'jsdom',
-          environment: 'jsdom',
-          globals: true,
-          include: ['tests/components/**/?(*.)+(test).[tj]sx'],
-          exclude: [
-            'tests/routes/**',
-            'tests/e2e/**',
-            'tests/pages/**',
-          ],
-          setupFiles: ['tests/setup.jsdom.ts'],
-          environmentOptions: { jsdom: { url: 'http://localhost' } },
-        },
-      },
+    setupFiles: ['tests/setup.ts'],
+    include: [
+      'tests/**/*.test.ts',
+      'tests/**/*.test.tsx',
+      'app/**/__tests__/**/*.test.ts',
+      'lib/**/__tests__/**/*.test.ts',
     ],
+    exclude: [
+      'tests/e2e/**',
+      'tests/db/**',
+      'tests/routes/**',
+      'tests/pages/**',
+    ],
+    environmentMatchGlobs: [
+      ['tests/components/**', 'jsdom'],
+    ],
+    environmentOptions: { jsdom: { url: 'http://localhost' } },
     coverage: { provider: 'v8' },
   },
 });

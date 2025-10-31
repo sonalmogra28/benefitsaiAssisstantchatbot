@@ -1,8 +1,10 @@
-import { DocumentUploadSimple } from '@/components/admin/document-upload-simple';
+import { DocumentUploadSimple } from '../../../../components/admin/document-upload-simple';
+import { DocumentComposer } from '../../../../components/admin/document-composer';
+import { DEFAULT_COMPANY_ID } from '../../../../lib/config';
 
 export default function DocumentUploadPage() {
   // For now, using a default company ID - in production this would come from user context
-  const companyId = 'amerivet-demo'; // Replace with actual company ID logic
+  const companyId = DEFAULT_COMPANY_ID;
 
   return (
     <div className="container mx-auto py-8">
@@ -10,11 +12,21 @@ export default function DocumentUploadPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Upload Documents</h1>
           <p className="text-muted-foreground mt-2">
-            Add benefits documents to the AI knowledge base for better responses.
+            Publish searchable content to the AI knowledge base and upload supporting source documents.
           </p>
         </div>
 
-        <DocumentUploadSimple companyId={companyId} />
+        <div className="space-y-8">
+          <DocumentComposer companyId={companyId} />
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Upload Source Documents</h2>
+            <p className="text-sm text-muted-foreground">
+              Upload PDFs and related files so the ingestion pipeline can chunk, embed, and index them for retrieval augmented generation.
+            </p>
+            <DocumentUploadSimple companyId={companyId} />
+          </div>
+        </div>
 
         <div className="mt-8 p-6 bg-muted rounded-lg">
           <h3 className="text-lg font-semibold mb-4">Document Types to Upload</h3>

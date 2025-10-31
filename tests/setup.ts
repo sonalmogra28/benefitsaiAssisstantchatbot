@@ -5,12 +5,12 @@
 
 import { beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
-import { config as dotenv } from 'dotenv';
 import React from 'react';
-import '@testing-library/jest-dom/vitest';
-
-// Load test environment variables
-dotenv({ path: '.env.test.local' });
+import '@testing-library/jest-dom';
+// --- ensure encoders exist (Node env quirk in some libs)
+import { TextEncoder, TextDecoder } from 'node:util';
+(globalThis as any).TextEncoder = TextEncoder;
+(globalThis as any).TextDecoder = TextDecoder;
 
 // Mock for window.crypto needed by Playwright in a Node environment
 // Set up global window object if it doesn't exist
@@ -82,17 +82,17 @@ vi.mock('@/lib/rate-limit/redis-limiter', () => ({
   rateLimitConfigs: {}
 }));
 
-// 4) Mock logger so tests don't blow up on logging
-vi.mock('@/lib/logger', () => ({
-  logger: { 
-    info: vi.fn(), 
-    warn: vi.fn(), 
-    error: vi.fn(), 
+// 4) Mock logger so tests don't blow up on logging (provide default and named)
+vi.mock('@/lib/logger', () => {
+  const logger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
     debug: vi.fn(),
-    auditEvent: vi.fn()
-  },
-  logError: vi.fn()
-}));
+    auditEvent: vi.fn(),
+  };
+  return { logger, logError: vi.fn(), default: logger };
+});
 
 // 5) Mock Application Insights SDK to prevent it from initializing in tests
 vi.mock('@microsoft/applicationinsights-web', () => {
@@ -116,63 +116,73 @@ vi.mock('@/lib/services/analytics', () => ({
   },
 }));
 
-// Mock Azure services
-vi.mock('@/lib/azure/cosmos', () => ({
-  cosmosClient: {
-    database: vi.fn(() => ({
-      container: vi.fn(() => ({
-        items: {
-          create: vi.fn(),
-          read: vi.fn(),
-          upsert: vi.fn(),
-          delete: vi.fn(),
-          query: vi.fn()
-        }
+// Mock Azure services (Cosmos)
+vi.mock('@/lib/azure/cosmos', () => {
+  // simple in-memory container mock
+  const store = new Map<string, any>();
+  const container = {
+    item: (id: string) => ({
+      read: async () => ({ resource: store.get(id) || null }),
+      replace: async (resource: any) => {
+        store.set(id, resource);
+        return { resource };
+      },
+      delete: vi.fn(),
+    }),
+    items: {
+      create: async (resource: any) => {
+        store.set(resource.id, resource);
+        return { resource };
+      },
+      query: vi.fn(() => ({
+        fetchAll: async () => ({ resources: Array.from(store.values()) })
+      })),
+    },
+  };
+
+  return {
+    getClient: vi.fn(async () => ({
+      database: vi.fn(() => ({
+        container: vi.fn(() => container)
       }))
-    }))
-  },
-  getRepositories: vi.fn(() => ({
-    users: {
-      create: vi.fn(),
-      get: vi.fn(),
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn()
-    },
-    companies: {
-      create: vi.fn(),
-      get: vi.fn(),
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn()
-    },
-    documents: {
-      create: vi.fn(),
-      get: vi.fn(),
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn()
-    },
-    chats: {
-      create: vi.fn(),
-      get: vi.fn(),
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn()
-    },
-    searchIndex: {
-      create: vi.fn(),
-      get: vi.fn(),
-      list: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      query: vi.fn()
+    })),
+    getRepositories: vi.fn(() => ({
+      users: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      companies: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      documents: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      chats: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      searchIndex: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      benefits: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      faqs: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      documentChunks: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      messages: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+      notifications: { create: vi.fn(), get: vi.fn(), list: vi.fn(), update: vi.fn(), delete: vi.fn(), query: vi.fn() },
+    })),
+  };
+});
+
+// --- mock RAG retrieval to “empty” (satisfy any RAG callers)
+vi.mock('@/lib/rag/retrieve', () => ({
+  retrieveRelevantChunks: vi.fn().mockResolvedValue([]),
+}));
+
+// --- mock AI chat runner to a plain 200 Response (unused by our route, harmless)
+vi.mock('@/lib/ai/chat', () => ({
+  streamChat: vi.fn().mockResolvedValue(
+    new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } })
+  ),
+  runChat: vi.fn().mockResolvedValue(
+    new Response('ok', { status: 200, headers: { 'content-type': 'text/plain' } })
+  ),
+}));
+
+// If some libs expect StreamingTextResponse from 'ai', provide a stub
+vi.mock('ai', () => ({
+  StreamingTextResponse: class extends Response {
+    constructor(_stream: any, init?: any) {
+      super('ok', { status: 200, ...(init || {}) });
     }
-  }))
+  },
 }));
 
 // Mock Azure storage
@@ -187,32 +197,23 @@ vi.mock('@/lib/azure/storage', () => ({
   }))
 }));
 
-// Mock authentication
-// Mock unified-auth for API route tests
-vi.mock('@/lib/auth/unified-auth', () => ({
-  UnifiedAuth: {
-    authenticateRequest: vi.fn().mockResolvedValue({
-      user: { id: 'u1', companyId: 'c1', roles: ['employee'] },
-      error: null,
-      isAuthenticated: true
-    }),
-    hasRole: vi.fn().mockReturnValue(true),
-    hasPermission: vi.fn().mockReturnValue(true),
-    hasAnyRole: vi.fn().mockReturnValue(true),
-    hasAnyPermission: vi.fn().mockReturnValue(true),
-    canAccessCompany: vi.fn().mockReturnValue(true),
-    getPermissionsForRole: vi.fn().mockReturnValue(['view_benefits', 'chat_with_ai']),
-    requireRole: vi.fn(),
-    requirePermission: vi.fn(),
-    logSecurityEvent: vi.fn()
-  },
-  withAuth: vi.fn((roles, permissions) => (handler) => handler),
-  requireSuperAdmin: vi.fn((handler) => handler),
-  requirePlatformAdmin: vi.fn((handler) => handler),
-  requireCompanyAdmin: vi.fn((handler) => handler),
-  requireHRAdmin: vi.fn((handler) => handler),
-  requireEmployee: vi.fn((handler) => handler)
+// 2) Mock token validation globally so route tests stop 401-ing
+vi.mock('@/lib/azure/token-validation', () => ({
+  validateToken: vi.fn().mockResolvedValue({
+    valid: true,
+    user: {
+      id: 'u1',
+      email: 'user@example.com',
+      name: 'Test User',
+      roles: ['employee'],
+      companyId: 'c1',
+      permissions: ['view_benefits', 'chat_with_ai']
+    }
+  }),
 }));
+
+// 3) If some utils branch on process.env, stub minimal vars here
+vi.stubEnv('NODE_ENV', 'test');
 
 // --- Web Crypto polyfills for jsdom / playwright-core ---
 import nodeCrypto from 'node:crypto';
@@ -241,7 +242,6 @@ if (!(globalThis.crypto as any).randomUUID) {
 // Global test setup
 beforeAll(() => {
   // Setup test environment
-  process.env.NODE_ENV = 'test';
   process.env.AZURE_COSMOS_ENDPOINT = 'https://test.documents.azure.com:443/';
   process.env.AZURE_COSMOS_KEY = 'test-key';
   process.env.OPENAI_API_KEY = 'test-key';
@@ -261,6 +261,7 @@ afterEach(() => {
   // Cleanup after each test
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
 });
 
 // Test utilities

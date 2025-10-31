@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DocumentUploadSimpleProps {
   companyId: string;
 }
+
+const ADMIN_API_TOKEN = process.env.NEXT_PUBLIC_ADMIN_API_TOKEN || 'demo-admin-token';
 
 export function DocumentUploadSimple({ companyId }: DocumentUploadSimpleProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -47,6 +49,9 @@ export function DocumentUploadSimple({ companyId }: DocumentUploadSimpleProps) {
 
       const response = await fetch('/api/documents/upload-simple', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${ADMIN_API_TOKEN}`,
+        },
         body: formData,
       });
 

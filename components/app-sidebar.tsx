@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PlusIcon, UserIcon } from 'lucide-react';
+import Image from 'next/image';
 
 import { SidebarHistory } from '@/components/sidebar-history';
 import { SidebarUserNav } from '@/components/sidebar-user-nav';
@@ -34,6 +35,14 @@ export function AppSidebar() {
               }}
               className="flex flex-row gap-3 items-center"
             >
+              <Image
+                src="/brand/amerivet-logo.png"
+                alt="Amerivet"
+                width={40}
+                height={40}
+                className="h-8 w-auto"
+                priority
+              />
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
                 Benefits AI Assistant
               </span>

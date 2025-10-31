@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/auth-context';
+import dynamic from 'next/dynamic';
+import { useAuth } from '../../context/auth-context';
 import { useRouter } from 'next/navigation';
-import { logger } from '@/lib/logger';
+import { logger } from '../../lib/logger';
 
 import {
   Card,
@@ -11,10 +12,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+} from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Badge } from '../../components/ui/badge';
 import {
   Users,
   FileText,
@@ -29,6 +30,18 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
+
+const BenefitsDashboard = dynamic(
+  () => import('../../components/benefits-dashboard').then((mod) => mod.BenefitsDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+        Loading benefits insights...
+      </div>
+    ),
+  },
+);
 
 interface SystemStats {
   totalUsers: number;
@@ -314,6 +327,16 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Benefits Snapshot</CardTitle>
+              <CardDescription>Live employee metrics powered by the benefits API</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BenefitsDashboard />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="activity" className="space-y-4">

@@ -1,5 +1,6 @@
-import { logger } from '@/lib/logger';
-import { azureADB2CUserService, type CreateUserRequest } from '@/lib/azure/azure-ad-b2c-user-service';
+import { logger } from '../logger';
+import { azureADB2CUserService, type CreateUserRequest } from '../azure/azure-ad-b2c-user-service';
+import { DEFAULT_COMPANY_ID } from '../config';
 
 export interface AdminAuthClaims {
   uid: string;
@@ -20,7 +21,7 @@ export class AdminAuth {
         uid: 'admin-user-id',
         email: 'admin@example.com',
         role: 'super_admin',
-        companyId: 'default-company'
+        companyId: DEFAULT_COMPANY_ID,
       };
     } catch (error) {
       logger.error('Failed to verify admin session', { data: error as Error });
@@ -37,7 +38,7 @@ export class AdminAuth {
         uid: 'admin-user-id',
         email: 'admin@example.com',
         role: 'super_admin',
-        companyId: 'default-company'
+        companyId: DEFAULT_COMPANY_ID,
       };
     } catch (error) {
       logger.error('Failed to verify admin ID token', { data: error as Error });
@@ -108,7 +109,7 @@ export class AdminAuth {
         uid: user.id,
         email: user.mail,
         role: 'employee', // Default role, would be extracted from custom attributes
-        companyId: 'default-company' // Would be extracted from custom attributes
+        companyId: DEFAULT_COMPANY_ID, // Would be extracted from custom attributes
       };
     } catch (error) {
       logger.error('Failed to get user by email', { 

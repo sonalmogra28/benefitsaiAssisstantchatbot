@@ -27,6 +27,8 @@ npm run dev
 | `npm run lint` | ESLint sanity check |
 | `npm run typecheck` | TypeScript strict mode |
 | `npm run test` | Unit/integration tests (Vitest) |
+| `npm run verify:production` | Audit required production env vars before deploy |
+| `npm run load:test` | Execute k6 load test scenarios (requires k6 CLI) |
 
 ## 4. Environment Management
 - All secrets live in Vercel project settings.
@@ -65,3 +67,19 @@ Trigger rollback from Vercel UI by promoting the last green deployment. Ensure e
 - Installed pre-push secret scan hook at `.git/hooks/pre-push`.
 
 Next: run validation (typecheck, lint, build) and smoke-test endpoints locally.
+
+## 9. Azure Infrastructure-as-Code
+- `infra/azure/main.bicep` provisions Cosmos DB (containers + autoscale), Azure OpenAI, Azure AI Search, Blob Storage, Redis, Log Analytics, and Application Insights in a single deployment.
+- `infra/azure/parameters/prod.parameters.json` contains production-ready naming conventions—adjust before running the deployment.
+- Deploy via Azure CLI:
+   ```bash
+   az deployment group create \
+      --resource-group <rg-name> \
+      --template-file infra/azure/main.bicep \
+      --parameters @infra/azure/parameters/prod.parameters.json
+   ```
+
+## 10. Load, UAT, and Experimentation
+- `npm run load:test` executes `tests/load/k6-rag-scenarios.js` to validate L1/L2/L3 tiers under load (ensure the [k6](https://k6.io) CLI is installed).
+- `tests/uat/test-matrix.yaml` captures the full UAT runbook (Employee → Super Admin journeys) plus one approved A/B experiment.
+- Collect artifacts (`k6` summary, UAT execution log, Vercel deploy audit, Azure Monitor exports) before granting production sign-off.

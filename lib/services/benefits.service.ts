@@ -2,6 +2,16 @@
 import { getRepositories } from '@/lib/azure/cosmos';
 import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  amerivetBenefits2024_2025,
+  getPlanById,
+  getPlansByRegion as getCatalogPlansByRegion,
+  isEligibleForPlan,
+} from '@/lib/data/amerivet';
+// Derive local types from the catalog instance to avoid path/type export issues
+type BenefitPlan = (typeof amerivetBenefits2024_2025)['medicalPlans'][number];
+type OpenEnrollment = (typeof amerivetBenefits2024_2025)['openEnrollment'];
+type EligibilityRules = (typeof amerivetBenefits2024_2025)['eligibility'];
 
 export interface BenefitsQuery {
   region?: string;
@@ -37,7 +47,8 @@ export class BenefitsService {
   private benefitsRepository: any = null;
 
   private async initializeRepository() {
-    if (this.messagesRepository || this.benefitsRepository || this.auditRepository || this.trackingRepository) return;
+    // Initialize on first use; keep lightweight for unit tests
+    if (this.benefitsRepository) return;
     try {
     const repositories = await getRepositories();
     this.benefitsRepository = repositories.benefits;
@@ -100,7 +111,6 @@ export class BenefitsService {
         ...existingPlan,
         ...updates,
         id: planId, // Ensure ID doesn't change
-        updatedAt: new Date()
       };
 
       await this.benefitsRepository.update(planId, updatedPlan, companyId);
@@ -293,12 +303,17 @@ export class BenefitsService {
       }
 
       const monthlyAmount = plan.tiers[tier];
-      const biweeklyAmount = calculatePremium(planId, tier, 'biweekly');
-      const annualAmount = monthlyAmount * 12;
+      if (typeof monthlyAmount !== 'number') {
+        logger.warn({ planId, tier }, 'Tier not available for premium calculation');
+        return null;
+      }
+
+      const biweeklyAmount = Number(((monthlyAmount * 12) / 26).toFixed(2));
+      const annualAmount = Number((monthlyAmount * 12).toFixed(2));
 
       const calculation: PremiumCalculation = {
         planId,
-        tier,
+        tier: tier as PremiumCalculation['tier'],
         monthlyAmount,
         biweeklyAmount,
         annualAmount,
@@ -408,7 +423,7 @@ export class BenefitsService {
    */
   async getPlansByRegion(region: string): Promise<BenefitPlan[]> {
     try {
-      const plans = getPlansByRegion(region);
+      const plans = getCatalogPlansByRegion(region);
       
       logger.info({
         region,
@@ -434,7 +449,7 @@ export class BenefitsService {
         plan.name.toLowerCase().includes(searchTerm) ||
         plan.provider.toLowerCase().includes(searchTerm) ||
         plan.type.toLowerCase().includes(searchTerm) ||
-        plan.features.some(feature => feature.toLowerCase().includes(searchTerm))
+        plan.features.some((feature: string) => feature.toLowerCase().includes(searchTerm))
       );
 
       logger.info({
@@ -475,10 +490,10 @@ export class BenefitsService {
   async getPlanTypes(): Promise<string[]> {
     try {
       const planTypes = [...new Set([
-        ...amerivetBenefits2024_2025.medicalPlans.map(p => p.type),
+        ...amerivetBenefits2024_2025.medicalPlans.map((p: BenefitPlan) => p.type),
         amerivetBenefits2024_2025.dentalPlan.type,
         amerivetBenefits2024_2025.visionPlan.type,
-        ...amerivetBenefits2024_2025.voluntaryPlans.map(p => p.type),
+        ...amerivetBenefits2024_2025.voluntaryPlans.map((p: BenefitPlan) => p.type),
         'voluntary' // Add voluntary as a separate type for test compatibility
       ])];
 
@@ -497,10 +512,10 @@ export class BenefitsService {
   async getProviders(): Promise<string[]> {
     try {
       const providers = [...new Set([
-        ...amerivetBenefits2024_2025.medicalPlans.map(p => p.provider),
+        ...amerivetBenefits2024_2025.medicalPlans.map((p: BenefitPlan) => p.provider),
         amerivetBenefits2024_2025.dentalPlan.provider,
         amerivetBenefits2024_2025.visionPlan.provider,
-        ...amerivetBenefits2024_2025.voluntaryPlans.map(p => p.provider)
+        ...amerivetBenefits2024_2025.voluntaryPlans.map((p: BenefitPlan) => p.provider)
       ])];
 
       logger.info({ providers }, 'Providers retrieved');

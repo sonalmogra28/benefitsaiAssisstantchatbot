@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useWindowSize } from 'usehooks-ts';
 
 import { ModelSelector } from '@/components/model-selector';
@@ -33,6 +34,16 @@ function PureChatHeader({
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
       <SidebarToggle />
+
+      <div className="hidden md:flex items-center gap-2 pr-2 border-r border-border/60 mr-2">
+        <Image
+          src="/brand/amerivet-logo.png"
+          alt="Amerivet"
+          width={112}
+          height={32}
+          className="h-8 w-auto"
+        />
+      </div>
 
       {(!open || windowWidth < 768) && (
         <Tooltip>

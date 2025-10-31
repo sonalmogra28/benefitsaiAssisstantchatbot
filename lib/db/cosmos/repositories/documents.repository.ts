@@ -9,11 +9,9 @@
  * - Business logic encapsulation
  * - Audit trail integration
  */
-
 import { CosmosContainers } from '../client';
 import { CosmosOperations, buildQuery, PaginatedResult } from '../operations';
 import { v4 as uuidv4 } from 'uuid';
-
 /**
  * Document interface matching Cosmos schema
  */
