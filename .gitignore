@@ -45,7 +45,52 @@ data/
 # sensitive files
 .env
 users.json
+node_modules/
+.next/
+.next/cache/
+out/
+dist/
+build/
+coverage/
+.vercel/
 
+logs/
+*.log
+*.pid
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+*.msi
+*.exe
+*.zip
+*.7z
+*.tar
+*.gz
+*.pdf
+*.docx
+*.xlsx
+
+tmp/
+temp/
+.cache/
+
+# Project-specific artifacts
+firebase-debug.log*
+.firebase/
+service-account.json
+service-account-key.json
+users.json
+scripts/simple-upload.ps1
+scripts/upload-amerivet-docs.ps1
+scripts/upload-pdfs.ps1
+scripts/upload-training-data.ps1
 # VS Code launch configurations (may contain secrets)
 .vscode/launch.json
 
@@ -56,4 +101,3 @@ scripts/upload-pdfs.ps1
 scripts/upload-training-data.ps1
 *.msi
 .firebase/hosting.Lm5leHQ.cache
-*.md
