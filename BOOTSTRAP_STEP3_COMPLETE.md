@@ -151,13 +151,13 @@ Verification Complete
 # ============================================================================
 
 # Azure Cosmos DB
-AZURE_COSMOS_CONNECTION_STRING="AccountEndpoint=https://benefits-chatbot-cosmos-dev.documents.azure.com:443/;AccountKey=..."
+AZURE_COSMOS_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 AZURE_COSMOS_ENDPOINT="https://benefits-chatbot-cosmos-dev.documents.azure.com:443/"
 AZURE_COSMOS_DATABASE="BenefitsDB"
 
 # Azure Redis Cache
-REDIS_URL="rediss://:PRIMARY_KEY@benefits-chatbot-redis-dev.redis.cache.windows.net:6380"
-RATE_LIMIT_REDIS_URL="rediss://:PRIMARY_KEY@benefits-chatbot-redis-dev.redis.cache.windows.net:6380"
+REDIS_URL="rediss://benefits-chatbot-redis-dev.redis.cache.windows.net:6380"
+RATE_LIMIT_REDIS_URL="rediss://benefits-chatbot-redis-dev.redis.cache.windows.net:6380"
 
 # Azure Cognitive Search
 AZURE_SEARCH_ENDPOINT="https://benefits-chatbot-search-dev.search.windows.net"
@@ -165,7 +165,7 @@ AZURE_SEARCH_KEY="ADMIN_KEY"
 AZURE_SEARCH_INDEX_NAME="benefits-documents"
 
 # Azure Storage
-AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=benefitschatbotdev;AccountKey=...;EndpointSuffix=core.windows.net"
+AZURE_STORAGE_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 AZURE_STORAGE_ACCOUNT_NAME="benefitschatbotdev"
 
 # Azure OpenAI (Manual: Create in portal if needed)

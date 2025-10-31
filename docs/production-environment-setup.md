@@ -26,7 +26,8 @@ ENCRYPTION_KEY=amerivet-encryption-2024-32-char-key
 
 # Database Configuration
 DATABASE_URL=postgresql://username:password@host:5432/benefits_chatbot
-REDIS_URL=redis://username:password@host:6379
+REDIS_URL=redis+tls://host:6380
+Note: supply the password out-of-band via secrets manager or environment variables.
 CACHE_TTL=600
 MAX_CONNECTIONS=20
 

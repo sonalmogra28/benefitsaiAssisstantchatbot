@@ -569,14 +569,14 @@ AZURE_OPENAI_DEPLOYMENT_L3=gpt-4
 AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-ada-002
 
 # Redis Cache
-REDIS_URL=rediss://:key@host:6380
-RATE_LIMIT_REDIS_URL=rediss://:key@host:6380
+REDIS_URL=rediss://host:6380
+RATE_LIMIT_REDIS_URL=rediss://host:6380
 
 # Cosmos DB (optional, for doc registry)
-AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=...
+AZURE_COSMOS_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 
 # Storage (ingestion)
-AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;...
+AZURE_STORAGE_CONNECTION_STRING=USE_KEYVAULT_OR_CI
 ```
 
 ---
