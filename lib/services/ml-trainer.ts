@@ -252,13 +252,8 @@ export class MLTrainer {
 
       features.push(combinedFeatures);
       labels.push({ 
-<<<<<<< HEAD
-        responseType: data.expectedResponseType, 
-        complexity: data.expectedComplexity,
-=======
         responseType: data.responseType, 
         complexity: data.complexity,
->>>>>>> main
         category: data.category || 'general'
       });
     }
@@ -335,11 +330,7 @@ export class MLTrainer {
 
       // Trigger retraining if we have enough new data
       if (Math.random() < 0.1) { // 10% chance to retrain
-<<<<<<< HEAD
-        await this.retrainAndSave();
-=======
         await this.retrainModel();
->>>>>>> main
       }
     } catch (error) {
       logger.error('Failed to learn from interaction', { error });

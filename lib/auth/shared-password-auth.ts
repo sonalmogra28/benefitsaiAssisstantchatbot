@@ -24,15 +24,10 @@ export interface SharedPasswordAuthResult {
 }
 
 export class SharedPasswordAuth {
-<<<<<<< HEAD
-  private static readonly SHARED_PASSWORD_HASH = process.env.SHARED_PASSWORD_HASH || 
-    this.hashPassword('benefits2024!'); // Default password for demo
-=======
   private static readonly EMPLOYEE_PASSWORD_HASH = process.env.SHARED_PASSWORD_HASH || 
     this.hashPassword('amerivet2024!'); // Employee password
   private static readonly ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || 
     this.hashPassword('admin2024!'); // Admin password
->>>>>>> main
   private static readonly SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
   private static readonly MAX_ATTEMPTS = 5;
   private static readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
@@ -82,10 +77,6 @@ export class SharedPasswordAuth {
         };
       }
 
-<<<<<<< HEAD
-      // Verify password
-      if (!this.verifyPassword(password, this.SHARED_PASSWORD_HASH)) {
-=======
       // Verify password and determine role
       let userRole: string;
       let userPermissions: string[];
@@ -103,7 +94,6 @@ export class SharedPasswordAuth {
         userRole = 'employee';
         userPermissions = ['VIEW_BENEFITS', 'COMPARE_PLANS', 'CALCULATE_COSTS'];
       } else {
->>>>>>> main
         await this.recordFailedAttempt(request);
         return {
           user: null,
@@ -118,19 +108,11 @@ export class SharedPasswordAuth {
       // Create user session
       const user: SharedPasswordUser = {
         id: `shared-${Date.now()}`,
-<<<<<<< HEAD
-        email: userInfo?.email || 'demo@benefits.com',
-        name: userInfo?.name || 'Demo User',
-        companyId: userInfo?.companyId || 'demo-company',
-        roles: ['employee'],
-        permissions: ['VIEW_BENEFITS', 'COMPARE_PLANS', 'CALCULATE_COSTS'],
-=======
         email: userInfo?.email || (userRole === 'company-admin' ? 'admin@amerivet.com' : 'demo@benefits.com'),
         name: userInfo?.name || (userRole === 'company-admin' ? 'Admin User' : 'Demo User'),
         companyId: userInfo?.companyId || 'amerivet',
         roles: [userRole],
         permissions: userPermissions,
->>>>>>> main
         isSharedPassword: true,
       };
 
@@ -319,9 +301,6 @@ export class SharedPasswordAuth {
     retryAfter?: number;
   }> {
     const ip = this.getClientIP(request);
-<<<<<<< HEAD
-    const key = `password_attempts:${ip}`;
-=======
 >>>>>>> main
     
     // This would typically use Redis, but for simplicity, we'll use a simple in-memory store
@@ -375,39 +354,3 @@ export class SharedPasswordAuth {
 
   // Simple in-memory storage for demo purposes
   // In production, use Redis or database
-<<<<<<< HEAD
-  private static failedAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
-=======
-  private static readonly failedAttempts: Map<string, { count: number; lastAttempt: number }> = new Map();
->>>>>>> main
-
-  private static getFailedAttempts(ip: string): number {
-    const attempts = this.failedAttempts.get(ip);
-    return attempts?.count || 0;
-  }
-
-  private static getLastAttemptTime(ip: string): number {
-    const attempts = this.failedAttempts.get(ip);
-    return attempts?.lastAttempt || 0;
-  }
-
-  private static incrementFailedAttempts(ip: string): void {
-    const attempts = this.failedAttempts.get(ip) || { count: 0, lastAttempt: 0 };
-    attempts.count += 1;
-    attempts.lastAttempt = Date.now();
-    this.failedAttempts.set(ip, attempts);
-  }
-
-  private static resetFailedAttempts(ip: string): void {
-    this.failedAttempts.delete(ip);
-  }
-
-  /**
-   * Logout user
-   */
-  static logout(): NextResponse {
-    const response = NextResponse.json({ success: true });
-    response.cookies.delete('shared-session');
-    return response;
-  }
-}

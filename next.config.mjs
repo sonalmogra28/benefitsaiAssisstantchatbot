@@ -2,11 +2,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-<<<<<<< HEAD
-    output: 'standalone',
-=======
-    // output: 'standalone', // Commented out to fix build issues
->>>>>>> main
     eslint: {
       ignoreDuringBuilds: true,
     },
@@ -27,8 +22,6 @@ const nextConfig = {
         },
       ],
     },
-    // Removed deprecated experimental.turbo - using turbopack instead
-    // turbopack: true, // Only enable if needed
     env: {
       CUSTOM_KEY: process.env.CUSTOM_KEY,
     },
@@ -39,8 +32,6 @@ const nextConfig = {
     httpAgentOptions: {
       keepAlive: true,
     },
-<<<<<<< HEAD
-=======
     webpack: (config, { isServer }) => {
       if (isServer) {
         // Add polyfills for server-side rendering
@@ -55,7 +46,6 @@ const nextConfig = {
       
       return config;
     },
->>>>>>> main
   };
 
 export default nextConfig;

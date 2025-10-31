@@ -1,14 +1,7 @@
-<<<<<<< HEAD
-import { createClient, RedisClientType } from 'redis';
-import { OpenAI } from 'openai';
-import { logger } from '@/lib/logger';
-// import { advancedMLService } from './advanced-ml-service';
-=======
 import { getRedisClient, getOpenAIClient } from '@/lib/services/service-factory';
 import { logger } from '@/lib/logger';
 import { LangChainProcessor } from './langchain-processor';
 import { VectorSearchService } from './vector-search-service';
->>>>>>> main
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -16,21 +9,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-<<<<<<< HEAD
-=======
-type ResponseType = 'pattern' | 'cache' | 'llm' | 'rag';
-
->>>>>>> main
-interface CachedResponse {
-  content: string;
-  confidence: number;
-  timestamp: Date;
-  queryHash: string;
-<<<<<<< HEAD
-  responseType: 'pattern' | 'cache' | 'llm' | 'rag';
-=======
   responseType: ResponseType;
->>>>>>> main
 }
 
 interface QuestionPattern {
@@ -48,15 +27,6 @@ interface CacheLayer {
 }
 
 export class SmartChatRouter {
-<<<<<<< HEAD
-  private readonly redis: RedisClientType;
-  private readonly openai: OpenAI | null;
-  private readonly patterns: QuestionPattern[];
-  private readonly cacheExpiry = 24 * 60 * 60; // 24 hours
-
-  // Stats & diagnostics
-  private stats = {
-=======
   private redis: any = null;
   private openai: any = null;
   private readonly patterns: QuestionPattern[];
@@ -66,7 +36,6 @@ export class SmartChatRouter {
 
   // Stats & diagnostics
   private readonly stats = {
->>>>>>> main
     totalRequests: 0,
     cacheHits: 0,
     patternCount: 0,
@@ -75,11 +44,7 @@ export class SmartChatRouter {
     latency: { cache: 0, pattern: 0, llm: 0, rag: 0 },
     counts: { cache: 0, pattern: 0, llm: 0, rag: 0 },
     modelUsage: { 'gpt-3.5-turbo': 0, 'gpt-4': 0, 'gpt-4-turbo': 0, 'gpt-4.5-turbo': 0 }
-<<<<<<< HEAD
-  } as const;
-=======
   };
->>>>>>> main
 
   private lastMeta: {
     route: 'cache' | 'pattern' | 'llm' | 'rag';
@@ -125,52 +90,6 @@ export class SmartChatRouter {
   }
 
   constructor() {
-<<<<<<< HEAD
-    // Initialize Redis with error handling
-    try {
-      this.redis = createClient({ 
-        url: process.env.REDIS_URL || 'redis://localhost:6379'
-      });
-      
-      this.redis.on('error', (err) => {
-        console.warn('Redis connection error:', err.message);
-      });
-
-      this.redis.on('connect', () => {
-        console.log('✅ Redis connected successfully');
-      });
-
-      // Connect asynchronously
-      this.redis.connect().catch(err => {
-        console.warn('Redis connection failed:', err.message);
-      });
-    } catch (error) {
-      console.warn('Redis initialization failed, continuing without cache:', error);
-      // Create a mock Redis instance for graceful degradation
-      this.redis = {
-        get: async () => null,
-        set: async () => 'OK',
-        del: async () => 0,
-        disconnect: async () => {},
-      } as any;
-    }
-
-    // Initialize OpenAI (only if API key is available)
-    const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        baseURL: process.env.AZURE_OPENAI_ENDPOINT || undefined,
-        defaultQuery: { 'api-version': process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview' },
-        defaultHeaders: {
-          'api-key': apiKey,
-        },
-      });
-    } else {
-      this.openai = null;
-    }
-
-=======
     // Initialize services lazily - no immediate connections
     this.redis = null;
     this.openai = null;
@@ -179,169 +98,11 @@ export class SmartChatRouter {
     this.langChainProcessor = new LangChainProcessor();
     this.vectorSearchService = new VectorSearchService();
     
->>>>>>> main
     // Initialize question patterns
     this.patterns = this.initializePatterns();
   }
 
-<<<<<<< HEAD
-=======
-  // Lazy initialization methods
-  private async getRedis(): Promise<any> {
-    if (!this.redis) {
-      try {
-        this.redis = await getRedisClient();
-        logger.info('Redis client initialized successfully');
-      } catch (error) {
-        logger.warn('Redis initialization failed, using fallback:', error);
-        this.redis = {
-          get: async () => null,
-          set: async () => 'OK',
-          setEx: async () => 'OK',
-          del: async () => 0,
-          disconnect: async () => {},
-        };
-      }
-    }
-    return this.redis;
-  }
-
-  private async getOpenAI(): Promise<any> {
-    if (!this.openai) {
-      try {
-        this.openai = await getOpenAIClient();
-        logger.info('OpenAI client initialized successfully');
-      } catch (error) {
-        logger.warn('OpenAI initialization failed, using fallback:', error);
-        this.openai = {
-          chat: {
-            completions: {
-              create: async () => ({
-                choices: [{ message: { content: 'AI service temporarily unavailable' } }],
-              }),
-            },
-          },
-        };
-      }
-    }
-    return this.openai;
-  }
-
->>>>>>> main
-  private initializePatterns(): QuestionPattern[] {
-    return [
-      // HSA Questions
-      {
-        keywords: ['hsa', 'health savings', 'investment', 'contribution', 'tax'],
-        response: 'hsa_detailed',
-        confidence: 0.9,
-        category: 'hsa'
-      },
-      {
-        keywords: ['hsa limit', 'contribution limit', 'max hsa'],
-        response: 'hsa_limits',
-        confidence: 0.95,
-        category: 'hsa'
-      },
-      {
-        keywords: ['hsa investment', 'invest hsa', 'hsa funds'],
-        response: 'hsa_investment',
-        confidence: 0.9,
-        category: 'hsa'
-      },
-
-      // Kaiser Questions
-      {
-        keywords: ['kaiser', 'hmo', 'permanente', 'copay'],
-        response: 'kaiser_detailed',
-        confidence: 0.9,
-        category: 'kaiser'
-      },
-      {
-        keywords: ['kaiser standard', 'kaiser enhanced', 'kaiser difference'],
-        response: 'kaiser_comparison',
-        confidence: 0.95,
-        category: 'kaiser'
-      },
-
-      // Dental Questions
-      {
-        keywords: ['dental', 'teeth', 'orthodontia', 'dentist'],
-        response: 'dental_detailed',
-        confidence: 0.9,
-        category: 'dental'
-      },
-      {
-        keywords: ['dhmo', 'dppo', 'dental network'],
-        response: 'dental_plans',
-        confidence: 0.9,
-        category: 'dental'
-      },
-
-      // Vision Questions
-      {
-        keywords: ['vision', 'eye', 'glasses', 'contacts', 'lasik', 'orthodontics', 'teenager', 'spouse'],
-        response: 'vision_detailed',
-        confidence: 0.9,
-        category: 'vision'
-      },
-
-      // Cost Questions
-      {
-        keywords: ['cost', 'price', 'calculator', 'compare', 'total cost', 'family', 'spouse', 'kids', 'children', 'coverage'],
-        response: 'cost_calculator',
-        confidence: 0.9,
-        category: 'cost'
-      },
-
-      // General Help
-      {
-        keywords: ['help', 'benefits', 'enrollment', 'what can you do'],
-        response: 'general_help',
-        confidence: 0.8,
-        category: 'general'
-      },
-
-      // Document Analysis
-      {
-        keywords: ['attached', 'pdf', 'document', 'upload', 'analyze'],
-        response: 'document_analysis',
-        confidence: 0.9,
-        category: 'document'
-      }
-    ];
-  }
-
-  async routeMessage(message: string, attachments?: any[]): Promise<CachedResponse> {
-    const started = Date.now();
-    this.stats.totalRequests++;
-    try {
-      const queryHash = this.generateQueryHash(message);
-      // 1) Try cache
-      let route: 'cache' | 'pattern' | 'llm' | 'rag' = 'pattern';
-      let cacheHit = false;
-      const cached = await this.getCachedResponse(queryHash);
-      if (cached) {
-        cacheHit = true;
-        route = 'cache';
-        this.stats.cacheHits++;
-        this.stats.counts.cache++;
-        const latencyMs = Date.now() - started;
-        this.stats.latency.cache += latencyMs;
-        this.lastMeta = { route, cacheHit, model: null, latencyMs };
-        console.log(`[CACHE HIT] key=${queryHash} ttl=${this.cacheExpiry}s`);
-        cached.content = cached.content.replace(/\*\*/g, '').replace(/\*/g, '');
-        return cached;
-      }
-
-      // 2) Decide route (pattern vs llm vs rag)
-      const decision = this.determineQueryType(message, attachments);
-      let result: CachedResponse;
-<<<<<<< HEAD
-      let model: 'gpt-3.5-turbo' | 'gpt-4' | 'gpt-4-turbo' | null = null;
-=======
       let model: 'gpt-3.5-turbo' | 'gpt-4' | 'gpt-4-turbo' | 'gpt-4.5-turbo' | null = null;
->>>>>>> main
 
       if (decision === 'document_analysis') {
         route = 'rag';
@@ -719,12 +480,8 @@ Would you like me to elaborate on any of these recommendations or help you compa
 
   private async getCachedResponse(queryHash: string): Promise<CachedResponse | null> {
     try {
-<<<<<<< HEAD
-      const cached = await this.redis.get(`chat:${queryHash}`);
-=======
       const redis = await this.getRedis();
       const cached = await redis.get(`chat:${queryHash}`);
->>>>>>> main
       if (cached) {
         const parsed = JSON.parse(cached);
         // Check if cache is still valid
@@ -741,12 +498,8 @@ Would you like me to elaborate on any of these recommendations or help you compa
 
   private async cacheResponse(queryHash: string, response: CachedResponse): Promise<void> {
     try {
-<<<<<<< HEAD
-      await this.redis.setEx(
-=======
       const redis = await this.getRedis();
       await redis.setEx(
->>>>>>> main
         `chat:${queryHash}`,
         this.cacheExpiry,
         JSON.stringify(response)
@@ -851,16 +604,11 @@ Would you like me to elaborate on any of these recommendations or help you compa
     attachments?: any[]
   ): Promise<CachedResponse> {
     
-<<<<<<< HEAD
-    // If no OpenAI client available, fall back to pattern matching
-    if (!this.openai) {
-=======
     // Get OpenAI client with fallback
     const openai = await this.getOpenAI();
     
     // If no OpenAI client available, fall back to pattern matching
     if (!openai) {
->>>>>>> main
       logger.info('No OpenAI API key available, using enhanced pattern matching');
       return {
         content: this.getEnhancedPatternResponse(message, complexity),
@@ -878,11 +626,7 @@ Would you like me to elaborate on any of these recommendations or help you compa
     this._lastModel = model;
     
     try {
-<<<<<<< HEAD
-      const response = await this.openai.chat.completions.create({
-=======
       const response = await openai.chat.completions.create({
->>>>>>> main
         model,
         messages: [
           {
@@ -1011,11 +755,7 @@ Would you like me to elaborate on any of these recommendations or help you compa
       // Use LangChain for document processing
       if (attachments && attachments.length > 0) {
         const documentContent = this.extractDocumentContent(attachments);
-<<<<<<< HEAD
-        const analysis = await langChainProcessor.analyzeDocument(documentContent, message);
-=======
         const analysis = await this.langChainProcessor.analyzeDocument(documentContent, message);
->>>>>>> main
         
         const response = `📄 Document Analysis Complete
 
@@ -1041,11 +781,7 @@ I've analyzed your document(s) and extracted the most relevant information. Feel
       }
 
       // Use vector search for document-related queries
-<<<<<<< HEAD
-      const searchResult = await vectorSearchService.semanticSearch(message, 3);
-=======
       const searchResult = await this.vectorSearchService.semanticSearch(message, 3);
->>>>>>> main
       if (searchResult.results.length > 0) {
         const response = `🔍 **Found relevant information**:
 
@@ -1054,11 +790,7 @@ ${searchResult.results.map((result, index) =>
    ${result.content.substring(0, 200)}...`
 ).join('\n\n')}
 
-<<<<<<< HEAD
-**Search Confidence**: ${(searchResult.confidence * 100).toFixed(0)}% | **Time**: ${searchResult.processingTime}ms`;
-=======
 **Search Confidence**: ${(searchResult.confidence * 100).toFixed(0)}% | **Time**: ${searchResult.processingTime || 0}ms`;
->>>>>>> main
 
         return {
           content: response,

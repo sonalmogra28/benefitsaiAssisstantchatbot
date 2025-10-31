@@ -690,8 +690,6 @@ export function AnalyticsDashboard({
             </Card>
           </div>
         </TabsContent>
-<<<<<<< HEAD
-=======
 
         {/* Phase 2: Conversation Quality Tab */}
         <TabsContent value="quality" className="space-y-4">
@@ -936,7 +934,6 @@ export function AnalyticsDashboard({
             </CardContent>
           </Card>
         </TabsContent>
->>>>>>> main
       </Tabs>
     </div>
   );

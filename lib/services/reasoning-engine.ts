@@ -221,11 +221,7 @@ export class ReasoningEngine {
     }
     
     // RAG for document analysis
-<<<<<<< HEAD
-    else if (intent.type === 'document_analysis' || context.attachments?.length > 0) {
-=======
     else if (intent.type === 'document_analysis' || (context.attachments?.length ?? 0) > 0) {
->>>>>>> main
       strategy = 'rag';
       confidence = 0.9;
       reasoning = 'Document analysis requires RAG processing';
@@ -327,11 +323,7 @@ export class ReasoningEngine {
       decision += ` with user profile context`;
     }
     
-<<<<<<< HEAD
-    if (context.attachments?.length > 0) {
-=======
     if ((context.attachments?.length ?? 0) > 0) {
->>>>>>> main
       decision += ` and document analysis`;
     }
     

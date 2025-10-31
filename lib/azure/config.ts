@@ -96,17 +96,12 @@ const azureConfigSchema = z.object({
 
 // Parse and validate environment variables
 const parseAzureConfig = () => {
-<<<<<<< HEAD
-  // Skip validation during tests or when explicitly disabled
-  if (process.env.NODE_ENV === 'test' || process.env.SKIP_AZURE_CONFIG === '1') {
-=======
   // Skip validation during tests, build time, or when explicitly disabled
   const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
                      process.env.SKIP_AZURE_CONFIG === '1' ||
                      process.env.NODE_ENV === 'test';
   
   if (isBuildTime) {
->>>>>>> main
     return {
       // Azure Core
       tenantId: process.env.AZURE_TENANT_ID || 'test-tenant',

@@ -22,19 +22,12 @@ interface ChainResult {
 }
 
 export class LangChainProcessor {
-<<<<<<< HEAD
-  private llm: ChatOpenAI;
-  private documentAnalyzer: RunnableSequence;
-  private questionAnswerer: RunnableSequence;
-  private recommendationEngine: RunnableSequence;
-=======
   private llm!: ChatOpenAI;
   private documentAnalyzer!: RunnableSequence;
   private questionAnswerer!: RunnableSequence;
   private recommendationEngine!: RunnableSequence;
 
 
->>>>>>> main
 
   constructor() {
     const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;

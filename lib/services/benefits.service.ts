@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-import { amerivetBenefits2024_2025, getPlansByRegion, getPlanById, calculatePremium, isEligibleForPlan } from '../data/amerivet-benefits-2024-2025';
-import { BenefitPlan, OpenEnrollment, EligibilityRules } from '../data/amerivet-benefits-2024-2025';
-=======
 import { amerivetBenefits2024_2025, getPlansByRegion, getPlanById, calculatePremium, isEligibleForPlan } from '../data/amerivet-benefits-2024-2025.ts';
 import { BenefitPlan, OpenEnrollment, EligibilityRules } from '../data/amerivet-benefits-2024-2025.ts';
->>>>>>> main
 import { getRepositories } from '@/lib/azure/cosmos';
 import { logger } from '@/lib/logger';
 import { v4 as uuidv4 } from 'uuid';
