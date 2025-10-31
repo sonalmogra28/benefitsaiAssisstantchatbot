@@ -8,6 +8,7 @@
 // ============================================================================
 
 export type Tier = "L1" | "L2" | "L3";
+export type LLMTier = Tier;  // Alias for backward compatibility
 export type Persona = "employee" | "hr" | "admin";
 
 export interface QARequest {
@@ -41,6 +42,7 @@ export interface Citation {
   url?: string;
   relevanceScore: number;
   excerpt?: string;
+  text?: string;                              // Cited text snippet (for validation)
 }
 
 export interface UsageMetrics {
@@ -342,6 +344,19 @@ export interface GroundingResult {
   totalSentences: number;
 }
 
+/**
+ * Extended Grounding Metrics
+ * Token-level grounding analysis with chunk mapping
+ */
+export interface GroundingMetrics {
+  score: number;                              // 0-1 (% of tokens grounded)
+  isPassing: boolean;                         // score >= threshold
+  totalTokens: number;
+  groundedTokens: number;
+  chunkMapping: Record<string, number>;       // chunkId -> grounded token count
+  ungroundedSpans: string[];                  // Sample of ungrounded tokens
+}
+
 export interface PIIDetectionResult {
   hasPII: boolean;
   redactedText: string;
@@ -370,6 +385,18 @@ export interface ValidationResult {
   citationsValid: boolean;
   shouldEscalate: boolean;
   issues: string[];
+  // Extended validation fields (for validation.ts module)
+  valid?: boolean;                            // Overall validation status
+  citations?: {                               // Citation validation details
+    valid: boolean;
+    invalidCitations: Array<{ citation: Citation; reason: string }>;
+  };
+  piiDetected?: boolean;
+  piiCategories?: string[];
+  redactedResponse?: string;
+  errors?: string[];
+  requiresEscalation?: boolean;
+  currentTier?: Tier;
 }
 
 // ============================================================================
