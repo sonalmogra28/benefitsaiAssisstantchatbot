@@ -22,7 +22,6 @@ const cosmosClient = new CosmosClient({
 import { getCosmosClient } from '@/lib/services/service-factory';
 import { logger } from '@/lib/logger';
 import { isBuildTime, getSafeService } from '@/lib/config/build-time';
->>>>>>> main
 
 export const DATABASE_NAME = 'BenefitsChat';
 export const CONVERSATIONS_CONTAINER = 'Conversations';
@@ -40,7 +39,6 @@ export async function getContainer(containerId: string) {
 }
 
 export default cosmosClient;
-=======
 // Cache for containers to avoid repeated initialization
 const containerCache = new Map<string, any>();
 
@@ -128,4 +126,3 @@ export async function checkCosmosHealth(): Promise<boolean> {
 export function clearContainerCache(): void {
   containerCache.clear();
 }
->>>>>>> main

@@ -301,7 +301,6 @@ export class SharedPasswordAuth {
     retryAfter?: number;
   }> {
     const ip = this.getClientIP(request);
->>>>>>> main
     
     // This would typically use Redis, but for simplicity, we'll use a simple in-memory store
     // In production, implement proper Redis-based rate limiting
