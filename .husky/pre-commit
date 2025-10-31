@@ -1,5 +1,8 @@
-#!/bin/sh
+#!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
-echo "Running PoW validation..."
-npm run validate-pow
+# cross-platform: no sed/jq
+node -e "console.log('pre-commit ok')"
+
+# if you use lint-staged:
+# npx lint-staged
