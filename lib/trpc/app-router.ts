@@ -1,4 +1,3 @@
-import 'server-only';
 import { router, publicProcedure } from './core';
 
 export const appRouter = router({

@@ -11,8 +11,18 @@
  * - Type-safe operations
  */
 
-import 'server-only';
 import { CosmosClient, CosmosClientOptions, Container, Database } from '@azure/cosmos';
+
+// Hard runtime guards - prevent browser/edge usage
+if (typeof window !== 'undefined') {
+  throw new Error('Cosmos client imported in the browser. Import only in server code.');
+}
+if (process.env.NEXT_RUNTIME === 'edge') {
+  throw new Error('Cosmos client not supported on the Edge runtime. Use nodejs runtime.');
+}
+
+type GlobalForCosmos = typeof globalThis & { __cosmosClient?: CosmosClient };
+const g = globalThis as GlobalForCosmos;
 
 /**
  * Check if we're in build phase (Next.js static analysis)
@@ -22,56 +32,37 @@ function isBuild(): boolean {
 }
 
 /**
- * Environment configuration with validation
- */
-function getCosmosConfig() {
-  if (isBuild()) {
-    // Return dummy config during build
-    return {
-      endpoint: 'https://localhost:8081',
-      key: 'dummy-key-for-build',
-      database: 'benefits-assistant'
-    };
-  }
-  
-  const COSMOS_ENDPOINT = process.env.AZURE_COSMOS_ENDPOINT;
-  const COSMOS_KEY = process.env.AZURE_COSMOS_KEY;
-  const COSMOS_DATABASE = process.env.AZURE_COSMOS_DATABASE || 'benefits-assistant';
-
-  if (!COSMOS_ENDPOINT || !COSMOS_KEY) {
-    throw new Error(
-      'Missing required Cosmos DB configuration. Please set AZURE_COSMOS_ENDPOINT and AZURE_COSMOS_KEY environment variables.'
-    );
-  }
-  
-  return {
-    endpoint: COSMOS_ENDPOINT,
-    key: COSMOS_KEY,
-    database: COSMOS_DATABASE
-  };
-}
-
-/**
  * Cosmos Client Configuration
  * Following Azure best practices for production deployments
  */
 function getCosmosClientOptions(): CosmosClientOptions {
-  const config = getCosmosConfig();
+  const connectionString = process.env.AZURE_COSMOS_CONNECTION_STRING;
+  
+  if (!connectionString) {
+    throw new Error('Missing AZURE_COSMOS_CONNECTION_STRING environment variable');
+  }
+  
+  const endpoint = connectionString.match(/AccountEndpoint=([^;]+)/)?.[1];
+  const key = connectionString.match(/AccountKey=([^;]+)/)?.[1];
+  
+  if (!endpoint || !key) {
+    throw new Error('Invalid AZURE_COSMOS_CONNECTION_STRING format');
+  }
+  
   return {
-    endpoint: config.endpoint,
-    key: config.key,
+    endpoint,
+    key,
+    userAgentSuffix: 'benefits-ai-chatbot',
     connectionPolicy: {
-      // Connection pooling for better performance
       requestTimeout: 10000,
       enableEndpointDiscovery: true,
-      preferredLocations: ['East US 2', 'West US 2'], // Multi-region failover
+      preferredLocations: ['East US 2', 'West US 2'],
       retryOptions: {
         maxRetryAttemptCount: 3,
         fixedRetryIntervalInMilliseconds: 300,
         maxWaitTimeInSeconds: 30,
       },
     },
-    // Consistent session for read-your-writes guarantee
     consistencyLevel: 'Session',
   };
 }
@@ -92,17 +83,10 @@ export function getCosmosClient(): CosmosClient {
     throw new Error('COSMOS_MISSING: Cannot access Cosmos DB during build phase');
   }
   
-  if (!cosmosClient) {
-    const config = getCosmosConfig();
-    const cs = process.env.AZURE_COSMOS_CONNECTION_STRING;
-    
-    if (!cs && (!config.endpoint || !config.key)) {
-      throw new Error('COSMOS_MISSING: No connection string or credentials available');
-    }
-    
-    cosmosClient = new CosmosClient(getCosmosClientOptions());
+  if (!g.__cosmosClient) {
+    g.__cosmosClient = new CosmosClient(getCosmosClientOptions());
   }
-  return cosmosClient;
+  return g.__cosmosClient;
 }
 
 /**
@@ -116,8 +100,8 @@ export function getDatabase(): Database {
   
   if (!database) {
     const client = getCosmosClient();
-    const config = getCosmosConfig();
-    database = client.database(config.database);
+    const databaseName = process.env.AZURE_COSMOS_DATABASE || 'benefits-assistant';
+    database = client.database(databaseName);
   }
   return database;
 }

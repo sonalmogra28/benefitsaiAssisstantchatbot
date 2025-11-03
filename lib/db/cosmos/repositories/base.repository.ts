@@ -9,7 +9,7 @@ import { Container, FeedOptions, SqlQuerySpec } from '@azure/cosmos';
 import { CosmosDocument, PaginatedResult, QueryOptions } from '../types';
 
 export abstract class BaseRepository<T extends CosmosDocument> {
-  constructor(protected container: Container) {}
+  protected abstract get container(): Container;
 
   /**
    * Create a new document
