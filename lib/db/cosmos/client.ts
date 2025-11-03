@@ -14,39 +14,66 @@
 import { CosmosClient, CosmosClientOptions, Container, Database } from '@azure/cosmos';
 
 /**
+ * Check if we're in build phase (Next.js static analysis)
+ */
+function isBuild(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+/**
  * Environment configuration with validation
  */
-const COSMOS_ENDPOINT = process.env.AZURE_COSMOS_ENDPOINT;
-const COSMOS_KEY = process.env.AZURE_COSMOS_KEY;
-const COSMOS_DATABASE = process.env.AZURE_COSMOS_DATABASE || 'benefits-assistant';
+function getCosmosConfig() {
+  if (isBuild()) {
+    // Return dummy config during build
+    return {
+      endpoint: 'https://localhost:8081',
+      key: 'dummy-key-for-build',
+      database: 'benefits-assistant'
+    };
+  }
+  
+  const COSMOS_ENDPOINT = process.env.AZURE_COSMOS_ENDPOINT;
+  const COSMOS_KEY = process.env.AZURE_COSMOS_KEY;
+  const COSMOS_DATABASE = process.env.AZURE_COSMOS_DATABASE || 'benefits-assistant';
 
-if (!COSMOS_ENDPOINT || !COSMOS_KEY) {
-  throw new Error(
-    'Missing required Cosmos DB configuration. Please set AZURE_COSMOS_ENDPOINT and AZURE_COSMOS_KEY environment variables.'
-  );
+  if (!COSMOS_ENDPOINT || !COSMOS_KEY) {
+    throw new Error(
+      'Missing required Cosmos DB configuration. Please set AZURE_COSMOS_ENDPOINT and AZURE_COSMOS_KEY environment variables.'
+    );
+  }
+  
+  return {
+    endpoint: COSMOS_ENDPOINT,
+    key: COSMOS_KEY,
+    database: COSMOS_DATABASE
+  };
 }
 
 /**
  * Cosmos Client Configuration
  * Following Azure best practices for production deployments
  */
-const cosmosConfig: CosmosClientOptions = {
-  endpoint: COSMOS_ENDPOINT,
-  key: COSMOS_KEY,
-  connectionPolicy: {
-    // Connection pooling for better performance
-    requestTimeout: 10000,
-    enableEndpointDiscovery: true,
-    preferredLocations: ['East US 2', 'West US 2'], // Multi-region failover
-    retryOptions: {
-      maxRetryAttemptCount: 3,
-      fixedRetryIntervalInMilliseconds: 300,
-      maxWaitTimeInSeconds: 30,
+function getCosmosClientOptions(): CosmosClientOptions {
+  const config = getCosmosConfig();
+  return {
+    endpoint: config.endpoint,
+    key: config.key,
+    connectionPolicy: {
+      // Connection pooling for better performance
+      requestTimeout: 10000,
+      enableEndpointDiscovery: true,
+      preferredLocations: ['East US 2', 'West US 2'], // Multi-region failover
+      retryOptions: {
+        maxRetryAttemptCount: 3,
+        fixedRetryIntervalInMilliseconds: 300,
+        maxWaitTimeInSeconds: 30,
+      },
     },
-  },
-  // Consistent session for read-your-writes guarantee
-  consistencyLevel: 'Session',
-};
+    // Consistent session for read-your-writes guarantee
+    consistencyLevel: 'Session',
+  };
+}
 
 /**
  * Singleton Cosmos Client
@@ -59,8 +86,12 @@ let database: Database | null = null;
  * Get or create Cosmos Client instance
  */
 export function getCosmosClient(): CosmosClient {
+  if (isBuild()) {
+    // Return a mock client during build
+    return null as any;
+  }
   if (!cosmosClient) {
-    cosmosClient = new CosmosClient(cosmosConfig);
+    cosmosClient = new CosmosClient(getCosmosClientOptions());
   }
   return cosmosClient;
 }
@@ -69,9 +100,14 @@ export function getCosmosClient(): CosmosClient {
  * Get database instance
  */
 export function getDatabase(): Database {
+  if (isBuild()) {
+    // Return a mock database during build
+    return { container: () => null } as any;
+  }
   if (!database) {
     const client = getCosmosClient();
-    database = client.database(COSMOS_DATABASE);
+    const config = getCosmosConfig();
+    database = client.database(config.database);
   }
   return database;
 }

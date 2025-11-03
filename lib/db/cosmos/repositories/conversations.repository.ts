@@ -57,8 +57,15 @@ export interface ConversationMessage {
  * Conversations Repository
  */
 export class ConversationsRepository {
-  private static container = CosmosContainers.conversations;
+  private static _container: any = null;
   private static TTL_ONE_YEAR = 31536000; // seconds
+  
+  private static get container() {
+    if (!this._container) {
+      this._container = CosmosContainers.conversations;
+    }
+    return this._container;
+  }
 
   /**
    * Create new conversation
