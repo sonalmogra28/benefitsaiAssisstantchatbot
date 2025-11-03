@@ -120,5 +120,3 @@ scripts/**/dist/**
 *.rej
 *.patch
 *.msi
-*.md
-.gitignore

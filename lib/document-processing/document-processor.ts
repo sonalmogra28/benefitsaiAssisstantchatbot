@@ -8,12 +8,14 @@ import { logger } from '@/lib/logger';
 import { getStorageServices } from '@/lib/azure/storage';
 import { getRepositories } from '@/lib/azure/cosmos';
 import { z } from 'zod';
+import crypto from 'crypto';
 
 // Document processing result interface
 export interface ProcessingResult {
   success: boolean;
   extractedText: string;
   metadata: DocumentMetadata;
+  documentId?: string; // ID of the stored document (if success)
   error?: string;
 }
 
@@ -47,23 +49,30 @@ export class PDFHandler extends DocumentHandler {
 
   async extractText(buffer: Buffer): Promise<ProcessingResult> {
     try {
-      const pdfParse = await import('pdf-parse');
-      const data = await pdfParse.default(buffer);
+      const { PDFParse } = await import('pdf-parse');
+      // Convert Buffer to Uint8Array
+      const uint8Array = new Uint8Array(buffer);
+      const parser = new PDFParse(uint8Array);
+      const textResult = await parser.getText();
+      const infoResult = await parser.getInfo();
+      
+      const extractedText = textResult.text || '';
+      const pdfInfo = infoResult.info || {};
       
       return {
         success: true,
-        extractedText: data.text,
+        extractedText,
         metadata: {
-          title: data.info?.Title || 'Untitled Document',
-          author: data.info?.Author,
-          subject: data.info?.Subject,
-          pageCount: data.numpages,
-          wordCount: data.text.split(/\s+/).length,
+          title: pdfInfo.Title || 'Untitled Document',
+          author: pdfInfo.Author,
+          subject: pdfInfo.Subject,
+          pageCount: infoResult.total || 0,
+          wordCount: extractedText.split(/\s+/).length,
           createdAt: new Date(),
           fileSize: buffer.length,
           mimeType: 'application/pdf',
           category: 'benefits',
-          tags: this.extractTags(data.text)
+          tags: this.extractTags(extractedText)
         }
       };
     } catch (error) {
@@ -85,20 +94,27 @@ export class PDFHandler extends DocumentHandler {
 
   async extractMetadata(buffer: Buffer): Promise<DocumentMetadata> {
     try {
-      const pdfParse = await import('pdf-parse');
-      const data = await pdfParse.default(buffer);
+      const { PDFParse } = await import('pdf-parse');
+      // Convert Buffer to Uint8Array
+      const uint8Array = new Uint8Array(buffer);
+      const parser = new PDFParse(uint8Array);
+      const textResult = await parser.getText();
+      const infoResult = await parser.getInfo();
+      
+      const extractedText = textResult.text || '';
+      const pdfInfo = infoResult.info || {};
       
       return {
-        title: data.info?.Title || 'Untitled Document',
-        author: data.info?.Author,
-        subject: data.info?.Subject,
-        pageCount: data.numpages,
-        wordCount: data.text.split(/\s+/).length,
+        title: pdfInfo.Title || 'Untitled Document',
+        author: pdfInfo.Author,
+        subject: pdfInfo.Subject,
+        pageCount: infoResult.total || 0,
+        wordCount: extractedText.split(/\s+/).length,
         createdAt: new Date(),
         fileSize: buffer.length,
         mimeType: 'application/pdf',
         category: 'benefits',
-        tags: this.extractTags(data.text)
+        tags: this.extractTags(extractedText)
       };
     } catch (error) {
       logger.error('PDF metadata extraction failed', { data: error });
@@ -354,6 +370,9 @@ export class DocumentProcessor {
         
         // Index for search using the actual document ID
         await this.indexDocument(result, fileName, companyId, documentId);
+        
+        // Add documentId to result
+        result.documentId = documentId;
       }
 
       return result;
@@ -434,10 +453,19 @@ export class DocumentProcessor {
     documentId: string
   ): Promise<void> {
     try {
-      // Create search index entry
+      logger.info('Starting document indexing pipeline', {
+        documentId,
+        fileName,
+        companyId,
+        textLength: result.extractedText.length
+      });
+
+      // ========================================================================
+      // STEP 1: Create basic search index entry (for traditional search)
+      // ========================================================================
       const searchIndex = {
         id: crypto.randomUUID(),
-        documentId: documentId, // Link directly to the stored document ID
+        documentId: documentId,
         title: result.metadata.title,
         content: result.extractedText,
         fileName,
@@ -448,17 +476,91 @@ export class DocumentProcessor {
         indexedAt: new Date().toISOString()
       };
 
-      // Store in search index (this would typically go to a search service)
       const repositories = await getRepositories();
       await repositories.searchIndex.create(searchIndex);
       
-      logger.info('Document indexed successfully', {
-        fileName,
-        companyId,
-        searchableTextLength: searchIndex.searchableText.length
+      logger.info('Basic search index created', {
+        documentId,
+        fileName
       });
+
+      // ========================================================================
+      // STEP 2: Chunk and index for RAG vector search
+      // ========================================================================
+      // Import chunking and embedding utilities
+      const { ingestDocument } = await import('@/lib/rag/chunking');
+      const { upsertDocumentChunks } = await import('@/lib/ai/vector-search');
+      
+      // Create document object for chunking
+      const doc: any = {
+        id: documentId,
+        companyId,
+        title: result.metadata.title,
+        content: result.extractedText,
+        type: 'pdf' as any,
+        metadata: {
+          benefitYear: new Date().getFullYear(),
+          carrier: 'N/A',
+          category: result.metadata.category || 'benefits',
+          tags: result.metadata.tags || []
+        }
+      };
+
+      // Ingest document and create chunks with embeddings
+      logger.info('Starting document chunking', { documentId });
+      const chunks = await ingestDocument(doc);
+      
+      logger.info('Document chunked successfully', {
+        documentId,
+        chunkCount: chunks.length
+      });
+
+      // Prepare chunks for Azure AI Search (filter out chunks without embeddings)
+      const chunksForIndex = chunks
+        .filter(chunk => chunk.vector && chunk.vector.length > 0)
+        .map(chunk => ({
+          id: chunk.id,
+          text: chunk.content,
+          embedding: chunk.vector as number[], // Safe to assert since we filtered
+          metadata: {
+            documentId: documentId,
+            companyId: companyId,
+            sectionPath: chunk.sectionPath,
+            title: chunk.title,
+            position: chunk.position,
+            ...chunk.metadata
+          }
+        }));
+
+      // Upsert chunks to Azure AI Search
+      logger.info('Upserting chunks to Azure AI Search', {
+        documentId,
+        chunkCount: chunksForIndex.length
+      });
+
+      const upsertResult = await upsertDocumentChunks(companyId, chunksForIndex);
+      
+      if (upsertResult.status === 'success') {
+        logger.info('Document indexed successfully for RAG', {
+          documentId,
+          fileName,
+          companyId,
+          chunksIndexed: upsertResult.vectorsUpserted,
+          searchableTextLength: searchIndex.searchableText.length
+        });
+      } else {
+        logger.error('Failed to upsert document chunks', {
+          documentId,
+          fileName,
+          companyId
+        });
+      }
+
     } catch (error) {
-      logger.error('Failed to index document', { data: error });
+      logger.error('Failed to index document', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       // Don't throw here as document storage succeeded
     }
   }
