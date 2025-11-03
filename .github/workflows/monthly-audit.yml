@@ -1,0 +1,76 @@
+name: Monthly Security Audit
+
+on:
+  schedule:
+    # First day of every month at 9 AM UTC
+    - cron: '0 9 1 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  security-audit:
+    name: Security Audit & Key Rotation Reminder
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks Full History Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+      - name: Check npm audit
+        run: |
+          npm audit --audit-level=high || true
+          echo "📊 npm audit completed - review results above"
+
+      - name: Create Issue for Key Rotation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const now = new Date();
+            const month = now.toLocaleString('default', { month: 'long' });
+            const year = now.getFullYear();
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔐 Quarterly Key Rotation Reminder - ${month} ${year}`,
+              body: `## Quarterly Security Audit Checklist
+              
+              **Due Date:** ${new Date(now.setMonth(now.getMonth() + 1)).toISOString().split('T')[0]}
+              
+              ### Azure Key Rotation Required
+              - [ ] Cosmos DB Primary Key regenerated
+              - [ ] Redis Cache Primary Key regenerated  
+              - [ ] Storage Account key1 regenerated
+              - [ ] Updated keys stored in Key Vault/GitHub Secrets
+              - [ ] Smoke test deployment verified with new keys
+              
+              ### Security Scan Results
+              - [ ] Gitleaks scan passed (no new secrets detected)
+              - [ ] npm audit reviewed (no high/critical vulnerabilities)
+              - [ ] Pre-push hooks verified working
+              
+              ### Rotation Commands
+              \`\`\`bash
+              az cosmosdb keys regenerate --resource-group <rg> --name <cosmos> --key-kind primary
+              az redis regenerate-keys --resource-group <rg> --name <redis> --key-type Primary
+              az storage account keys renew --resource-group <rg> --account-name <storage> --key key1
+              \`\`\`
+              
+              **Old Keys Location:** Exposed in git history before commit e377f79 (Jan 2025)
+              **New Keys Location:** \`$HOME/secrets/benefitsaichatbot-383/.env.production\` (not tracked)
+              `,
+              labels: ['security', 'maintenance', 'high-priority']
+            });
+
+      - name: Audit Summary
+        run: |
+          echo "✅ Monthly security audit completed"
+          echo "📋 GitHub issue created for key rotation tracking"
+          echo "🔍 Review gitleaks results above"
