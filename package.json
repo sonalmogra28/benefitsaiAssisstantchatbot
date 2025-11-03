@@ -21,7 +21,10 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": ["eslint --fix --max-warnings=0", "git add"]
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix --max-warnings=0",
+      "git add"
+    ]
   },
   "dependencies": {
     "@ai-sdk/azure": "^2.0.59",
@@ -55,6 +58,9 @@
     "@tiptap/extension-image": "^3.10.1",
     "@tiptap/extension-link": "^3.10.1",
     "@tiptap/extension-table": "^3.10.1",
+    "@tiptap/extension-table-cell": "^3.10.1",
+    "@tiptap/extension-table-header": "^3.10.1",
+    "@tiptap/extension-table-row": "^3.10.1",
     "@tiptap/react": "^3.10.1",
     "@tiptap/starter-kit": "^3.10.1",
     "@trpc/client": "^11.7.1",
@@ -76,6 +82,7 @@
     "mammoth": "^1.11.0",
     "marked": "^16.4.1",
     "next": "15.5.5",
+    "next-auth": "^4.24.13",
     "next-themes": "^0.4.6",
     "openai": "^6.7.0",
     "papaparse": "^5.5.3",

@@ -83,7 +83,14 @@ export interface UpdateDocumentInput {
  * Documents Repository
  */
 export class DocumentsRepository {
-  private static container = CosmosContainers.documents;
+  private static _container: any = null;
+  
+  private static get container() {
+    if (!this._container) {
+      this._container = CosmosContainers.documents;
+    }
+    return this._container;
+  }
 
   /**
    * Create a new document with version 1
