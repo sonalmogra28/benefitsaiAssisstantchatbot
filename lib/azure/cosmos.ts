@@ -373,7 +373,7 @@ let repositories: {
   companies: CosmosRepository<any>;
   benefits: CosmosRepository<any>;
   chats: CosmosRepository<any>;
-  documents: CosmosRepository<any>;
+  documents: import('@/lib/db/cosmos/repositories/document.repository').DocumentRepository;
   faqs: CosmosRepository<any>;
   documentChunks: CosmosRepository<any>;
   messages: CosmosRepository<any>;
@@ -384,12 +384,17 @@ let repositories: {
 export const getRepositories = async () => {
   if (!repositories) {
     const { containers } = await initializeCosmosDb();
+    const { DocumentRepository } = await import('@/lib/db/cosmos/repositories/document.repository');
+    const docRepo = new DocumentRepository();
+    // Initialize the base repository container - hackish but necessary
+    (docRepo as any).container = containers.documents;
+    
     repositories = {
       users: new CosmosRepository(containers.users),
       companies: new CosmosRepository(containers.companies),
       benefits: new CosmosRepository(containers.benefits),
       chats: new CosmosRepository(containers.chats),
-      documents: new CosmosRepository(containers.documents),
+      documents: docRepo,
       faqs: new CosmosRepository(containers.faqs),
       documentChunks: new CosmosRepository(containers.documentChunks),
       messages: new CosmosRepository(containers.messages),

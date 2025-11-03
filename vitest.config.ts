@@ -16,7 +16,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    setupFiles: ['tests/setup.ts'],
+    setupFiles: ['tests/setup.ts', 'vitest.setup.ts'],
     include: [
       'tests/**/*.test.ts',
       'tests/**/*.test.tsx',
@@ -34,5 +34,6 @@ export default defineConfig({
     ],
     environmentOptions: { jsdom: { url: 'http://localhost' } },
     coverage: { provider: 'v8' },
+    onConsoleLog: (log) => /TT: undefined function: 21/.test(log) ? false : undefined,
   },
 });

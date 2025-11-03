@@ -5,6 +5,34 @@
 
 import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import type { Chunk, RetrievalContext, RetrievalResult, HybridSearchConfig } from "../../types/rag";
+import { isVitest } from '@/lib/ai/runtime';
+
+// ============================================================================
+// In-Memory Test Index (for Vitest)
+// ============================================================================
+
+type MemoryChunk = { id: string; text: string; embedding?: number[]; docId: string; companyId: string };
+let memoryIndex: MemoryChunk[] = [];
+
+export function __test_only_resetMemoryIndex() { 
+  memoryIndex = []; 
+}
+
+export function __test_only_addToMemoryIndex(chunks: MemoryChunk[]) { 
+  memoryIndex.push(...chunks); 
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a || !b || a.length !== b.length) return 0;
+  let dot = 0, magA = 0, magB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  const mag = Math.sqrt(magA) * Math.sqrt(magB);
+  return mag === 0 ? 0 : dot / mag;
+}
 
 // ============================================================================
 // Azure Search Client (Lazy Initialization)
@@ -12,15 +40,19 @@ import type { Chunk, RetrievalContext, RetrievalResult, HybridSearchConfig } fro
 
 let searchClient: SearchClient<any> | null = null;
 
-function ensureSearchClient(): SearchClient<any> {
+function ensureSearchClient(): SearchClient<any> | null {
   if (searchClient) return searchClient;
 
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
   const apiKey = process.env.AZURE_SEARCH_API_KEY;
   const indexName = process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1";
 
-  if (!endpoint || !apiKey) {
+  if ((!endpoint || !apiKey) && !isVitest) {
     throw new Error("Azure Search credentials not configured");
+  }
+  
+  if (!endpoint || !apiKey) {
+    return null; // Vitest path: use in-memory index
   }
 
   searchClient = new SearchClient(
@@ -62,6 +94,37 @@ export async function retrieveVectorTopK(
 ): Promise<Chunk[]> {
   const client = ensureSearchClient();
   const startTime = Date.now();
+
+  // In-memory fallback for tests
+  if (!client && isVitest) {
+    const queryVector = await generateEmbedding(query);
+    const filtered = memoryIndex.filter(c => c.companyId === context.companyId);
+    const scored = filtered
+      .map(c => ({ 
+        chunk: c, 
+        score: cosineSimilarity(queryVector, c.embedding || []) 
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k);
+    
+    return scored.map(s => ({
+      id: s.chunk.id,
+      docId: s.chunk.docId,
+      companyId: s.chunk.companyId,
+      sectionPath: "",
+      content: s.chunk.text,
+      title: "",
+      position: 0,
+      windowStart: 0,
+      windowEnd: s.chunk.text.length,
+      metadata: { tokenCount: Math.ceil(s.chunk.text.length / 4), vectorScore: s.score },
+      createdAt: new Date(),
+    }));
+  }
+
+  if (!client) {
+    throw new Error("Azure Search client not available");
+  }
 
   try {
     // Generate query embedding
@@ -144,6 +207,38 @@ export async function retrieveBM25TopK(
 ): Promise<Chunk[]> {
   const client = ensureSearchClient();
   const startTime = Date.now();
+
+  // In-memory fallback for tests (simple keyword matching)
+  if (!client && isVitest) {
+    const filtered = memoryIndex.filter(c => c.companyId === context.companyId);
+    const queryLower = query.toLowerCase();
+    const scored = filtered
+      .map(c => ({
+        chunk: c,
+        score: c.text.toLowerCase().split(queryLower).length - 1, // Count keyword occurrences
+      }))
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k);
+    
+    return scored.map(s => ({
+      id: s.chunk.id,
+      docId: s.chunk.docId,
+      companyId: s.chunk.companyId,
+      sectionPath: "",
+      content: s.chunk.text,
+      title: "",
+      position: 0,
+      windowStart: 0,
+      windowEnd: s.chunk.text.length,
+      metadata: { tokenCount: Math.ceil(s.chunk.text.length / 4), bm25Score: s.score },
+      createdAt: new Date(),
+    }));
+  }
+
+  if (!client) {
+    throw new Error("Azure Search client not available");
+  }
 
   try {
     // Build filter
