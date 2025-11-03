@@ -11,6 +11,7 @@
  * - Type-safe operations
  */
 
+import 'server-only';
 import { CosmosClient, CosmosClientOptions, Container, Database } from '@azure/cosmos';
 
 /**
@@ -84,13 +85,21 @@ let database: Database | null = null;
 
 /**
  * Get or create Cosmos Client instance
+ * Lazy initialization - only creates client when actually called at runtime
  */
 export function getCosmosClient(): CosmosClient {
   if (isBuild()) {
-    // Return a mock client during build
-    return null as any;
+    throw new Error('COSMOS_MISSING: Cannot access Cosmos DB during build phase');
   }
+  
   if (!cosmosClient) {
+    const config = getCosmosConfig();
+    const cs = process.env.AZURE_COSMOS_CONNECTION_STRING;
+    
+    if (!cs && (!config.endpoint || !config.key)) {
+      throw new Error('COSMOS_MISSING: No connection string or credentials available');
+    }
+    
     cosmosClient = new CosmosClient(getCosmosClientOptions());
   }
   return cosmosClient;
@@ -98,12 +107,13 @@ export function getCosmosClient(): CosmosClient {
 
 /**
  * Get database instance
+ * Lazy initialization - only creates database reference when actually called at runtime
  */
 export function getDatabase(): Database {
   if (isBuild()) {
-    // Return a mock database during build
-    return { container: () => null } as any;
+    throw new Error('COSMOS_MISSING: Cannot access Cosmos DB during build phase');
   }
+  
   if (!database) {
     const client = getCosmosClient();
     const config = getCosmosConfig();
