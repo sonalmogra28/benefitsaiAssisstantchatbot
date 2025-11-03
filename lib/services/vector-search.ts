@@ -286,6 +286,137 @@ export class VectorSearchService {
     return searchResult.results;
   }
 
+  /**
+   * Calculate cosine similarity between two vectors
+   * 
+   * Cosine similarity measures the cosine of the angle between two vectors.
+   * Range: [-1, 1], where:
+   *  - 1.0 = vectors point in same direction (identical)
+   *  - 0.0 = vectors are orthogonal (unrelated)
+   *  - -1.0 = vectors point in opposite directions (opposites)
+   * 
+   * Formula: cosine(θ) = (A · B) / (||A|| × ||B||)
+   * Where:
+   *  - A · B = dot product
+   *  - ||A|| = magnitude (Euclidean norm) of A
+   *  - ||B|| = magnitude (Euclidean norm) of B
+   * 
+   * @param vectorA - First embedding vector
+   * @param vectorB - Second embedding vector
+   * @returns Similarity score between -1 and 1
+   * 
+   * @example
+   * const embedding1 = await vectorSearchService.generateEmbedding("dental coverage");
+   * const embedding2 = await vectorSearchService.generateEmbedding("orthodontic benefits");
+   * const similarity = vectorSearchService.calculateCosineSimilarity(embedding1, embedding2);
+   * // similarity ≈ 0.85 (highly similar concepts)
+   */
+  calculateCosineSimilarity(vectorA: number[], vectorB: number[]): number {
+    if (vectorA.length !== vectorB.length) {
+      throw new Error(
+        `Vector dimensions must match. Got ${vectorA.length} and ${vectorB.length}`
+      );
+    }
+
+    if (vectorA.length === 0) {
+      return 0;
+    }
+
+    let dotProduct = 0;
+    let magnitudeA = 0;
+    let magnitudeB = 0;
+
+    for (let i = 0; i < vectorA.length; i++) {
+      dotProduct += vectorA[i] * vectorB[i];
+      magnitudeA += vectorA[i] * vectorA[i];
+      magnitudeB += vectorB[i] * vectorB[i];
+    }
+
+    const magnitude = Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB);
+    
+    // Avoid division by zero
+    if (magnitude === 0) {
+      return 0;
+    }
+
+    return dotProduct / magnitude;
+  }
+
+  /**
+   * Calculate similarity between two text documents
+   * Converts text to embeddings and computes cosine similarity
+   * 
+   * @param text1 - First document text
+   * @param text2 - Second document text
+   * @returns Promise<number> Similarity score 0-1
+   * 
+   * @example
+   * const similarity = await vectorSearchService.calculateTextSimilarity(
+   *   "What is my dental coverage?",
+   *   "Tell me about orthodontic benefits"
+   * );
+   * console.log(`Similarity: ${(similarity * 100).toFixed(1)}%`);
+   */
+  async calculateTextSimilarity(text1: string, text2: string): Promise<number> {
+    try {
+      const [embedding1, embedding2] = await Promise.all([
+        this.generateEmbedding(text1),
+        this.generateEmbedding(text2),
+      ]);
+
+      return this.calculateCosineSimilarity(embedding1, embedding2);
+    } catch (error) {
+      logger.error('Failed to calculate text similarity', { error });
+      return 0;
+    }
+  }
+
+  /**
+   * Find duplicate or near-duplicate documents using cosine similarity
+   * 
+   * @param referenceText - The text to find duplicates of
+   * @param candidateTexts - Array of texts to compare against
+   * @param threshold - Similarity threshold (default: 0.95 for near-duplicates)
+   * @returns Array of { text, similarity } for matches above threshold
+   * 
+   * @example
+   * const duplicates = await vectorSearchService.findDuplicates(
+   *   "Employee dental plan information",
+   *   allDocuments.map(d => d.content),
+   *   0.95
+   * );
+   */
+  async findDuplicates(
+    referenceText: string,
+    candidateTexts: string[],
+    threshold: number = 0.95
+  ): Promise<Array<{ text: string; similarity: number; index: number }>> {
+    try {
+      const referenceEmbedding = await this.generateEmbedding(referenceText);
+      const candidateEmbeddings = await Promise.all(
+        candidateTexts.map((text) => this.generateEmbedding(text))
+      );
+
+      const duplicates: Array<{ text: string; similarity: number; index: number }> = [];
+
+      candidateEmbeddings.forEach((embedding, index) => {
+        const similarity = this.calculateCosineSimilarity(referenceEmbedding, embedding);
+        if (similarity >= threshold) {
+          duplicates.push({
+            text: candidateTexts[index],
+            similarity,
+            index,
+          });
+        }
+      });
+
+      return duplicates.sort((a, b) => b.similarity - a.similarity);
+    } catch (error) {
+      logger.error('Failed to find duplicates', { error });
+      return [];
+    }
+  }
+
   async getDocumentRecommendations(userQuery: string, documentType: string): Promise<VectorSearchResult[]> {
     const enhancedQuery = `${userQuery} ${documentType} benefits information`;
     const searchResult = await this.semanticSearch(enhancedQuery, 5);
