@@ -1,0 +1,6 @@
+[allowlist]
+paths = [
+  "^\\.venv/",          # ignore local virtualenv
+  "^node_modules/",    # safety
+  "^\\.next/"           # safety
+]
