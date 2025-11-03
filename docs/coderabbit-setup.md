@@ -134,7 +134,7 @@ CodeRabbit will provide reviews like:
 ### Security Issues
 ```typescript
 // ❌ Security Issue
-const apiKey = "sk-1234567890abcdef"; // Hardcoded secret
+const apiKey = "<OPENAI_API_KEY>"; // Hardcoded secret
 
 // ✅ Suggested Fix
 const apiKey = process.env.OPENAI_API_KEY; // Use environment variable

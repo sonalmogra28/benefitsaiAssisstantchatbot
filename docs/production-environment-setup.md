@@ -32,16 +32,16 @@ CACHE_TTL=600
 MAX_CONNECTIONS=20
 
 # AI Services
-OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+OPENAI_API_KEY=<OPENAI_API_KEY>
 AZURE_OPENAI_ENDPOINT=https://amerivet-openai.openai.azure.com/
-AZURE_OPENAI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+AZURE_OPENAI_API_KEY=<AZURE_OPENAI_API_KEY>
 AZURE_OPENAI_API_VERSION=2024-02-15-preview
 DEFAULT_MODEL=gpt-3.5-turbo
 FALLBACK_MODEL=gpt-4
 
 # File Storage
 AZURE_STORAGE_ACCOUNT_NAME=amerivetstorage
-AZURE_STORAGE_ACCOUNT_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+AZURE_STORAGE_ACCOUNT_KEY=<AZURE_STORAGE_ACCOUNT_KEY>
 AZURE_STORAGE_CONTAINER_NAME=benefits-documents
 MAX_FILE_SIZE=52428800
 ALLOWED_FILE_TYPES=pdf,doc,docx,txt,jpg,png
@@ -51,7 +51,7 @@ SMTP_HOST=smtp.office365.com
 SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=noreply@amerivet.com
-SMTP_PASS=xxxxxxxxxxxxxxxx
+SMTP_PASS=<SMTP_PASSWORD>
 FROM_EMAIL=noreply@amerivet.com
 FROM_NAME=AmeriVet Benefits Assistant
 

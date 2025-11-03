@@ -37,7 +37,7 @@ Authorization: Bearer your-api-key-here
 For user-specific operations, use JWT tokens:
 
 ```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Authorization: Bearer <jwt_token>
 ```
 
 ## Base URL and Versioning
