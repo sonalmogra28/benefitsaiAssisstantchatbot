@@ -5,13 +5,14 @@ import { isBuild } from '@/lib/runtime/is-build';
 import { DISABLE_AZURE } from '@/lib/runtime/feature-flags';
 import { getContainer } from '@/lib/azure/cosmos-db';
 import { generateEmbedding, generateEmbeddings } from './embeddings';
+import { isVitest, isNodeRuntime } from '@/lib/ai/runtime';
 
 let searchClient: SearchClient<any> | null = null;
 
 async function ensureInitialized() {
   if (isBuild || DISABLE_AZURE) return null;
   if (searchClient) return searchClient;
-  if (typeof window !== 'undefined') throw new Error('Server-only module');
+  if (!isNodeRuntime && !isVitest) throw new Error('Server-only module');
 
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
   const apiKey = process.env.AZURE_SEARCH_API_KEY;
@@ -50,6 +51,18 @@ class VectorSearchService {
     try {
       const texts = chunks.map((c) => c.text);
       const embeddings = await generateEmbeddings(texts);
+
+      // Feed memory index for tests
+      if (isVitest) {
+        const { __test_only_addToMemoryIndex } = await import('@/lib/rag/hybrid-retrieval');
+        __test_only_addToMemoryIndex(chunks.map((c, i) => ({
+          id: c.id,
+          text: c.text,
+          embedding: embeddings[i],
+          docId: c.metadata.documentId,
+          companyId,
+        })));
+      }
 
       // Store chunk data with embeddings in Cosmos DB
       const documentsContainer = await getContainer('Documents');

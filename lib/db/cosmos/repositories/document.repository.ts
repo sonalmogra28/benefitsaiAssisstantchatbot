@@ -15,6 +15,28 @@ export class DocumentRepository extends BaseRepository<DocumentDocument> {
   }
 
   /**
+   * Get document by ID (cross-partition query if tenantId unknown)
+   * 
+   * @param id - Document ID
+   * @param tenantId - Optional tenant/company ID for partition key
+   */
+  async getById(id: string, tenantId?: string): Promise<DocumentDocument | null> {
+    if (tenantId) {
+      // Use point-read when partition key is known
+      return await this.findById(id, tenantId);
+    }
+    
+    // Fallback: cross-partition query
+    const query = {
+      query: 'SELECT * FROM c WHERE c.id = @id',
+      parameters: [{ name: '@id', value: id }],
+    };
+    
+    const results = await this.queryAll(query, undefined);
+    return results[0] ?? null;
+  }
+
+  /**
    * Create new document with initial version
    * 
    * @param document - Document data (without version info)
