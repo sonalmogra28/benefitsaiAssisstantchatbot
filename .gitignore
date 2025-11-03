@@ -116,7 +116,13 @@ scripts/**/*.log
 scripts/**/out/**
 scripts/**/dist/**
 
+# --- Azure key rotation scripts (contain secret patterns) ---
+scripts/rotate-azure-keys.ps1
+scripts/rotate-keys-NOW.ps1
+scripts/smoke-test.ps1
+
 # --- Git merge artifacts ---
 *.rej
 *.patch
 *.msi
+.vercel

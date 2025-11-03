@@ -384,17 +384,14 @@ let repositories: {
 export const getRepositories = async () => {
   if (!repositories) {
     const { containers } = await initializeCosmosDb();
-    const { DocumentRepository } = await import('@/lib/db/cosmos/repositories/document.repository');
-    const docRepo = new DocumentRepository();
-    // Initialize the base repository container - hackish but necessary
-    (docRepo as any).container = containers.documents;
+    const { documentRepository } = await import('@/lib/db/cosmos/repositories/document.repository');
     
     repositories = {
       users: new CosmosRepository(containers.users),
       companies: new CosmosRepository(containers.companies),
       benefits: new CosmosRepository(containers.benefits),
       chats: new CosmosRepository(containers.chats),
-      documents: docRepo,
+      documents: documentRepository.instance, // Use lazy singleton instead of manual construction
       faqs: new CosmosRepository(containers.faqs),
       documentChunks: new CosmosRepository(containers.documentChunks),
       messages: new CosmosRepository(containers.messages),

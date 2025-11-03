@@ -8,10 +8,15 @@
 import { CosmosContainers } from '../client';
 import { BaseRepository } from './base.repository';
 import { DocumentDocument, VersionHistory } from '../types';
+import { Container } from '@azure/cosmos';
 
 export class DocumentRepository extends BaseRepository<DocumentDocument> {
-  constructor() {
-    super(CosmosContainers.documents);
+  // Lazy container getter - only accessed at runtime
+  protected get container(): Container {
+    if (typeof process !== 'undefined' && process.env.NEXT_PHASE === 'phase-production-build') {
+      throw new Error('Cannot access Cosmos container during build phase');
+    }
+    return CosmosContainers.documents;
   }
 
   /**
@@ -245,5 +250,19 @@ export class DocumentRepository extends BaseRepository<DocumentDocument> {
   }
 }
 
-// Singleton instance export
-export const documentRepository = new DocumentRepository();
+// Singleton instance - lazy instantiation via getter
+let _documentRepository: DocumentRepository | null = null;
+
+export const documentRepository = {
+  get instance(): DocumentRepository {
+    if (!_documentRepository) {
+      _documentRepository = new DocumentRepository();
+    }
+    return _documentRepository;
+  }
+};
+
+// Re-export methods for convenience
+export function getDocumentRepository(): DocumentRepository {
+  return documentRepository.instance;
+}
