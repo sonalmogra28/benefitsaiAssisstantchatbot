@@ -30,11 +30,10 @@ export interface AIConfigFormValues {
 export class AIConfigService {
   private configRepository: any;
 
-  constructor() {
-    this.initializeRepository();
-  }
-
+  // Remove constructor - initialize lazily per request
+  
   private async initializeRepository() {
+    if (this.configRepository) return; // Already initialized
     const repositories = await getRepositories();
     this.configRepository = repositories.documents; // Using documents container for AI config
   }

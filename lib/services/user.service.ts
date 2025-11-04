@@ -9,15 +9,18 @@ export interface UserMetadata {
 }
 
 export class UserService {
-  private userRepository: any;
+  private userRepository: any = null;
+  private initialized = false;
 
   constructor() {
-    this.initializeRepository();
+    // Lazy initialization - don't call async in constructor
   }
 
-  private async initializeRepository() {
+  private async ensureInitialized() {
+    if (this.initialized) return;
     const repositories = await getRepositories();
     this.userRepository = repositories.users;
+    this.initialized = true;
   }
 
   async updateUserMetadata(userId: string, metadata: UserMetadata): Promise<void> {
@@ -70,7 +73,7 @@ export class UserService {
 
   async listUsers(options: { companyId: string; limit?: number; offset?: number }): Promise<any[]> {
     try {
-      await this.initializeRepository();
+      await this.ensureInitialized();
       
       // Query users by company ID with pagination
       const query = `
@@ -107,7 +110,7 @@ export class UserService {
 
   async assignUserToCompany(userId: string, companyId: string): Promise<void> {
     try {
-      await this.initializeRepository();
+      await this.ensureInitialized();
       
       // Get the user first
       const user = await this.userRepository.getById(userId);
@@ -135,7 +138,7 @@ export class UserService {
 
   async updateUserRole(userId: string, role: string): Promise<void> {
     try {
-      await this.initializeRepository();
+      await this.ensureInitialized();
       
       // Get the user first
       const user = await this.userRepository.getById(userId);
@@ -163,7 +166,7 @@ export class UserService {
 
   async deleteUser(userId: string): Promise<void> {
     try {
-      await this.initializeRepository();
+      await this.ensureInitialized();
       
       // Check if user exists
       const user = await this.userRepository.getById(userId);
@@ -186,4 +189,14 @@ export class UserService {
 
 }
 
-export const userService = new UserService();
+// Lazy singleton to avoid build-time initialization
+let _userService: UserService | null = null;
+export function getUserService(): UserService {
+  if (!_userService) {
+    _userService = new UserService();
+  }
+  return _userService;
+}
+
+// Deprecated: use getUserService() instead
+export const userService = getUserService();

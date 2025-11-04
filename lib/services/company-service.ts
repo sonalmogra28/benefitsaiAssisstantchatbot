@@ -108,4 +108,14 @@ class CompanyService {
   }
 }
 
-export const companyService = new CompanyService();
+// Lazy singleton to avoid build-time initialization
+let _companyService: CompanyService | null = null;
+export function getCompanyService(): CompanyService {
+  if (!_companyService) {
+    _companyService = new CompanyService();
+  }
+  return _companyService;
+}
+
+// Deprecated: use getCompanyService() instead
+export const companyService = getCompanyService();

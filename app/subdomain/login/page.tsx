@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Lock, User, Building } from 'lucide-react';
+import { Loader2, Lock, User, Building, Eye, EyeOff } from 'lucide-react';
 
 export default function SubdomainLoginPage() {
   const [password, setPassword] = useState('');
@@ -20,6 +20,7 @@ export default function SubdomainLoginPage() {
   const [companyId, setCompanyId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,14 +63,15 @@ export default function SubdomainLoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Lock className="w-6 h-6 text-white" />
+          {/* Logo Image */}
+          <div className="mx-auto mb-4">
+            <img src="/brand/amerivet-logo.png" alt="AmeriVet Logo" className="w-32 h-16 mx-auto object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold">Benefits Assistant</CardTitle>
+          <CardTitle className="text-2xl font-bold">Benefits AI Assistant</CardTitle>
           <CardDescription>
-            Enter your shared password to access the benefits chatbot
+            Your personal assistant for health benefits Q&amp;A
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -85,15 +87,28 @@ export default function SubdomainLoginPage() {
                 <Lock className="w-4 h-4" />
                 Shared Password *
               </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter shared password"
-                required
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  required
+                  className="w-full pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -156,13 +171,6 @@ export default function SubdomainLoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>This is a demo environment with shared password authentication.</p>
-            <p className="mt-2">
-              <strong>Default password:</strong> benefits2024!
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -12,7 +12,7 @@
  * - Performance optimization
  */
 
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 import { environmentManager, isServiceRequired, shouldUseMockService } from '@/lib/config/environment';
 
 function isBuild(): boolean {

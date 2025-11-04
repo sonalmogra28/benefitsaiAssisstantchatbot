@@ -1,6 +1,6 @@
 import type OpenAI from 'openai';
 import { getOpenAIConfig } from './config';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 // Lazy client initialization
 let client: OpenAI | null = null;

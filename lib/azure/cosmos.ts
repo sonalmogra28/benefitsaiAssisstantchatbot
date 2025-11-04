@@ -1,6 +1,6 @@
 import type { CosmosClient, Database, Container, ItemResponse } from '@azure/cosmos';
 import { getCosmosDbConfig } from './config';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 function isBuild(): boolean {
   return process.env.NEXT_PHASE === 'phase-production-build';
@@ -384,14 +384,14 @@ let repositories: {
 export const getRepositories = async () => {
   if (!repositories) {
     const { containers } = await initializeCosmosDb();
-    const { documentRepository } = await import('@/lib/db/cosmos/repositories/document.repository');
+    const { getDocumentRepository } = await import('@/lib/db/cosmos/repositories/document.repository');
     
     repositories = {
       users: new CosmosRepository(containers.users),
       companies: new CosmosRepository(containers.companies),
       benefits: new CosmosRepository(containers.benefits),
       chats: new CosmosRepository(containers.chats),
-      documents: documentRepository.instance, // Use lazy singleton instead of manual construction
+      documents: getDocumentRepository(), // Use factory function instead of singleton
       faqs: new CosmosRepository(containers.faqs),
       documentChunks: new CosmosRepository(containers.documentChunks),
       messages: new CosmosRepository(containers.messages),

@@ -1,5 +1,5 @@
 import type OpenAI from 'openai';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 let openaiClient: OpenAI | null = null;
 

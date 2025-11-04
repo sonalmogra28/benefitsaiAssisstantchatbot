@@ -2,7 +2,7 @@ import type Redis from 'ioredis';
 import { isBuild } from '@/lib/runtime/is-build';
 import { DISABLE_AZURE } from '@/lib/runtime/feature-flags';
 import { getRedisConfig } from './config';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 let redis: Redis | null = null;
 

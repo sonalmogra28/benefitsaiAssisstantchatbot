@@ -6,7 +6,7 @@
  */
 
 import { getCosmosClient } from '@/lib/services/service-factory';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 import { isBuildTime, getSafeService } from '@/lib/config/build-time';
 
 export const DATABASE_NAME = 'BenefitsChat';
