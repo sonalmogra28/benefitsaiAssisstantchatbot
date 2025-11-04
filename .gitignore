@@ -128,4 +128,4 @@ scripts/smoke-test.ps1
 .vercel
 
 # --- Sample/Dummy PDF files in root ---
-*.pdf
+/*.pdf
