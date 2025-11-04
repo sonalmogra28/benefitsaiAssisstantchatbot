@@ -5,3 +5,6 @@ declare module '@/lib/*' {
   const anyValue: any;
   export default anyValue;
 }
+
+// Lightweight Node globals for typecheck-only runs
+declare const process: any;
