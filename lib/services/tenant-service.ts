@@ -9,28 +9,36 @@ import { logger } from '@/lib/logger';
 import { DataRetentionService } from './data-retention.service';
 
 export class TenantService {
-  private tenantsContainer;
-  private usersContainer;
-  private conversationsContainer;
-  private messagesContainer;
-  private documentsContainer;
-  private analyticsContainer;
-  private usageContainer;
+  private tenantsContainer: any = null;
+  private usersContainer: any = null;
+  private conversationsContainer: any = null;
+  private messagesContainer: any = null;
+  private documentsContainer: any = null;
+  private analyticsContainer: any = null;
+  private usageContainer: any = null;
   private dataRetentionService: DataRetentionService;
+  private initialized = false;
 
   constructor() {
-    this.tenantsContainer = getContainer('tenants');
-    this.usersContainer = getContainer('users');
-    this.conversationsContainer = getContainer('conversations');
-    this.messagesContainer = getContainer('messages');
-    this.documentsContainer = getContainer('documents');
-    this.analyticsContainer = getContainer('analytics');
-    this.usageContainer = getContainer('usage');
     this.dataRetentionService = new DataRetentionService();
+  }
+
+  private async ensureInitialized() {
+    if (this.initialized) return;
+    
+    this.tenantsContainer = await getContainer('tenants');
+    this.usersContainer = await getContainer('users');
+    this.conversationsContainer = await getContainer('conversations');
+    this.messagesContainer = await getContainer('messages');
+    this.documentsContainer = await getContainer('documents');
+    this.analyticsContainer = await getContainer('analytics');
+    this.usageContainer = await getContainer('usage');
+    this.initialized = true;
   }
 
   // Tenant Management
   async createTenant(tenant: Omit<Tenant, 'createdAt' | 'updatedAt'>): Promise<Tenant> {
+    await this.ensureInitialized();
     const now = new Date().toISOString();
     const newTenant: Tenant = {
       ...tenant,
@@ -63,6 +71,7 @@ export class TenantService {
   }
 
   async getTenant(tenantId: string): Promise<Tenant | null> {
+    await this.ensureInitialized();
     try {
       const container = await this.tenantsContainer;
       const result = await container.item(tenantId, tenantId).read();
@@ -77,6 +86,7 @@ export class TenantService {
   }
 
   async updateTenant(tenantId: string, updates: Partial<Tenant>): Promise<Tenant> {
+    await this.ensureInitialized();
     try {
       const existing = await this.getTenant(tenantId);
       if (!existing) {
@@ -100,6 +110,7 @@ export class TenantService {
   }
 
   async deleteTenant(tenantId: string): Promise<void> {
+    await this.ensureInitialized();
     try {
       // Soft delete - mark as inactive
       await this.updateTenant(tenantId, { status: 'inactive' });
@@ -134,6 +145,7 @@ export class TenantService {
 
   // User Management
   async createUser(user: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User> {
+    await this.ensureInitialized();
     const now = new Date().toISOString();
     const newUser: User = {
       ...user,
@@ -153,6 +165,7 @@ export class TenantService {
   }
 
   async getUser(tenantId: string, userId: string): Promise<User | null> {
+    await this.ensureInitialized();
     try {
       const container = await this.usersContainer;
       const result = await container.item(userId, tenantId).read();
@@ -167,6 +180,7 @@ export class TenantService {
   }
 
   async getUserByEmail(tenantId: string, email: string): Promise<User | null> {
+    await this.ensureInitialized();
     try {
       const query = {
         query: 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.email = @email',
@@ -187,6 +201,7 @@ export class TenantService {
   }
 
   async updateUser(tenantId: string, userId: string, updates: Partial<User>): Promise<User> {
+    await this.ensureInitialized();
     try {
       const existing = await this.getUser(tenantId, userId);
       if (!existing) {
@@ -211,6 +226,7 @@ export class TenantService {
 
   // Data Isolation Helpers
   async getTenantConversations(tenantId: string, userId?: string, limit = 50): Promise<Conversation[]> {
+    await this.ensureInitialized();
     try {
       let query;
       if (userId) {
@@ -239,6 +255,7 @@ export class TenantService {
   }
 
   async getTenantMessages(tenantId: string, conversationId: string, limit = 100): Promise<Message[]> {
+    await this.ensureInitialized();
     try {
       const query = {
         query: 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.conversationId = @conversationId ORDER BY c.createdAt ASC',
@@ -259,6 +276,7 @@ export class TenantService {
   }
 
   async getTenantDocuments(tenantId: string, uploadedBy?: string, limit = 50): Promise<Document[]> {
+    await this.ensureInitialized();
     try {
       let query;
       if (uploadedBy) {
@@ -288,6 +306,7 @@ export class TenantService {
 
   // Analytics and Usage
   async trackEvent(tenantId: string, event: Omit<Analytics, 'id' | 'tenantId' | 'timestamp'>): Promise<void> {
+    await this.ensureInitialized();
     try {
       const analyticsEvent: Analytics = {
         ...event,
@@ -305,6 +324,7 @@ export class TenantService {
   }
 
   async getTenantUsage(tenantId: string, period: string): Promise<TenantUsage | null> {
+    await this.ensureInitialized();
     try {
       const query = {
         query: 'SELECT * FROM c WHERE c.tenantId = @tenantId AND c.period = @period',
@@ -325,6 +345,7 @@ export class TenantService {
   }
 
   async updateTenantUsage(tenantId: string, period: string, usage: Partial<TenantUsage>): Promise<TenantUsage> {
+    await this.ensureInitialized();
     try {
       const existing = await this.getTenantUsage(tenantId, period);
       const now = new Date().toISOString();
@@ -364,6 +385,7 @@ export class TenantService {
 
   // Validation
   async validateTenantAccess(tenantId: string, userId: string): Promise<boolean> {
+    await this.ensureInitialized();
     try {
       const user = await this.getUser(tenantId, userId);
       return user !== null && user.status === 'active';
@@ -374,6 +396,7 @@ export class TenantService {
   }
 
   async validateTenantStatus(tenantId: string): Promise<boolean> {
+    await this.ensureInitialized();
     try {
       const tenant = await this.getTenant(tenantId);
       return tenant !== null && tenant.status === 'active';
@@ -450,5 +473,11 @@ export class TenantService {
   }
 }
 
-// Singleton instance
-export const tenantService = new TenantService();
+// Lazy singleton to avoid build-time initialization
+let _tenantService: TenantService | null = null;
+export function getTenantService(): TenantService {
+  if (!_tenantService) {
+    _tenantService = new TenantService();
+  }
+  return _tenantService;
+}

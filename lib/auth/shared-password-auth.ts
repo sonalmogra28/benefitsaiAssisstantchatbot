@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createHash, timingSafeEqual } from 'crypto';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 export interface SharedPasswordUser {
   id: string;
@@ -76,11 +76,25 @@ export class SharedPasswordAuth {
         };
       }
 
-      // Validate password against stored hash
-      const storedPasswordHash = process.env.SHARED_PASSWORD_HASH;
-      const providedPasswordHash = this.hashPassword(password);
+      // Dual password system: Employee vs Admin
+      const EMPLOYEE_PASSWORD = 'amerivet2024!';
+      const ADMIN_PASSWORD = 'admin2024!';
+      
+      let userRole: 'employee' | 'admin' | null = null;
+      let userPermissions: string[] = [];
 
-      if (!storedPasswordHash || providedPasswordHash !== storedPasswordHash) {
+      if (password === EMPLOYEE_PASSWORD) {
+        userRole = 'employee';
+        userPermissions = ['VIEW_BENEFITS', 'USE_CHAT', 'COMPARE_PLANS', 'VIEW_DOCUMENTS'];
+      } else if (password === ADMIN_PASSWORD) {
+        userRole = 'admin';
+        userPermissions = [
+          'VIEW_BENEFITS', 'USE_CHAT', 'COMPARE_PLANS', 'VIEW_DOCUMENTS',
+          'VIEW_ANALYTICS', 'MANAGE_CONTENT', 'MONITOR_COSTS', 
+          'MANAGE_USERS', 'CONFIGURE_SYSTEM', 'VIEW_QUALITY_METRICS'
+        ];
+      } else {
+        // Invalid password
         await this.recordFailedAttempt(request);
         return {
           user: null,
@@ -92,14 +106,14 @@ export class SharedPasswordAuth {
         };
       }
 
-      // Create user session
+      // Create user session with role-based permissions
       const user: SharedPasswordUser = {
-        id: `shared-${Date.now()}`,
-        email: userInfo?.email || 'shared@company.local',
-        name: userInfo?.name || 'Shared User',
-        companyId: userInfo?.companyId || 'default',
-        roles: ['user'],
-        permissions: ['read'],
+        id: `${userRole}-${Date.now()}`,
+        email: userInfo?.email || `${userRole}@amerivet.com`,
+        name: userInfo?.name || (userRole === 'admin' ? 'AmeriVet Admin' : 'AmeriVet Employee'),
+        companyId: userInfo?.companyId || 'amerivet',
+        roles: [userRole],
+        permissions: userPermissions,
         isSharedPassword: true,
       };
 

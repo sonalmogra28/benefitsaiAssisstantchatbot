@@ -6,11 +6,10 @@ import { v4 as uuidv4 } from 'uuid';
 export class FAQService {
   private faqRepository: any;
 
-  constructor() {
-    this.initializeRepository();
-  }
+  // Remove constructor - initialize lazily per request
 
   private async initializeRepository() {
+    if (this.faqRepository) return; // Already initialized
     const repositories = await getRepositories();
     this.faqRepository = repositories.faqs;
   }

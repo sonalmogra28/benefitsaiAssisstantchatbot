@@ -1,5 +1,5 @@
 import type Redis from 'ioredis';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 
 const CACHE_TTL_SECONDS = 3600; // Cache for 1 hour
 

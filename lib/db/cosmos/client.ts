@@ -9,20 +9,13 @@
  * - Connection pooling and retry policies
  * - Comprehensive error handling
  * - Type-safe operations
+ * 
+ * CRITICAL: No module-level initialization. All functions throw during build phase.
  */
 
 import { CosmosClient, CosmosClientOptions, Container, Database } from '@azure/cosmos';
 
-// Hard runtime guards - prevent browser/edge usage
-if (typeof window !== 'undefined') {
-  throw new Error('Cosmos client imported in the browser. Import only in server code.');
-}
-if (process.env.NEXT_RUNTIME === 'edge') {
-  throw new Error('Cosmos client not supported on the Edge runtime. Use nodejs runtime.');
-}
-
 type GlobalForCosmos = typeof globalThis & { __cosmosClient?: CosmosClient };
-const g = globalThis as GlobalForCosmos;
 
 /**
  * Check if we're in build phase (Next.js static analysis)
@@ -79,10 +72,18 @@ let database: Database | null = null;
  * Lazy initialization - only creates client when actually called at runtime
  */
 export function getCosmosClient(): CosmosClient {
+  // Runtime guards
+  if (typeof window !== 'undefined') {
+    throw new Error('Cosmos client cannot be used in browser. Server-only.');
+  }
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    throw new Error('Cosmos client not supported on Edge runtime. Use nodejs.');
+  }
   if (isBuild()) {
     throw new Error('COSMOS_MISSING: Cannot access Cosmos DB during build phase');
   }
   
+  const g = globalThis as GlobalForCosmos;
   if (!g.__cosmosClient) {
     g.__cosmosClient = new CosmosClient(getCosmosClientOptions());
   }

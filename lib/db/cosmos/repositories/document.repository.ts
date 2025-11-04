@@ -5,18 +5,14 @@
  * Implements document version control following best practices
  */
 
-import { CosmosContainers } from '../client';
+import { getDatabase } from '../client';
 import { BaseRepository } from './base.repository';
 import { DocumentDocument, VersionHistory } from '../types';
 import { Container } from '@azure/cosmos';
 
 export class DocumentRepository extends BaseRepository<DocumentDocument> {
-  // Lazy container getter - only accessed at runtime
-  protected get container(): Container {
-    if (typeof process !== 'undefined' && process.env.NEXT_PHASE === 'phase-production-build') {
-      throw new Error('Cannot access Cosmos container during build phase');
-    }
-    return CosmosContainers.documents;
+  constructor(container: Container) {
+    super(container);
   }
 
   /**
@@ -250,19 +246,16 @@ export class DocumentRepository extends BaseRepository<DocumentDocument> {
   }
 }
 
-// Singleton instance - lazy instantiation via getter
-let _documentRepository: DocumentRepository | null = null;
-
-export const documentRepository = {
-  get instance(): DocumentRepository {
-    if (!_documentRepository) {
-      _documentRepository = new DocumentRepository();
-    }
-    return _documentRepository;
-  }
-};
-
-// Re-export methods for convenience
+/**
+ * Factory function - creates repository at request time only
+ * Throws during build phase to prevent static analysis issues
+ */
 export function getDocumentRepository(): DocumentRepository {
-  return documentRepository.instance;
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    throw new Error('COSMOS_MISSING: Cannot create repository during build phase');
+  }
+  
+  const database = getDatabase();
+  const container = database.container('documents');
+  return new DocumentRepository(container);
 }

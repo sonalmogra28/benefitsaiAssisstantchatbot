@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "dev": "next dev --turbo --hostname localhost --port 8080",
     "build": "next build",
+    "build:vercel": "next build && node ./scripts/postbuild-fix-manifests.mjs",
     "start": "next start -p 3000",
   "prebuild": "node ./scripts/ci-guard.mjs && npm run typecheck && npm run lint",
     "test": "vitest run",

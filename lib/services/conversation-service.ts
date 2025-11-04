@@ -1,4 +1,4 @@
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 import { getClient } from '@/lib/azure/cosmos';
 
 export interface Message {

@@ -122,7 +122,7 @@ export default function SubdomainDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Shield className="w-8 h-8 text-blue-600 mr-3" />
+              <img src="/brand/amerivet-logo.png" alt="AmeriVet Logo" className="w-32 h-10 mr-4 object-contain" />
               <h1 className="text-xl font-semibold text-gray-900">
                 Benefits Assistant
               </h1>

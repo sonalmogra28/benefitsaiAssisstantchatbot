@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "env": {
+    "NEXT_DISABLE_TURBOPACK": "1"
+  }
+}

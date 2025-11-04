@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       companyId: result.user.companyId,
     });
 
-    return result.error || NextResponse.json({
+    return NextResponse.json({
       success: true,
       user: {
         id: result.user.id,

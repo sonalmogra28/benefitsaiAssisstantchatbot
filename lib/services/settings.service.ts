@@ -50,11 +50,10 @@ export interface SettingsDocument {
 export class SettingsService {
   private settingsRepository: any;
 
-  constructor() {
-    this.initializeRepository();
-  }
+  // Remove constructor - initialize lazily per request
 
   private async initializeRepository() {
+    if (this.settingsRepository) return; // Already initialized
     const repositories = await getRepositories();
     this.settingsRepository = repositories.documents; // Using documents container for settings
   }

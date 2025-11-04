@@ -3,7 +3,7 @@
  */
 
 import { Redis } from 'ioredis';
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 import { getRedisConfig } from '@/lib/azure/config';
 
 function isBuild(): boolean {

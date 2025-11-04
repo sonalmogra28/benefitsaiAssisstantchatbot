@@ -3,7 +3,7 @@
  * Phase 3: Production Readiness with Real-time Dashboards and Circuit Breakers
  */
 
-import logger from '@/lib/logger';
+import { logger } from '@/lib/logger';
 import { productionMonitor, SystemHealth } from './production-monitor';
 
 export interface AlertRule {
