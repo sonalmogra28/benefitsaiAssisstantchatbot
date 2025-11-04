@@ -18,8 +18,6 @@ export default function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [darkMode, setDarkMode] = useState(false);
-  const [language, setLanguage] = useState('en');
-  const [emailUpdates, setEmailUpdates] = useState(true);
   const [textSize, setTextSize] = useState<'sm' | 'md' | 'lg'>('md');
 
   useEffect(() => {
@@ -92,29 +90,6 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <Label>Language</Label>
-              <div className="mt-2 max-w-xs">
-                <Select value={language} onValueChange={setLanguage}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Spanish</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Email Updates</Label>
-                <p className="text-sm text-gray-500">Receive benefit tips and reminders</p>
-              </div>
-              <Switch checked={emailUpdates} onCheckedChange={setEmailUpdates} />
             </div>
 
             <Button className="w-full" onClick={() => {
