@@ -126,3 +126,6 @@ scripts/smoke-test.ps1
 *.patch
 *.msi
 .vercel
+
+# --- Sample/Dummy PDF files in root ---
+*.pdf
