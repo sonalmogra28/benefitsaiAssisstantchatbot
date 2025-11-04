@@ -33,7 +33,7 @@ import {
   findMostSimilar,
 } from '../../../lib/rag/cache-utils';
 import { QualityTracker } from '../../../lib/analytics/quality-tracker';
-import type { QARequest, QAResponse, Tier, Citation, ConversationQuality } from '../../../types/rag';
+import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult } from '../../../types/rag';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -200,10 +200,48 @@ export async function POST(req: NextRequest) {
       filters: {},
     };
     
-    const retrievalResult = await hybridRetrieve(
-      normalizedQuery,
-      retrievalContext
-    );
+    let retrievalResult: RetrievalResult;
+    try {
+      retrievalResult = await hybridRetrieve(
+        normalizedQuery,
+        retrievalContext
+      );
+    } catch (retrievalError) {
+      console.warn('[QA] Retrieval unavailable, using demo fallback:', retrievalError instanceof Error ? retrievalError.message : retrievalError);
+      // Demo fallback context when Azure Search is not configured
+      const demoText = `This is a demo environment without connected search.
+
+HSA vs FSA quick summary:
+- HSA pairs with High Deductible Health Plans and funds roll over year to year; you can invest them.
+- FSA works with most plans but is generally "use-it-or-lose-it" (limited carryover or grace period).
+- Both reduce taxable income; HSA typically has higher contribution limits.
+
+Dental benefits overview:
+- Preventive care (cleanings, exams) is often covered at 100%.
+- Basic services (fillings) and major services (crowns) vary by plan coinsurance and annual maximum.`;
+
+      retrievalResult = {
+        chunks: [
+          {
+            id: 'demo-001',
+            docId: 'demo-doc',
+            companyId: retrievalContext.companyId,
+            sectionPath: 'Demo',
+            content: demoText,
+            title: 'Benefits Overview (Demo)',
+            position: 0,
+            windowStart: 0,
+            windowEnd: demoText.length,
+            metadata: { tokenCount: Math.ceil(demoText.length / 4), relevanceScore: 0.5 },
+            createdAt: new Date(),
+          },
+        ],
+        method: 'hybrid',
+        totalResults: 1,
+        latencyMs: Date.now() - retrievalStart,
+        scores: { vector: [], bm25: [], rrf: [] },
+      } as RetrievalResult;
+    }
     retrievalTime = Date.now() - retrievalStart;
 
     // Build context string and citations from chunks

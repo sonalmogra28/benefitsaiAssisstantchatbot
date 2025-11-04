@@ -10,7 +10,7 @@
         "types/stubs/*"
       ]
     },
-    "types": ["node"]
+    "types": []
   },
   "include": [
     "app/api/ready/route.ts",

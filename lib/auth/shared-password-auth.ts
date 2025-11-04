@@ -155,7 +155,7 @@ export class SharedPasswordAuth {
 
       return {
         user,
-        error: null,
+        error: response,  // Return the response object here for successful auth
         isAuthenticated: true,
       };
 

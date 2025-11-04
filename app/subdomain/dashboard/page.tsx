@@ -42,7 +42,7 @@ export default function SubdomainDashboardPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/subdomain/auth/login', {
+      const response = await fetch('/api/subdomain/auth/session', {
         method: 'GET',
         credentials: 'include',
       });
@@ -52,8 +52,16 @@ export default function SubdomainDashboardPage() {
       }
 
       const data = await response.json();
-      if (data.success && data.user) {
-        setUser(data.user);
+      if (data.ok && data.role) {
+        // Convert session response to user format
+        setUser({
+          id: 'subdomain-user',
+          email: 'user@amerivet.com',
+          name: data.role === 'admin' ? 'Admin User' : 'Employee User',
+          companyId: 'amerivet',
+          roles: [data.role],
+          permissions: data.permissions,
+        });
       } else {
         throw new Error('No user data');
       }
@@ -67,8 +75,8 @@ export default function SubdomainDashboardPage() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/subdomain/auth/login', {
-        method: 'DELETE',
+      await fetch('/api/subdomain/auth/logout', {
+        method: 'POST',
         credentials: 'include',
       });
       router.push('/subdomain/login');
@@ -92,6 +100,10 @@ export default function SubdomainDashboardPage() {
 
   const navigateToCalculator = () => {
     router.push('/subdomain/calculator');
+  };
+
+  const navigateToSettings = () => {
+    router.push('/subdomain/settings');
   };
 
   if (isLoading) {
@@ -236,7 +248,7 @@ export default function SubdomainDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={navigateToSettings}>
             <CardHeader>
               <div className="flex items-center">
                 <Settings className="w-8 h-8 text-gray-600 mr-3" />
