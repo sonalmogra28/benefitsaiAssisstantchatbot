@@ -34,7 +34,6 @@ import {
 } from '../../../lib/rag/cache-utils';
 import { QualityTracker } from '../../../lib/analytics/quality-tracker';
 import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult } from '../../../types/rag';
-import { azureOpenAIService } from '@/lib/azure/openai';
 import { getRedisClient } from '@/lib/services/service-factory';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +101,7 @@ async function generateResponse(
     { role: 'user' as const, content: `Question: ${query}\n\nContext:\n${context}` },
   ];
 
+  const { azureOpenAIService } = await import('@/lib/azure/openai');
   const { content, usage } = await azureOpenAIService.generateChatCompletion(messages, {
     maxTokens: tier === 'L1' ? 400 : tier === 'L2' ? 700 : 1000,
     temperature: 0.3,
