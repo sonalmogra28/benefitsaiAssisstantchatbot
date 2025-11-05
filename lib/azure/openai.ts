@@ -1,19 +1,38 @@
 import type OpenAI from 'openai';
-import { getOpenAIConfig } from './config';
 import { logger } from '@/lib/logger';
 
 // Lazy client initialization
 let client: OpenAI | null = null;
 
+// Minimal, self-contained Azure OpenAI config (avoid mega-config validation)
+function getMinimalOpenAIConfig() {
+  const endpoint = (process.env.AZURE_OPENAI_ENDPOINT || '').trim();
+  const apiKey = (process.env.AZURE_OPENAI_API_KEY || '').trim();
+  const apiVersion = (process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview').trim();
+  const deploymentL1 = process.env.AZURE_OPENAI_DEPLOYMENT_L1 || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
+  const deploymentL2 = process.env.AZURE_OPENAI_DEPLOYMENT_L2 || deploymentL1;
+  const deploymentL3 = process.env.AZURE_OPENAI_DEPLOYMENT_L3 || deploymentL2;
+  const embeddingDeployment = process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002';
+  return {
+    endpoint,
+    apiKey,
+    apiVersion,
+    deployments: { L1: deploymentL1, L2: deploymentL2, L3: deploymentL3 },
+    embeddingDeployment,
+  };
+}
+
 async function getOpenAIClient(): Promise<OpenAI> {
   if (client) return client;
 
-  const openaiConfig = getOpenAIConfig();
+  const cfg = getMinimalOpenAIConfig();
   const { default: OpenAIClass } = await import('openai');
-  
+
   client = new OpenAIClass({
-    apiKey: (getOpenAIConfig()).apiKey,
-    baseURL: (getOpenAIConfig()).endpoint,
+    apiKey: cfg.apiKey,
+    baseURL: cfg.endpoint ? `${cfg.endpoint}/openai` : undefined,
+    defaultQuery: { 'api-version': cfg.apiVersion },
+    defaultHeaders: cfg.apiKey ? { 'api-key': cfg.apiKey } : undefined,
   });
   
   return client;
@@ -41,8 +60,8 @@ export class AzureOpenAIService {
       stop?: string[];
     } = {}
   ): Promise<string> {
-    const client = await this.ensureClient();
-    const openaiConfig = getOpenAIConfig();
+  const client = await this.ensureClient();
+  const cfg = getMinimalOpenAIConfig();
     try {
       const {
         maxTokens = 1000,
@@ -54,7 +73,7 @@ export class AzureOpenAIService {
       } = options;
 
       const response = await client.chat.completions.create({
-        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
+        model: cfg.deployments.L2 || 'gpt-4o-mini',
         messages: [
           {
             role: 'user',
@@ -116,8 +135,10 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const response = await client.chat.completions.create({
-        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
+  const cfg = getMinimalOpenAIConfig();
+  const cli = await this.ensureClient();
+  const response = await cli.chat.completions.create({
+        model: cfg.deployments.L2 || 'gpt-4o-mini',
         messages: messages,
         max_tokens: maxTokens,
         temperature,
@@ -178,8 +199,10 @@ export class AzureOpenAIService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      const response = await client.embeddings.create({
-        model: (getOpenAIConfig()).embeddingDeployment,
+  const cfg = getMinimalOpenAIConfig();
+  const cli = await this.ensureClient();
+  const response = await cli.embeddings.create({
+        model: cfg.embeddingDeployment,
         input: text
       });
 
@@ -205,8 +228,10 @@ export class AzureOpenAIService {
 
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     try {
-      const response = await client.embeddings.create({
-        model: (getOpenAIConfig()).embeddingDeployment,
+  const cfg = getMinimalOpenAIConfig();
+  const cli = await this.ensureClient();
+  const response = await cli.embeddings.create({
+        model: cfg.embeddingDeployment,
         input: texts
       });
 
@@ -251,8 +276,10 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const stream = await client.chat.completions.create({
-        model: (getOpenAIConfig()).deploymentName,
+  const cfg = getMinimalOpenAIConfig();
+  const cli = await this.ensureClient();
+  const stream = await cli.chat.completions.create({
+        model: cfg.deployments.L2 || 'gpt-4o-mini',
         messages,
         max_tokens: maxTokens,
         temperature,
@@ -342,9 +369,10 @@ export class AzureOpenAIService {
       
       logger.info({}, 'Models requested');
 
+      const cfg = getMinimalOpenAIConfig();
       return [
         {
-          id: (getOpenAIConfig()).deploymentName,
+          id: cfg.deployments.L2,
           object: 'model',
           created: Date.now(),
           ownedBy: 'azure'
