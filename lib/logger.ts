@@ -1,9 +1,26 @@
-// lib/logger.ts
-import pino from "pino";
+// lib/logger.ts (pino-free, build-safe console wrapper)
 
-const base = pino({ level: process.env.LOG_LEVEL ?? "info" });
+type Level = "debug" | "info" | "warn" | "error";
+const LEVELS: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 };
 
-function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
+function getLevel(): Level {
+  const raw = (process.env.LOG_LEVEL || "info").toLowerCase();
+  if (raw === "debug" || raw === "info" || raw === "warn" || raw === "error") return raw;
+  return "info";
+}
+
+function shouldLog(level: Level): boolean {
+  const current = getLevel();
+  return LEVELS[level] >= LEVELS[current];
+}
+
+function call(method: Level, ...args: any[]) {
+  if (!shouldLog(method)) return;
+  const target = method === "debug" ? console.debug
+    : method === "warn" ? console.warn
+    : method === "error" ? console.error
+    : console.info;
+
   const [a, b, c] = args;
 
   // ("msg", obj?, err?)
@@ -11,9 +28,9 @@ function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
     const msg = a;
     const obj = b && typeof b === "object" ? b : undefined;
     const err = c instanceof Error ? c : undefined;
-    if (err) return (base as any)[method]({ ...(obj ?? {}), err }, msg);
-    if (obj)  return (base as any)[method](obj, msg);
-    return (base as any)[method](msg);
+    if (err) return target({ ...(obj ?? {}), err, level: method, ts: new Date().toISOString() }, msg);
+    if (obj)  return target({ ...obj, level: method, ts: new Date().toISOString() }, msg);
+    return target(`[${method}] ${msg}`);
   }
 
   // (obj, "msg"?, err?)
@@ -21,12 +38,12 @@ function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
     const obj = a;
     const msg = typeof b === "string" ? b : undefined;
     const err = c instanceof Error ? c : undefined;
-    if (err) return (base as any)[method]({ ...obj, err }, msg);
-    if (msg)  return (base as any)[method](obj, msg);
-    return (base as any)[method](obj);
+    if (err) return target({ ...obj, err, level: method, ts: new Date().toISOString() }, msg);
+    if (msg)  return target({ ...obj, level: method, ts: new Date().toISOString() }, msg);
+    return target({ ...obj, level: method, ts: new Date().toISOString() });
   }
 
-  return (base as any)[method](String(a ?? ""));
+  return target(`[${method}] ${String(a ?? "")}`);
 }
 
 export const logger = {
@@ -59,11 +76,10 @@ export const logger = {
   },
 };
 
-// ✅ Compatibility helpers for existing code that imports named functions
+// Compatibility helpers for existing code that imports named functions
 export const logInfo  = (...args: any[]) => logger.info(...args);
 export const logWarn  = (...args: any[]) => logger.warn(...args);
 export const logError = (...args: any[]) => logger.error(...args);
 export const logDebug = (...args: any[]) => logger.debug(...args);
 
-// Also export default for `import log from '@/lib/logger'`
 export default logger;
