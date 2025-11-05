@@ -43,9 +43,9 @@ let searchClient: SearchClient<any> | null = null;
 function ensureSearchClient(): SearchClient<any> | null {
   if (searchClient) return searchClient;
 
-  const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
-  const apiKey = process.env.AZURE_SEARCH_API_KEY;
-  const indexName = process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1";
+  const endpoint = (process.env.AZURE_SEARCH_ENDPOINT || '').trim();
+  const apiKey = (process.env.AZURE_SEARCH_API_KEY || '').trim();
+  const indexName = (process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1").replace(/\r|\n/g, '').trim();
 
   if ((!endpoint || !apiKey) && !isVitest) {
     throw new Error("Azure Search credentials not configured");
@@ -55,11 +55,7 @@ function ensureSearchClient(): SearchClient<any> | null {
     return null; // Vitest path: use in-memory index
   }
 
-  searchClient = new SearchClient(
-    endpoint,
-    indexName,
-    new AzureKeyCredential(apiKey)
-  );
+  searchClient = new SearchClient(endpoint, indexName, new AzureKeyCredential(apiKey));
 
   return searchClient;
 }
@@ -73,10 +69,13 @@ function ensureSearchClient(): SearchClient<any> | null {
  * TODO: Integrate with Azure OpenAI text-embedding-ada-002
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-  // Stub implementation - returns dummy vector
-  // In production, call Azure OpenAI embeddings API
-  console.warn("Using stub embedding - integrate Azure OpenAI in production");
-  return new Array(1536).fill(0).map(() => Math.random());
+  try {
+    const { azureOpenAIService } = await import('@/lib/azure/openai');
+    return await azureOpenAIService.generateEmbedding(text);
+  } catch (err) {
+    console.warn("Embedding generation failed, falling back to stub:", err);
+    return new Array(1536).fill(0).map(() => Math.random());
+  }
 }
 
 // ============================================================================

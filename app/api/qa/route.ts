@@ -34,6 +34,8 @@ import {
 } from '../../../lib/rag/cache-utils';
 import { QualityTracker } from '../../../lib/analytics/quality-tracker';
 import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult } from '../../../types/rag';
+import { azureOpenAIService } from '@/lib/azure/openai';
+import { getRedisClient } from '@/lib/services/service-factory';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -48,35 +50,37 @@ const ENABLE_EXACT_CACHE = true;
 // Cache Client (Lazy Initialization)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// TODO: Integrate Redis client with lazy-init pattern
-// For now, use in-memory cache for development
+// Prefer Redis cache; fall back to in-memory map
 const MEMORY_CACHE = new Map<string, { data: QAResponse; expiresAt: number }>();
 
 async function getCachedResponse(cacheKey: string): Promise<QAResponse | null> {
+  try {
+    const redis = (await getRedisClient()) as any;
+    const raw = await redis.get(cacheKey);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+
   const cached = MEMORY_CACHE.get(cacheKey);
   if (!cached) return null;
-  
   if (Date.now() > cached.expiresAt) {
     MEMORY_CACHE.delete(cacheKey);
     return null;
   }
-  
   return cached.data;
 }
 
-async function setCachedResponse(
-  cacheKey: string,
-  response: QAResponse,
-  ttlSeconds: number
-): Promise<void> {
-  MEMORY_CACHE.set(cacheKey, {
-    data: response,
-    expiresAt: Date.now() + ttlSeconds * 1000,
-  });
+async function setCachedResponse(cacheKey: string, response: QAResponse, ttlSeconds: number): Promise<void> {
+  try {
+    const redis = (await getRedisClient()) as any;
+    await redis.setEx(cacheKey, ttlSeconds, JSON.stringify(response));
+    return;
+  } catch {}
+
+  MEMORY_CACHE.set(cacheKey, { data: response, expiresAt: Date.now() + ttlSeconds * 1000 });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LLM Generation (Stub for Azure OpenAI Integration)
+// LLM Generation using Azure OpenAI (no inline citations)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function generateResponse(
@@ -85,37 +89,29 @@ async function generateResponse(
   tier: Tier,
   citations: Citation[]
 ): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
-  // TODO: Integrate Azure OpenAI with tier-specific models
-  // - L1: gpt-4o-mini (fast, simple)
-  // - L2: gpt-4-turbo (moderate complexity)
-  // - L3: gpt-4 (complex, tools)
-  
-  // Stub response for development
-  const systemPrompt = `You are a benefits AI assistant. Answer the user's question using ONLY the provided context. Include citations.
+  const system = [
+    'You are a helpful Benefits AI assistant.',
+    'Use ONLY the provided context to answer.',
+    'Do NOT include citation markers in your answer.',
+    'If the context is insufficient, say you do not have enough information rather than guessing.',
+    'Write concisely and naturally, like a human assistant.'
+  ].join(' ');
 
-Context:
-${context}
+  const messages = [
+    { role: 'system' as const, content: system },
+    { role: 'user' as const, content: `Question: ${query}\n\nContext:\n${context}` },
+  ];
 
-Rules:
-- Only use information from the context
-- Cite sources using [Citation: <chunkId>]
-- If the context doesn't contain enough information, say so
-- Be concise and accurate`;
-
-  // Simulate LLM response
-  const simulatedResponse = `Based on the provided benefits documentation:
-
-${context.substring(0, 200)}...
-
-[This is a simulated response. Integration with Azure OpenAI required for production.]
-
-Citation: ${citations[0]?.chunkId || 'chunk-001'}`;
+  const { content, usage } = await azureOpenAIService.generateChatCompletion(messages, {
+    maxTokens: tier === 'L1' ? 400 : tier === 'L2' ? 700 : 1000,
+    temperature: 0.3,
+  });
 
   return {
-    text: simulatedResponse,
+    text: content,
     usage: {
-      promptTokens: 500,
-      completionTokens: 150,
+      promptTokens: usage.promptTokens || 0,
+      completionTokens: usage.completionTokens || 0,
     },
   };
 }
