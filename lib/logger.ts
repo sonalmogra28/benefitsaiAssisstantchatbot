@@ -1,7 +1,22 @@
 // lib/logger.ts
 import pino from "pino";
 
-const base = pino({ level: process.env.LOG_LEVEL ?? "info" });
+// Standard pino levels + any custom levels
+const standardLevels = { fatal: 60, error: 50, warn: 40, info: 30, debug: 20, trace: 10 };
+const customLevels = {
+  audit: 35,   // Between warn(40) and info(30)
+  metric: 25,  // Between info(30) and debug(20)
+};
+
+// Merge standard + custom so 'info' exists
+const allLevels = { ...standardLevels, ...customLevels };
+
+const base = pino({
+  level: process.env.LOG_LEVEL ?? "info",
+  customLevels: allLevels,
+  useOnlyCustomLevels: false, // Allow standard levels
+  formatters: { level: (label) => ({ level: label }) },
+});
 
 function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
   const [a, b, c] = args;
