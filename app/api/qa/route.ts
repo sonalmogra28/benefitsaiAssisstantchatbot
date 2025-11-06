@@ -33,7 +33,7 @@ import {
   findMostSimilar,
 } from '../../../lib/rag/cache-utils';
 import { QualityTracker } from '../../../lib/analytics/quality-tracker';
-import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult } from '../../../types/rag';
+import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult, Chunk } from '../../../types/rag';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -45,23 +45,14 @@ const ENABLE_SEMANTIC_CACHE = true;
 const ENABLE_EXACT_CACHE = true;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cache Client (Lazy Initialization)
+// Cache Client (Safe Redis with Graceful Degradation)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// TODO: Integrate Redis client with lazy-init pattern
-// For now, use in-memory cache for development
-const MEMORY_CACHE = new Map<string, { data: QAResponse; expiresAt: number }>();
+import { cacheGet, cacheSet, isCacheAvailable } from '@/lib/cache';
+import { logger } from '@/lib/logger';
 
 async function getCachedResponse(cacheKey: string): Promise<QAResponse | null> {
-  const cached = MEMORY_CACHE.get(cacheKey);
-  if (!cached) return null;
-  
-  if (Date.now() > cached.expiresAt) {
-    MEMORY_CACHE.delete(cacheKey);
-    return null;
-  }
-  
-  return cached.data;
+  return cacheGet<QAResponse>(cacheKey);
 }
 
 async function setCachedResponse(
@@ -69,10 +60,7 @@ async function setCachedResponse(
   response: QAResponse,
   ttlSeconds: number
 ): Promise<void> {
-  MEMORY_CACHE.set(cacheKey, {
-    data: response,
-    expiresAt: Date.now() + ttlSeconds * 1000,
-  });
+  await cacheSet(cacheKey, response, ttlSeconds);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -151,7 +139,20 @@ Citation: ${citations[0]?.chunkId || 'chunk-001'}`;
 // Main QA Orchestration
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { ensureIndexHealthy } from '@/lib/rag/search-health';
+
+// Run index health check once on first request
+let healthCheckInitialized = false;
+
 export async function POST(req: NextRequest) {
+  // Ensure index is healthy before processing requests
+  if (!healthCheckInitialized) {
+    healthCheckInitialized = true;
+    await ensureIndexHealthy().catch(err => {
+      logger.error({ err: String(err) }, '[QA] Index health check failed');
+    });
+  }
+
   const startTime = Date.now();
   let retrievalTime = 0;
   let generationTime = 0;
@@ -278,6 +279,34 @@ Dental benefits overview:
       } as RetrievalResult;
     }
     retrievalTime = Date.now() - retrievalStart;
+
+    // Handle zero-results case (index corpus starvation)
+    if (retrievalResult.chunks.length === 0) {
+      logger.warn(
+        { query: normalizedQuery, companyId: request.companyId },
+        '[QA] Zero retrieval results; returning fallback response'
+      );
+      
+      const fallbackResponse: QAResponse = {
+        answer: "I don't have enough indexed documents to answer your question right now. Please try rephrasing your question or contact your HR administrator for assistance. Example questions I can typically help with: 'What dental coverage is available?' or 'How do I enroll in benefits?'",
+        citations: [],
+        tier: 'L3',
+        fromCache: false,
+        usage: {
+          promptTokens: 0,
+          completionTokens: 0,
+          latencyMs: Date.now() - startTime,
+        },
+        metadata: {
+          retrievalCount: 0,
+          groundingScore: 0,
+          escalated: false,
+          retrievalMethod: 'hybrid',
+        },
+      };
+
+      return NextResponse.json(fallbackResponse);
+    }
 
     // Deduplicate at chunk level (post-RRF)
     const keyOf = (c: Chunk) => c.id ?? `${c.docId}:${c.position ?? 0}`;
@@ -409,16 +438,19 @@ Dental benefits overview:
       },
     };
 
-    // Step 10: Cache result
+    // Step 10: Cache result (async, non-blocking)
     const cacheKey = buildCacheKey(normalizedQuery, request.companyId);
     const cacheTTL = getTTLForTier(currentTier);
-    await setCachedResponse(cacheKey, qaResponse, cacheTTL);
-
-    console.log('[QA] Response cached:', {
-      tier: currentTier,
-      ttl: cacheTTL + 's',
-      totalLatency: Date.now() - startTime + 'ms',
-    });
+    
+    if (cacheTTL > 0 && isCacheAvailable()) {
+      setCachedResponse(cacheKey, qaResponse, cacheTTL).then(() => {
+        logger.info({ tier: currentTier, ttl: `${cacheTTL}s` }, '[QA] Cache write completed');
+      }).catch(err => {
+        logger.warn({ err: String(err) }, '[QA] Cache write failed (non-blocking)');
+      });
+    } else if (!isCacheAvailable()) {
+      logger.debug('[QA] Cache unavailable; skipping write');
+    }
 
     // Step 11: Record conversation quality metrics
     const conversationId = request.context?.sessionId || `conv-${Date.now()}-${Math.random().toString(36).substring(7)}`;

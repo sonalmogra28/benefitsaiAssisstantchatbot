@@ -55,6 +55,11 @@ export interface ResponseMetadata {
   escalated: boolean;
   cacheKey?: string;
   retrievalMethod?: "vector" | "bm25" | "hybrid";
+  rawRetrievalCount?: number;    // Total chunks before deduplication
+  dedupeCount?: number;          // Unique chunks after deduplication
+  citationCount?: number;        // Citations shown to user
+  shownCount?: number;           // Alternative name for citationCount
+  usedCount?: number;            // Alternative name for dedupeCount
 }
 
 // ============================================================================
