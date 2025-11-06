@@ -1,85 +1,34 @@
-import type OpenAI from 'openai';
+import type { AzureOpenAI } from 'openai';
+import { getOpenAIConfig } from './config';
 import { logger } from '@/lib/logger';
-import { ENV } from '@/lib/env';
 
-// Lazy client initialization (separate clients for chat and embeddings)
-let chatClient: OpenAI | null = null;
-let embeddingClient: OpenAI | null = null;
+// Lazy client initialization
+let client: AzureOpenAI | null = null;
 
-// Azure OpenAI configuration from centralized ENV
-export const AOAI = {
-  endpoint: ENV.AZURE_OPENAI_ENDPOINT,
-  apiKey: ENV.AZURE_OPENAI_API_KEY,
-  apiVersion: ENV.AZURE_OPENAI_API_VERSION,
-  deployments: {
-    L1: ENV.AZURE_OPENAI_DEPLOYMENT_L1,
-    L2: ENV.AZURE_OPENAI_DEPLOYMENT_L2,
-    L3: ENV.AZURE_OPENAI_DEPLOYMENT_L3,
-  },
-  embeddingDeployment: ENV.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
-} as const;
+async function getOpenAIClient(): Promise<AzureOpenAI> {
+  if (client) return client;
 
-/**
- * Get Azure OpenAI client for CHAT completions (deployment in baseURL)
- * Azure requires deployment name in baseURL path, not as model parameter
- */
-async function getChatClient(): Promise<OpenAI> {
-  if (chatClient) return chatClient;
-
-  const { default: OpenAIClass } = await import('openai');
-
-  // Deployment must be in baseURL for Azure (not passed as model param)
-  chatClient = new OpenAIClass({
-    apiKey: AOAI.apiKey,
-    baseURL: `${AOAI.endpoint}/openai/deployments/${AOAI.deployments.L2}`,
-    defaultQuery: { 'api-version': AOAI.apiVersion },
-    defaultHeaders: { 'api-key': AOAI.apiKey },
+  const openaiConfig = getOpenAIConfig();
+  const { AzureOpenAI: AzureOpenAIClass } = await import('openai');
+  
+  client = new AzureOpenAIClass({
+    apiKey: openaiConfig.apiKey,
+    endpoint: openaiConfig.endpoint,
+    apiVersion: openaiConfig.apiVersion,
   });
   
-  return chatClient;
-}
-
-/**
- * Get Azure OpenAI client for EMBEDDINGS (separate deployment in baseURL)
- */
-async function getEmbeddingClient(): Promise<OpenAI> {
-  if (embeddingClient) return embeddingClient;
-
-  const { default: OpenAIClass } = await import('openai');
-
-  // Separate client for embeddings with its deployment in baseURL
-  embeddingClient = new OpenAIClass({
-    apiKey: AOAI.apiKey,
-    baseURL: `${AOAI.endpoint}/openai/deployments/${AOAI.embeddingDeployment}`,
-    defaultQuery: { 'api-version': AOAI.apiVersion },
-    defaultHeaders: { 'api-key': AOAI.apiKey },
-  });
-  
-  return embeddingClient;
-}
-
-// Legacy function for backwards compatibility (uses chat client)
-async function getOpenAIClient(): Promise<OpenAI> {
-  return getChatClient();
+  return client;
 }
 
 // Azure OpenAI service class
 export class AzureOpenAIService {
-  private chatClient: OpenAI | null = null;
-  private embeddingClient: OpenAI | null = null;
+  private client: AzureOpenAI | null = null;
   
-  private async ensureChatClient(): Promise<OpenAI> {
-    if (!this.chatClient) {
-      this.chatClient = await getChatClient();
+  private async ensureClient(): Promise<AzureOpenAI> {
+    if (!this.client) {
+      this.client = await getOpenAIClient();
     }
-    return this.chatClient;
-  }
-
-  private async ensureEmbeddingClient(): Promise<OpenAI> {
-    if (!this.embeddingClient) {
-      this.embeddingClient = await getEmbeddingClient();
-    }
-    return this.embeddingClient;
+    return this.client;
   }
 
   async generateText(
@@ -93,8 +42,8 @@ export class AzureOpenAIService {
       stop?: string[];
     } = {}
   ): Promise<string> {
-    const client = await this.ensureChatClient();
-  
+    const client = await this.ensureClient();
+    const openaiConfig = getOpenAIConfig();
     try {
       const {
         maxTokens = 1000,
@@ -105,9 +54,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      // Azure ignores 'model' parameter (deployment is in baseURL), but SDK requires it
       const response = await client.chat.completions.create({
-        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
+        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
         messages: [
           {
             role: 'user',
@@ -159,6 +107,7 @@ export class AzureOpenAIService {
       totalTokens: number;
     };
   }> {
+    const client = await this.ensureClient();
     try {
       const {
         maxTokens = 1000,
@@ -169,9 +118,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const cli = await this.ensureChatClient();
-      const response = await cli.chat.completions.create({
-        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
+      const response = await client.chat.completions.create({
+        model: (getOpenAIConfig()).deploymentName || 'gpt-3.5-turbo',
         messages: messages,
         max_tokens: maxTokens,
         temperature,
@@ -231,10 +179,10 @@ export class AzureOpenAIService {
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
+    const client = await this.ensureClient();
     try {
-      const cli = await this.ensureEmbeddingClient();
-      const response = await cli.embeddings.create({
-        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
+      const response = await client.embeddings.create({
+        model: (getOpenAIConfig()).embeddingDeployment,
         input: text
       });
 
@@ -259,10 +207,10 @@ export class AzureOpenAIService {
   }
 
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
+    const client = await this.ensureClient();
     try {
-      const cli = await this.ensureEmbeddingClient();
-      const response = await cli.embeddings.create({
-        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
+      const response = await client.embeddings.create({
+        model: (getOpenAIConfig()).embeddingDeployment,
         input: texts
       });
 
@@ -297,6 +245,7 @@ export class AzureOpenAIService {
       stop?: string[];
     } = {}
   ): Promise<AsyncIterable<string>> {
+    const client = await this.ensureClient();
     try {
       const {
         maxTokens = 1000,
@@ -307,9 +256,8 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-      const cli = await this.ensureChatClient();
-      const stream = await cli.chat.completions.create({
-        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
+      const stream = await client.chat.completions.create({
+        model: (getOpenAIConfig()).deploymentName,
         messages,
         max_tokens: maxTokens,
         temperature,
@@ -399,10 +347,9 @@ export class AzureOpenAIService {
       
       logger.info({}, 'Models requested');
 
-      
       return [
         {
-          id: AOAI.deployments.L2,
+          id: (getOpenAIConfig()).deploymentName,
           object: 'model',
           created: Date.now(),
           ownedBy: 'azure'
@@ -420,5 +367,4 @@ export const azureOpenAIService = new AzureOpenAIService();
 
 // Export the client getter for advanced operations
 export { getOpenAIClient };
-
 

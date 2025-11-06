@@ -6,19 +6,8 @@
 import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import type { Chunk, RetrievalContext, RetrievalResult, HybridSearchConfig } from "../../types/rag";
 import { isVitest } from '@/lib/ai/runtime';
-import { ENV } from '@/lib/env';
 
 // ============================================================================
-// Fallback-safe field sets for production index
-const FALLBACK_SEARCH_FIELDS = ["content"] as const;
-const FALLBACK_SELECT_FIELDS = [
-  "id",
-  "document_id",
-  "company_id",
-  "chunk_index",
-  "content",
-  "metadata",
-] as const;
 // In-Memory Test Index (for Vitest)
 // ============================================================================
 
@@ -49,42 +38,53 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // Azure Search Client (Lazy Initialization)
 // ============================================================================
 
-let searchClient: any | null = null;
-const VECTOR_FIELD = ENV.AZURE_SEARCH_VECTOR_FIELD;
+let searchClient: SearchClient<any> | null = null;
 
-function ensureSearchClient(): any | null {
+function ensureSearchClient(): SearchClient<any> | null {
   if (searchClient) return searchClient;
 
-  if (isVitest) {
+  const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
+  const apiKey = process.env.AZURE_SEARCH_API_KEY;
+  const indexName = process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1";
+
+  if ((!endpoint || !apiKey) && !isVitest) {
+    throw new Error("Azure Search credentials not configured");
+  }
+  
+  if (!endpoint || !apiKey) {
     return null; // Vitest path: use in-memory index
   }
 
   searchClient = new SearchClient(
-    ENV.AZURE_SEARCH_ENDPOINT,
-    ENV.AZURE_SEARCH_INDEX_NAME,
-    new AzureKeyCredential(ENV.AZURE_SEARCH_API_KEY)
+    endpoint,
+    indexName,
+    new AzureKeyCredential(apiKey)
   );
 
   return searchClient;
 }
 
 // ============================================================================
-// Embedding Generation (Stub - will integrate with Azure OpenAI)
+// Embedding Generation
 // ============================================================================
 
 /**
- * Generate embedding for query
- * TODO: Integrate with Azure OpenAI text-embedding-ada-002
+ * Generate embedding for query using Azure OpenAI
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    const { azureOpenAIService } = await import('@/lib/azure/openai');
-    return await azureOpenAIService.generateEmbedding(text);
-  } catch (err) {
-    console.warn("Embedding generation failed, falling back to stub:", err);
-    return new Array(1536).fill(0).map(() => Math.random());
-  }
+  // Use the real Azure OpenAI service
+  const { azureOpenAIService } = await import('@/lib/azure/openai');
+  return azureOpenAIService.generateEmbedding(text);
 }
+
+// ============================================================================
+// Vector Search
+// ============================================================================
+
+/**
+ * Retrieve top-K chunks using vector similarity
+ * Uses HNSW index with cosine distance
+ */
 export async function retrieveVectorTopK(
   query: string,
   context: RetrievalContext,
@@ -96,19 +96,16 @@ export async function retrieveVectorTopK(
   // In-memory fallback for tests
   if (!client && isVitest) {
     const queryVector = await generateEmbedding(query);
-    const filtered = memoryIndex.filter((c) => c.companyId === context.companyId);
+    const filtered = memoryIndex.filter(c => c.companyId === context.companyId);
     const scored = filtered
-      .map((c) => ({
-        chunk: c,
-        score: cosineSimilarity(
-          queryVector,
-          c.embedding ?? new Array(queryVector.length).fill(0)
-        ),
+      .map(c => ({ 
+        chunk: c, 
+        score: cosineSimilarity(queryVector, c.embedding || []) 
       }))
       .sort((a, b) => b.score - a.score)
       .slice(0, k);
-
-    const chunks: Chunk[] = scored.map((s) => ({
+    
+    return scored.map(s => ({
       id: s.chunk.id,
       docId: s.chunk.docId,
       companyId: s.chunk.companyId,
@@ -121,10 +118,6 @@ export async function retrieveVectorTopK(
       metadata: { tokenCount: Math.ceil(s.chunk.text.length / 4), vectorScore: s.score },
       createdAt: new Date(),
     }));
-
-    const latencyMs = Date.now() - startTime;
-    console.log(`Vector search (memory): ${chunks.length} results in ${latencyMs}ms`);
-    return chunks;
   }
 
   if (!client) {
@@ -145,47 +138,43 @@ export async function retrieveVectorTopK(
     // Execute vector search
     const results = await client.search(query, {
       vectorSearchOptions: {
-        queries: [
-          {
-            kind: "vector",
-            vector: queryVector,
-            fields: [VECTOR_FIELD],
-            kNearestNeighborsCount: k,
-          },
-        ],
+        queries: [{
+          kind: "vector",
+          vector: queryVector,
+          fields: ["content_vector"],
+          kNearestNeighborsCount: k,
+        }],
       },
       filter: filterString,
       top: k,
-      // Intentionally no select/searchFields to tolerate schema variance
+      select: [
+        "id",
+        "document_id",
+        "company_id",
+        "chunk_index",
+        "content",
+        "metadata",
+      ],
     });
 
     // Convert results to Chunk objects
     const chunks: Chunk[] = [];
-    const pick = (obj: any, keys: string[], dflt?: any) => {
-      for (const k of keys) {
-        if (obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
-      }
-      return dflt;
-    };
-
     for await (const result of results.results) {
-      const doc = result.document as any;
+      const metadata = result.document.metadata ? JSON.parse(result.document.metadata) : {};
       chunks.push({
-        id: pick(doc, ["id", "chunk_id", "chunkId"], String((result as any).score ?? "chunk")),
-        docId: pick(doc, ["document_id", "doc_id", "docId", "documentId"], "unknown-doc"),
-        companyId: pick(doc, ["company_id", "companyId"], context.companyId),
-        sectionPath: pick(doc, ["section_path", "sectionPath", "section"], ""),
-        content: pick(doc, ["content", "text", "chunk_text", "body"], ""),
-        title: pick(doc, ["title", "document_title", "doc_title"], ""),
-        position: pick(doc, ["chunk_index", "position"], 0),
+        id: result.document.id,
+        docId: result.document.document_id,
+        companyId: result.document.company_id,
+        sectionPath: metadata.fileName || "",
+        content: result.document.content,
+        title: metadata.title || metadata.fileName || "",
+        position: result.document.chunk_index || 0,
         windowStart: 0,
-        windowEnd: (pick(doc, ["content", "text", "chunk_text", "body"], "") as string).length,
+        windowEnd: result.document.content.length,
         metadata: {
-          tokenCount: Math.ceil(
-            (pick(doc, ["content", "text", "chunk_text", "body"], "") as string).length / 4
-          ),
-          vectorScore: (result as any).score,
-          ...parseMetadata(pick(doc, ["metadata", "meta", "attrs"]))
+          tokenCount: Math.ceil(result.document.content.length / 4),
+          vectorScore: result.score,
+          ...parseMetadata(result.document.metadata),
         },
         createdAt: new Date(),
       });
@@ -217,23 +206,20 @@ export async function retrieveBM25TopK(
   const client = ensureSearchClient();
   const startTime = Date.now();
 
-  // In-memory fallback for tests
+  // In-memory fallback for tests (simple keyword matching)
   if (!client && isVitest) {
-    const terms = query
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((t) => t.length > 2);
-
-    const filtered = memoryIndex.filter((c) => c.companyId === context.companyId);
+    const filtered = memoryIndex.filter(c => c.companyId === context.companyId);
+    const queryLower = query.toLowerCase();
     const scored = filtered
-      .map((c) => ({
+      .map(c => ({
         chunk: c,
-        score: terms.reduce((acc, t) => (c.text.toLowerCase().includes(t) ? acc + 1 : acc), 0),
+        score: c.text.toLowerCase().split(queryLower).length - 1, // Count keyword occurrences
       }))
+      .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, k);
-
-    const chunks: Chunk[] = scored.map((s) => ({
+    
+    return scored.map(s => ({
       id: s.chunk.id,
       docId: s.chunk.docId,
       companyId: s.chunk.companyId,
@@ -246,14 +232,12 @@ export async function retrieveBM25TopK(
       metadata: { tokenCount: Math.ceil(s.chunk.text.length / 4), bm25Score: s.score },
       createdAt: new Date(),
     }));
-
-    const latencyMs = Date.now() - startTime;
-    console.log(`BM25 search (memory): ${chunks.length} results in ${latencyMs}ms`);
-    return chunks;
   }
+
   if (!client) {
     throw new Error("Azure Search client not available");
   }
+
   try {
     // Build filter
     const filters: string[] = [`company_id eq '${context.companyId}'`];
@@ -266,38 +250,37 @@ export async function retrieveBM25TopK(
     const results = await client.search(query, {
       searchMode: "all",
       queryType: "full",
-      // Intentionally no searchFields/select to tolerate schema variance
+      searchFields: ["content"],
       filter: filterString,
       top: k,
+      select: [
+        "id",
+        "document_id",
+        "company_id",
+        "chunk_index",
+        "content",
+        "metadata",
+      ],
     });
 
     // Convert results to Chunk objects
     const chunks: Chunk[] = [];
-    const pick = (obj: any, keys: string[], dflt?: any) => {
-      for (const k of keys) {
-        if (obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
-      }
-      return dflt;
-    };
-
     for await (const result of results.results) {
-      const doc = result.document as any;
+      const metadata = result.document.metadata ? JSON.parse(result.document.metadata) : {};
       chunks.push({
-        id: pick(doc, ["id", "chunk_id", "chunkId"], String((result as any).score ?? "chunk")),
-        docId: pick(doc, ["document_id", "doc_id", "docId", "documentId"], "unknown-doc"),
-        companyId: pick(doc, ["company_id", "companyId"], context.companyId),
-        sectionPath: pick(doc, ["section_path", "sectionPath", "section"], ""),
-        content: pick(doc, ["content", "text", "chunk_text", "body"], ""),
-        title: pick(doc, ["title", "document_title", "doc_title"], ""),
-        position: pick(doc, ["chunk_index", "position"], 0),
+        id: result.document.id,
+        docId: result.document.document_id,
+        companyId: result.document.company_id,
+        sectionPath: metadata.fileName || "",
+        content: result.document.content,
+        title: metadata.title || metadata.fileName || "",
+        position: result.document.chunk_index || 0,
         windowStart: 0,
-        windowEnd: (pick(doc, ["content", "text", "chunk_text", "body"], "") as string).length,
+        windowEnd: result.document.content.length,
         metadata: {
-          tokenCount: Math.ceil(
-            (pick(doc, ["content", "text", "chunk_text", "body"], "") as string).length / 4
-          ),
-          bm25Score: (result as any).score,
-          ...parseMetadata(pick(doc, ["metadata", "meta", "attrs"]))
+          tokenCount: metadata.tokenCount || Math.ceil(result.document.content.length / 4),
+          bm25Score: result.score,
+          ...metadata,
         },
         createdAt: new Date(),
       });
