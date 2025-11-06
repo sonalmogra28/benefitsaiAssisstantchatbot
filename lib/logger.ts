@@ -8,3 +8,10 @@ const instance = pino({
 });
 export const logger = instance;
 export default logger;
+export const logError = (msg: string, err?: Error, context?: any) => {
+  if (err) {
+    instance.error({ msg, error: err.message, stack: err.stack, ...context });
+  } else {
+    instance.error({ msg, ...context });
+  }
+};
