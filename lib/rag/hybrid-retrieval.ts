@@ -45,6 +45,8 @@ function ensureSearchClient(): SearchClient<any> | null {
 
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
   const apiKey = process.env.AZURE_SEARCH_API_KEY;
+  // HOTFIX: chunks_prod_v2 only has 3 test docs. Use chunks_prod_v1 (499 docs) for production.
+  // TODO: Rebuild chunks_prod_v2 with full ingestion pipeline when ready.
   const indexName = process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1";
 
   if ((!endpoint || !apiKey) && !isVitest) {
@@ -418,7 +420,7 @@ export async function hybridRetrieve(
       retrieveBM25TopK(query, context, cfg.bm25K),
     ]);
 
-    console.log(`[HybridRetrieve] Search results: vector=${vectorResults.length}, bm25=${bm25Results.length}, k=${cfg.vectorK}`);
+    console.log(`[RAG] v=${vectorResults.length} b=${bm25Results.length} (requested k=${cfg.vectorK})`);
 
     // Merge using RRF
     const merged = rrfMerge(
@@ -427,14 +429,14 @@ export async function hybridRetrieve(
       cfg.finalTopK
     );
 
-    console.log(`[HybridRetrieve] After RRF merge: ${merged.length} unique chunks`);
+    console.log(`[RAG] merged=${merged.length} (after RRF dedupe)`);
 
     // Re-rank if enabled
     const final = cfg.enableReranking
       ? await rerankChunks(query, merged, cfg.rerankedTopK)
       : merged.slice(0, cfg.rerankedTopK);
 
-    console.log(`[HybridRetrieve] After reranking: ${final.length} final chunks (enableReranking=${cfg.enableReranking})`);
+    console.log(`[RAG] final=${final.length} (reranking=${cfg.enableReranking})`);
 
     const latencyMs = Date.now() - startTime;
 

@@ -285,7 +285,7 @@ Dental benefits overview:
       new Map(retrievalResult.chunks.map(c => [keyOf(c), c])).values()
     );
 
-    console.log(`[QA] Dedup: ${retrievalResult.chunks.length} → ${deduped.length} unique chunks`);
+    console.log(`[QA] Dedup: raw=${retrievalResult.chunks.length} unique=${deduped.length}`);
 
     // Show more, keep all for validation
     const SHOWN_CITATIONS = 12;
@@ -402,6 +402,10 @@ Dental benefits overview:
         escalated: retryCount > 0,
         cacheKey: buildCacheKey(normalizedQuery, request.companyId),
         retrievalMethod: 'hybrid',
+        // NEW: Expose granular counts for diagnostics
+        rawRetrievalCount: retrievalResult.chunks.length,
+        dedupeCount: deduped.length,
+        citationCount: citationsToShow.length,
       },
     };
 
