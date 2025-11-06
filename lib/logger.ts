@@ -1,45 +1,65 @@
-// lib/logger.ts
-import pino from "pino";
+﻿// lib/logger.ts
+import pino from 'pino';
 
-const pinoLogger = pino({
-  level: process.env.LOG_LEVEL ?? "info",
-  // Use default pino levels, avoid customLevels to prevent build errors
-  formatters: { level: (label) => ({ level: label }) },
+// allow override but default to 'info'
+const level = (process.env.LOG_LEVEL ?? 'info').toLowerCase();
+
+const p = pino({
+  level,
+  // Keep the standard levels and add any custom ones.
+  // DO NOT enable useOnlyCustomLevels.
+  customLevels: {
+    // standard (keep them so 'info' is present)
+    fatal: 60,
+    error: 50,
+    warn: 40,
+    info: 30,
+    debug: 20,
+    trace: 10,
+    // your extras
+    http: 25,
+    analytics: 15,
+  },
+  base: undefined, // optional: drop pid/hostname to keep logs clean
+  timestamp: pino.stdTimeFunctions.isoTime,
 });
 
-function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
-  const [a, b, c] = args;
-
-  // ("msg", obj?, err?)
-  if (typeof a === "string") {
-    const msg = a;
-    const obj = b && typeof b === "object" ? b : undefined;
-    const err = c instanceof Error ? c : undefined;
-    if (err) return (pinoLogger as any)[method]({ ...(obj ?? {}), err }, msg);
-    if (obj)  return (pinoLogger as any)[method](obj, msg);
-    return (pinoLogger as any)[method](msg);
-  }
-
-  // (obj, "msg"?, err?)
-  if (a && typeof a === "object") {
-    const obj = a;
-    const msg = typeof b === "string" ? b : undefined;
-    const err = c instanceof Error ? c : undefined;
-    if (err) return (pinoLogger as any)[method]({ ...obj, err }, msg);
-    if (msg)  return (pinoLogger as any)[method](obj, msg);
-    return (pinoLogger as any)[method](obj);
-  }
-
-  return (pinoLogger as any)[method](String(a ?? ""));
-}
-
-export const loggerApi = {
-  info: (...args: any[]) => call("info", ...args),
-  warn: (...args: any[]) => call("warn", ...args),
-  error: (...args: any[]) => call("error", ...args),
-  debug: (...args: any[]) => call("debug", ...args),
+// Wrapper object with convenience methods
+export const logger = {
+  info: (msg: string | object, obj?: any) => {
+    if (typeof msg === 'string') {
+      p.info(obj, msg);
+    } else {
+      p.info(msg);
+    }
+  },
+  warn: (msg: string | object, obj?: any) => {
+    if (typeof msg === 'string') {
+      p.warn(obj, msg);
+    } else {
+      p.warn(msg);
+    }
+  },
+  error: (msg: string | object, obj?: any, err?: Error) => {
+    if (typeof msg === 'string') {
+      if (err) {
+        p.error({ ...obj, err }, msg);
+      } else {
+        p.error(obj, msg);
+      }
+    } else {
+      p.error(msg);
+    }
+  },
+  debug: (msg: string | object, obj?: any) => {
+    if (typeof msg === 'string') {
+      p.debug(obj, msg);
+    } else {
+      p.debug(msg);
+    }
+  },
   apiResponse: (method: string, endpoint: string, statusCode: number, duration: number, context?: any) => {
-    return call("info", {
+    p.info({
       method,
       endpoint,
       statusCode,
@@ -47,30 +67,6 @@ export const loggerApi = {
       ...context
     }, `API ${method} ${endpoint}`);
   },
-  securityEvent: (message: string, context?: any) => {
-    return call("warn", {
-      ...context,
-      securityEvent: true,
-      timestamp: new Date().toISOString(),
-    }, `SECURITY: ${message}`);
-  },
-  auditEvent: (message: string, context?: any) => {
-    return call("info", {
-      ...context,
-      auditEvent: true,
-      timestamp: new Date().toISOString(),
-    }, `AUDIT: ${message}`);
-  },
 };
 
-// ✅ Compatibility helpers for existing code that imports named functions
-export const logInfo  = (...args: any[]) => loggerApi.info(...args);
-export const logWarn  = (...args: any[]) => loggerApi.warn(...args);
-export const logError = (...args: any[]) => loggerApi.error(...args);
-export const logDebug = (...args: any[]) => loggerApi.debug(...args);
-
-// Export as "logger" for backward compatibility
-export const logger = loggerApi;
-
-// Also export default for `import log from '@/lib/logger'`
-export default loggerApi;
+export default logger;
