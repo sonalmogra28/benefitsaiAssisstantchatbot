@@ -203,40 +203,8 @@ export async function POST(req: NextRequest) {
         retrievalContext
       );
     } catch (retrievalError) {
-      console.warn('[QA] Retrieval unavailable, using demo fallback:', retrievalError instanceof Error ? retrievalError.message : retrievalError);
-      // Demo fallback context when Azure Search is not configured
-      const demoText = `This is a demo environment without connected search.
-
-HSA vs FSA quick summary:
-- HSA pairs with High Deductible Health Plans and funds roll over year to year; you can invest them.
-- FSA works with most plans but is generally "use-it-or-lose-it" (limited carryover or grace period).
-- Both reduce taxable income; HSA typically has higher contribution limits.
-
-Dental benefits overview:
-- Preventive care (cleanings, exams) is often covered at 100%.
-- Basic services (fillings) and major services (crowns) vary by plan coinsurance and annual maximum.`;
-
-      retrievalResult = {
-        chunks: [
-          {
-            id: 'demo-001',
-            docId: 'demo-doc',
-            companyId: retrievalContext.companyId,
-            sectionPath: 'Demo',
-            content: demoText,
-            title: 'Benefits Overview (Demo)',
-            position: 0,
-            windowStart: 0,
-            windowEnd: demoText.length,
-            metadata: { tokenCount: Math.ceil(demoText.length / 4), relevanceScore: 0.5 },
-            createdAt: new Date(),
-          },
-        ],
-        method: 'hybrid',
-        totalResults: 1,
-        latencyMs: Date.now() - retrievalStart,
-        scores: { vector: [], bm25: [], rrf: [] },
-      } as RetrievalResult;
+      console.error('[QA] RETRIEVAL ERROR (demo mode disabled):', retrievalError);
+      throw retrievalError; // TEMPORARILY THROW TO SEE ACTUAL ERROR
     }
     retrievalTime = Date.now() - retrievalStart;
 
@@ -291,12 +259,21 @@ Dental benefits overview:
     while (retryCount <= MAX_RETRIES) {
       // Generate response
       const generationStart = Date.now();
-      response = await generateResponse(
-        normalizedQuery,
-        context,
-        currentTier,
-        citations
-      );
+      try {
+        response = await generateResponse(
+          normalizedQuery,
+          context,
+          currentTier,
+          citations
+        );
+      } catch (genErr) {
+        console.warn('[QA] LLM unavailable, using safe template fallback:', genErr instanceof Error ? genErr.message : genErr);
+        const safe = `Here’s what I can share based on your plan materials:\n\n${context.substring(0, 800)}\n\nIf you need specifics beyond this, I don’t have enough information in the materials I can see.`;
+        response = {
+          text: safe,
+          usage: { promptTokens: 0, completionTokens: 0 },
+        };
+      }
       generationTime = Date.now() - generationStart;
 
       // Step 7: Validate response

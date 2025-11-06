@@ -1,4 +1,4 @@
-# Upload all AmeriVet PDF files to Azure Blob Storage
+ Upload all AmeriVet PDF files to Azure Blob Storage
 $storageAccountName = "benefitschatbotdev"
 $storageAccountKey = $env:AZURE_STORAGE_ACCOUNT_KEY
 $extractedFolder = "C:\Users\sonal\Downloads\drive-download-20250923T195107Z-1-001"

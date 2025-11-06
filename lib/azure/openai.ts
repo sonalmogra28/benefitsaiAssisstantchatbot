@@ -9,10 +9,10 @@ function getMinimalOpenAIConfig() {
   const endpoint = (process.env.AZURE_OPENAI_ENDPOINT || '').trim();
   const apiKey = (process.env.AZURE_OPENAI_API_KEY || '').trim();
   const apiVersion = (process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview').trim();
-  const deploymentL1 = process.env.AZURE_OPENAI_DEPLOYMENT_L1 || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
-  const deploymentL2 = process.env.AZURE_OPENAI_DEPLOYMENT_L2 || deploymentL1;
-  const deploymentL3 = process.env.AZURE_OPENAI_DEPLOYMENT_L3 || deploymentL2;
-  const embeddingDeployment = process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002';
+  const deploymentL1 = (process.env.AZURE_OPENAI_DEPLOYMENT_L1 || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini').trim();
+  const deploymentL2 = (process.env.AZURE_OPENAI_DEPLOYMENT_L2 || deploymentL1).trim();
+  const deploymentL3 = (process.env.AZURE_OPENAI_DEPLOYMENT_L3 || deploymentL2).trim();
+  const embeddingDeployment = (process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002').trim();
   return {
     endpoint,
     apiKey,
