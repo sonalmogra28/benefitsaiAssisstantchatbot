@@ -21,9 +21,6 @@
  * - Retrieval: < 800 ms
  */
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeQuery } from '../../../lib/rag/query-understanding';
 import { hybridRetrieve } from '../../../lib/rag/hybrid-retrieval';
@@ -37,7 +34,6 @@ import {
 } from '../../../lib/rag/cache-utils';
 import { QualityTracker } from '../../../lib/analytics/quality-tracker';
 import type { QARequest, QAResponse, Tier, Citation, ConversationQuality, RetrievalResult } from '../../../types/rag';
-import { getRedisClient } from '@/lib/services/service-factory';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration
@@ -52,37 +48,35 @@ const ENABLE_EXACT_CACHE = true;
 // Cache Client (Lazy Initialization)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Prefer Redis cache; fall back to in-memory map
+// TODO: Integrate Redis client with lazy-init pattern
+// For now, use in-memory cache for development
 const MEMORY_CACHE = new Map<string, { data: QAResponse; expiresAt: number }>();
 
 async function getCachedResponse(cacheKey: string): Promise<QAResponse | null> {
-  try {
-    const redis = (await getRedisClient()) as any;
-    const raw = await redis.get(cacheKey);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-
   const cached = MEMORY_CACHE.get(cacheKey);
   if (!cached) return null;
+  
   if (Date.now() > cached.expiresAt) {
     MEMORY_CACHE.delete(cacheKey);
     return null;
   }
+  
   return cached.data;
 }
 
-async function setCachedResponse(cacheKey: string, response: QAResponse, ttlSeconds: number): Promise<void> {
-  try {
-    const redis = (await getRedisClient()) as any;
-    await redis.setEx(cacheKey, ttlSeconds, JSON.stringify(response));
-    return;
-  } catch {}
-
-  MEMORY_CACHE.set(cacheKey, { data: response, expiresAt: Date.now() + ttlSeconds * 1000 });
+async function setCachedResponse(
+  cacheKey: string,
+  response: QAResponse,
+  ttlSeconds: number
+): Promise<void> {
+  MEMORY_CACHE.set(cacheKey, {
+    data: response,
+    expiresAt: Date.now() + ttlSeconds * 1000,
+  });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// LLM Generation using Azure OpenAI (no inline citations)
+// LLM Generation (Stub for Azure OpenAI Integration)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function generateResponse(
@@ -91,32 +85,66 @@ async function generateResponse(
   tier: Tier,
   citations: Citation[]
 ): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number } }> {
-  const system = [
-    'You are a helpful Benefits AI assistant.',
-    'Use ONLY the provided context to answer.',
-    'Do NOT include citation markers in your answer.',
-    'If the context is insufficient, say you do not have enough information rather than guessing.',
-    'Write concisely and naturally, like a human assistant.'
-  ].join(' ');
-
-  const messages = [
-    { role: 'system' as const, content: system },
-    { role: 'user' as const, content: `Question: ${query}\n\nContext:\n${context}` },
-  ];
-
+  // Use Azure OpenAI with tier-specific models
   const { azureOpenAIService } = await import('@/lib/azure/openai');
-  const { content, usage } = await azureOpenAIService.generateChatCompletion(messages, {
-    maxTokens: tier === 'L1' ? 400 : tier === 'L2' ? 700 : 1000,
-    temperature: 0.3,
-  });
+  
+  const systemPrompt = `You're a friendly benefits advisor helping employees understand their benefits. Chat naturally while staying accurate.
 
-  return {
-    text: content,
-    usage: {
-      promptTokens: usage.promptTokens || 0,
-      completionTokens: usage.completionTokens || 0,
-    },
-  };
+Here's what I know from your benefits documents:
+${context}
+
+Guidelines:
+- Speak conversationally, like you're explaining to a colleague
+- Reference specific documents when helpful (e.g., "According to your 2026 Benefits Guide...")
+- If you're not sure about something, be honest - say "I don't see that information in your current benefits documents"
+- Keep answers clear and practical
+- Use everyday language, not corporate jargon`;
+
+  // Determine deployment based on tier
+  const deployment = tier === 'L1' 
+    ? process.env.AZURE_OPENAI_DEPLOYMENT_L1 || 'gpt-4o-mini'
+    : tier === 'L3'
+    ? process.env.AZURE_OPENAI_DEPLOYMENT_L3 || 'gpt-4'
+    : process.env.AZURE_OPENAI_DEPLOYMENT_L1 || 'gpt-4o-mini';
+
+  try {
+    const response = await azureOpenAIService.generateChatCompletion(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: query }
+      ],
+      {
+        temperature: 0.7,
+        maxTokens: 500
+      }
+    );
+
+    return {
+      text: response.content,
+      usage: {
+        promptTokens: response.usage?.promptTokens || 0,
+        completionTokens: response.usage?.completionTokens || 0,
+      },
+    };
+  } catch (error) {
+    console.error('[QA] LLM generation failed:', error);
+    // Fallback to simulated response on error
+    const simulatedResponse = `Based on the provided benefits documentation:
+
+${context.substring(0, 200)}...
+
+[Error generating response. Please try again.]
+
+Citation: ${citations[0]?.chunkId || 'chunk-001'}`;
+
+    return {
+      text: simulatedResponse,
+      usage: {
+        promptTokens: 500,
+        completionTokens: 150,
+      },
+    };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,24 +229,53 @@ export async function POST(req: NextRequest) {
     
     let retrievalResult: RetrievalResult;
     try {
+      // Use optimized retrieval config for production
       retrievalResult = await hybridRetrieve(
         normalizedQuery,
-        retrievalContext
+        retrievalContext,
+        {
+          vectorK: 40,           // More candidates for filtering
+          bm25K: 40,             // More candidates for filtering  
+          finalTopK: 16,         // More chunks after merging
+          rerankedTopK: 12,      // More final chunks for LLM context
+          enableReranking: true, // Enable semantic reranking
+        }
       );
     } catch (retrievalError) {
-      console.error('[QA] Retrieval failed:', {
-        error: retrievalError instanceof Error ? retrievalError.message : String(retrievalError),
-        stack: retrievalError instanceof Error ? retrievalError.stack : undefined,
-        companyId: retrievalContext.companyId,
-        query: normalizedQuery,
-      });
-      
-      // Return detailed error response
-      return NextResponse.json({
-        error: 'QA_RETRIEVAL_FAILED',
-        details: retrievalError instanceof Error ? retrievalError.message : String(retrievalError),
-        timestamp: new Date().toISOString(),
-      }, { status: 500 });
+      console.warn('[QA] Retrieval unavailable, using demo fallback:', retrievalError instanceof Error ? retrievalError.message : retrievalError);
+      // Demo fallback context when Azure Search is not configured
+      const demoText = `This is a demo environment without connected search.
+
+HSA vs FSA quick summary:
+- HSA pairs with High Deductible Health Plans and funds roll over year to year; you can invest them.
+- FSA works with most plans but is generally "use-it-or-lose-it" (limited carryover or grace period).
+- Both reduce taxable income; HSA typically has higher contribution limits.
+
+Dental benefits overview:
+- Preventive care (cleanings, exams) is often covered at 100%.
+- Basic services (fillings) and major services (crowns) vary by plan coinsurance and annual maximum.`;
+
+      retrievalResult = {
+        chunks: [
+          {
+            id: 'demo-001',
+            docId: 'demo-doc',
+            companyId: retrievalContext.companyId,
+            sectionPath: 'Demo',
+            content: demoText,
+            title: 'Benefits Overview (Demo)',
+            position: 0,
+            windowStart: 0,
+            windowEnd: demoText.length,
+            metadata: { tokenCount: Math.ceil(demoText.length / 4), relevanceScore: 0.5 },
+            createdAt: new Date(),
+          },
+        ],
+        method: 'hybrid',
+        totalResults: 1,
+        latencyMs: Date.now() - retrievalStart,
+        scores: { vector: [], bm25: [], rrf: [] },
+      } as RetrievalResult;
     }
     retrievalTime = Date.now() - retrievalStart;
 
@@ -273,21 +330,12 @@ export async function POST(req: NextRequest) {
     while (retryCount <= MAX_RETRIES) {
       // Generate response
       const generationStart = Date.now();
-      try {
-        response = await generateResponse(
-          normalizedQuery,
-          context,
-          currentTier,
-          citations
-        );
-      } catch (genErr) {
-        console.warn('[QA] LLM unavailable, using safe template fallback:', genErr instanceof Error ? genErr.message : genErr);
-        const safe = `Here’s what I can share based on your plan materials:\n\n${context.substring(0, 800)}\n\nIf you need specifics beyond this, I don’t have enough information in the materials I can see.`;
-        response = {
-          text: safe,
-          usage: { promptTokens: 0, completionTokens: 0 },
-        };
-      }
+      response = await generateResponse(
+        normalizedQuery,
+        context,
+        currentTier,
+        citations
+      );
       generationTime = Date.now() - generationStart;
 
       // Step 7: Validate response
