@@ -6,6 +6,7 @@
 import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import type { Chunk, RetrievalContext, RetrievalResult, HybridSearchConfig } from "../../types/rag";
 import { isVitest } from '@/lib/ai/runtime';
+import { ENV } from '@/lib/env';
 
 // ============================================================================
 // Fallback-safe field sets for production index
@@ -49,24 +50,20 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // ============================================================================
 
 let searchClient: any | null = null;
-const VECTOR_FIELD = (process.env.AZURE_SEARCH_VECTOR_FIELD || 'content_vector').trim();
+const VECTOR_FIELD = ENV.AZURE_SEARCH_VECTOR_FIELD;
 
 function ensureSearchClient(): any | null {
   if (searchClient) return searchClient;
 
-  const endpoint = (process.env.AZURE_SEARCH_ENDPOINT || '').trim();
-  const apiKey = (process.env.AZURE_SEARCH_API_KEY || '').trim();
-  const indexName = (process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1").replace(/\r|\n/g, '').trim();
-
-  if ((!endpoint || !apiKey) && !isVitest) {
-    throw new Error("Azure Search credentials not configured");
-  }
-  
-  if (!endpoint || !apiKey) {
+  if (isVitest) {
     return null; // Vitest path: use in-memory index
   }
 
-  searchClient = new SearchClient(endpoint, indexName, new AzureKeyCredential(apiKey));
+  searchClient = new SearchClient(
+    ENV.AZURE_SEARCH_ENDPOINT,
+    ENV.AZURE_SEARCH_INDEX_NAME,
+    new AzureKeyCredential(ENV.AZURE_SEARCH_API_KEY)
+  );
 
   return searchClient;
 }

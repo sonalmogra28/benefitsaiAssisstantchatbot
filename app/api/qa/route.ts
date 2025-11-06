@@ -21,6 +21,9 @@
  * - Retrieval: < 800 ms
  */
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeQuery } from '../../../lib/rag/query-understanding';
 import { hybridRetrieve } from '../../../lib/rag/hybrid-retrieval';
@@ -203,8 +206,19 @@ export async function POST(req: NextRequest) {
         retrievalContext
       );
     } catch (retrievalError) {
-      console.error('[QA] RETRIEVAL ERROR (demo mode disabled):', retrievalError);
-      throw retrievalError; // TEMPORARILY THROW TO SEE ACTUAL ERROR
+      console.error('[QA] Retrieval failed:', {
+        error: retrievalError instanceof Error ? retrievalError.message : String(retrievalError),
+        stack: retrievalError instanceof Error ? retrievalError.stack : undefined,
+        companyId: retrievalContext.companyId,
+        query: normalizedQuery,
+      });
+      
+      // Return detailed error response
+      return NextResponse.json({
+        error: 'QA_RETRIEVAL_FAILED',
+        details: retrievalError instanceof Error ? retrievalError.message : String(retrievalError),
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
     }
     retrievalTime = Date.now() - retrievalStart;
 

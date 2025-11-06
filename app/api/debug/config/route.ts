@@ -1,49 +1,48 @@
 /**
  * Debug Config Endpoint
- * Shows which Azure OpenAI environment variables are visible to the application
+ * Shows sanitized environment variables (after CR/LF removal and trimming)
  * IMPORTANT: Remove or restrict access after debugging
  */
 
 import { NextResponse } from 'next/server';
+import { ENV } from '@/lib/env';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const config = {
-      azureOpenAI: {
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT || '(not set)',
-        apiKeyPresent: !!process.env.AZURE_OPENAI_API_KEY,
-        apiKeyLength: process.env.AZURE_OPENAI_API_KEY?.length || 0,
-        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '(not set)',
-        embeddingDeployment: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || '(not set)',
-        embeddingsDeployment: process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || '(not set)',
-        deploymentL1: process.env.AZURE_OPENAI_DEPLOYMENT_L1 || '(not set)',
-        deploymentL2: process.env.AZURE_OPENAI_DEPLOYMENT_L2 || '(not set)',
-        deploymentL3: process.env.AZURE_OPENAI_DEPLOYMENT_L3 || '(not set)',
-      },
-      azureSearch: {
-        endpoint: process.env.AZURE_SEARCH_ENDPOINT || '(not set)',
-        apiKeyPresent: !!process.env.AZURE_SEARCH_API_KEY,
-        indexName: process.env.AZURE_SEARCH_INDEX_NAME || '(not set)',
-        vectorField: process.env.AZURE_SEARCH_VECTOR_FIELD || '(not set)',
-      },
-      environment: process.env.NEXT_PUBLIC_ENVIRONMENT || '(not set)',
-      nodeEnv: process.env.NODE_ENV || '(not set)',
-    };
-
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      config,
+      config: {
+        azureOpenAI: {
+          endpoint: ENV.AZURE_OPENAI_ENDPOINT,
+          apiKeyPresent: !!ENV.AZURE_OPENAI_API_KEY,
+          apiKeyLength: ENV.AZURE_OPENAI_API_KEY.length,
+          apiVersion: ENV.AZURE_OPENAI_API_VERSION,
+          embeddingDeployment: ENV.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+          deploymentL1: ENV.AZURE_OPENAI_DEPLOYMENT_L1,
+          deploymentL2: ENV.AZURE_OPENAI_DEPLOYMENT_L2,
+          deploymentL3: ENV.AZURE_OPENAI_DEPLOYMENT_L3,
+        },
+        azureSearch: {
+          endpoint: ENV.AZURE_SEARCH_ENDPOINT,
+          apiKeyPresent: !!ENV.AZURE_SEARCH_API_KEY,
+          indexName: ENV.AZURE_SEARCH_INDEX_NAME,
+          vectorField: ENV.AZURE_SEARCH_VECTOR_FIELD,
+        },
+        environment: ENV.VERCEL_ENV,
+        nodeEnv: ENV.NODE_ENV,
+      },
     });
   } catch (error) {
     console.error('[Debug Config]', error);
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
