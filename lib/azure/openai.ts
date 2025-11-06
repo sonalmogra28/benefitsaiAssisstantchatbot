@@ -2,8 +2,9 @@ import type OpenAI from 'openai';
 import { logger } from '@/lib/logger';
 import { ENV } from '@/lib/env';
 
-// Lazy client initialization
-let client: OpenAI | null = null;
+// Lazy client initialization (separate clients for chat and embeddings)
+let chatClient: OpenAI | null = null;
+let embeddingClient: OpenAI | null = null;
 
 // Azure OpenAI configuration from centralized ENV
 export const AOAI = {
@@ -18,30 +19,67 @@ export const AOAI = {
   embeddingDeployment: ENV.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
 } as const;
 
-async function getOpenAIClient(): Promise<OpenAI> {
-  if (client) return client;
+/**
+ * Get Azure OpenAI client for CHAT completions (deployment in baseURL)
+ * Azure requires deployment name in baseURL path, not as model parameter
+ */
+async function getChatClient(): Promise<OpenAI> {
+  if (chatClient) return chatClient;
 
   const { default: OpenAIClass } = await import('openai');
 
-  client = new OpenAIClass({
+  // Deployment must be in baseURL for Azure (not passed as model param)
+  chatClient = new OpenAIClass({
     apiKey: AOAI.apiKey,
-    baseURL: `${AOAI.endpoint}/openai`,
+    baseURL: `${AOAI.endpoint}/openai/deployments/${AOAI.deployments.L2}`,
     defaultQuery: { 'api-version': AOAI.apiVersion },
     defaultHeaders: { 'api-key': AOAI.apiKey },
   });
   
-  return client;
+  return chatClient;
+}
+
+/**
+ * Get Azure OpenAI client for EMBEDDINGS (separate deployment in baseURL)
+ */
+async function getEmbeddingClient(): Promise<OpenAI> {
+  if (embeddingClient) return embeddingClient;
+
+  const { default: OpenAIClass } = await import('openai');
+
+  // Separate client for embeddings with its deployment in baseURL
+  embeddingClient = new OpenAIClass({
+    apiKey: AOAI.apiKey,
+    baseURL: `${AOAI.endpoint}/openai/deployments/${AOAI.embeddingDeployment}`,
+    defaultQuery: { 'api-version': AOAI.apiVersion },
+    defaultHeaders: { 'api-key': AOAI.apiKey },
+  });
+  
+  return embeddingClient;
+}
+
+// Legacy function for backwards compatibility (uses chat client)
+async function getOpenAIClient(): Promise<OpenAI> {
+  return getChatClient();
 }
 
 // Azure OpenAI service class
 export class AzureOpenAIService {
-  private client: OpenAI | null = null;
+  private chatClient: OpenAI | null = null;
+  private embeddingClient: OpenAI | null = null;
   
-  private async ensureClient(): Promise<OpenAI> {
-    if (!this.client) {
-      this.client = await getOpenAIClient();
+  private async ensureChatClient(): Promise<OpenAI> {
+    if (!this.chatClient) {
+      this.chatClient = await getChatClient();
     }
-    return this.client;
+    return this.chatClient;
+  }
+
+  private async ensureEmbeddingClient(): Promise<OpenAI> {
+    if (!this.embeddingClient) {
+      this.embeddingClient = await getEmbeddingClient();
+    }
+    return this.embeddingClient;
   }
 
   async generateText(
@@ -55,7 +93,7 @@ export class AzureOpenAIService {
       stop?: string[];
     } = {}
   ): Promise<string> {
-  const client = await this.ensureClient();
+    const client = await this.ensureChatClient();
   
     try {
       const {
@@ -67,8 +105,9 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
+      // Azure ignores 'model' parameter (deployment is in baseURL), but SDK requires it
       const response = await client.chat.completions.create({
-        model: AOAI.deployments.L2 || 'gpt-4o-mini',
+        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
         messages: [
           {
             role: 'user',
@@ -130,10 +169,9 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-  
-  const cli = await this.ensureClient();
-  const response = await cli.chat.completions.create({
-        model: AOAI.deployments.L2 || 'gpt-4o-mini',
+      const cli = await this.ensureChatClient();
+      const response = await cli.chat.completions.create({
+        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
         messages: messages,
         max_tokens: maxTokens,
         temperature,
@@ -194,10 +232,9 @@ export class AzureOpenAIService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-  
-  const cli = await this.ensureClient();
-  const response = await cli.embeddings.create({
-        model: AOAI.embeddingDeployment,
+      const cli = await this.ensureEmbeddingClient();
+      const response = await cli.embeddings.create({
+        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
         input: text
       });
 
@@ -223,10 +260,9 @@ export class AzureOpenAIService {
 
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     try {
-  
-  const cli = await this.ensureClient();
-  const response = await cli.embeddings.create({
-        model: AOAI.embeddingDeployment,
+      const cli = await this.ensureEmbeddingClient();
+      const response = await cli.embeddings.create({
+        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
         input: texts
       });
 
@@ -271,10 +307,9 @@ export class AzureOpenAIService {
         stop = []
       } = options;
 
-  
-  const cli = await this.ensureClient();
-  const stream = await cli.chat.completions.create({
-        model: AOAI.deployments.L2 || 'gpt-4o-mini',
+      const cli = await this.ensureChatClient();
+      const stream = await cli.chat.completions.create({
+        model: '', // Required by SDK, ignored by Azure (deployment in baseURL)
         messages,
         max_tokens: maxTokens,
         temperature,
