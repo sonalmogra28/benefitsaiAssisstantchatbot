@@ -1,19 +1,9 @@
 // lib/logger.ts
 import pino from "pino";
 
-// Option A: Include standard levels + custom levels
-// This ensures 'info' (set via LOG_LEVEL env var) always exists
-const standard = { fatal: 60, error: 50, warn: 40, info: 30, debug: 20, trace: 10 };
-const custom = {
-  // Add any truly custom levels here if needed
-  // audit: 35,
-  // metric: 25,
-};
-
-const base = pino({
+const pinoLogger = pino({
   level: process.env.LOG_LEVEL ?? "info",
-  customLevels: { ...standard, ...custom },
-  useOnlyCustomLevels: false, // allow standard levels
+  // Use default pino levels, avoid customLevels to prevent build errors
   formatters: { level: (label) => ({ level: label }) },
 });
 
@@ -25,9 +15,9 @@ function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
     const msg = a;
     const obj = b && typeof b === "object" ? b : undefined;
     const err = c instanceof Error ? c : undefined;
-    if (err) return (base as any)[method]({ ...(obj ?? {}), err }, msg);
-    if (obj)  return (base as any)[method](obj, msg);
-    return (base as any)[method](msg);
+    if (err) return (pinoLogger as any)[method]({ ...(obj ?? {}), err }, msg);
+    if (obj)  return (pinoLogger as any)[method](obj, msg);
+    return (pinoLogger as any)[method](msg);
   }
 
   // (obj, "msg"?, err?)
@@ -35,15 +25,15 @@ function call(method: "info" | "warn" | "error" | "debug", ...args: any[]) {
     const obj = a;
     const msg = typeof b === "string" ? b : undefined;
     const err = c instanceof Error ? c : undefined;
-    if (err) return (base as any)[method]({ ...obj, err }, msg);
-    if (msg)  return (base as any)[method](obj, msg);
-    return (base as any)[method](obj);
+    if (err) return (pinoLogger as any)[method]({ ...obj, err }, msg);
+    if (msg)  return (pinoLogger as any)[method](obj, msg);
+    return (pinoLogger as any)[method](obj);
   }
 
-  return (base as any)[method](String(a ?? ""));
+  return (pinoLogger as any)[method](String(a ?? ""));
 }
 
-export const logger = {
+export const loggerApi = {
   info: (...args: any[]) => call("info", ...args),
   warn: (...args: any[]) => call("warn", ...args),
   error: (...args: any[]) => call("error", ...args),
@@ -74,10 +64,13 @@ export const logger = {
 };
 
 // ✅ Compatibility helpers for existing code that imports named functions
-export const logInfo  = (...args: any[]) => logger.info(...args);
-export const logWarn  = (...args: any[]) => logger.warn(...args);
-export const logError = (...args: any[]) => logger.error(...args);
-export const logDebug = (...args: any[]) => logger.debug(...args);
+export const logInfo  = (...args: any[]) => loggerApi.info(...args);
+export const logWarn  = (...args: any[]) => loggerApi.warn(...args);
+export const logError = (...args: any[]) => loggerApi.error(...args);
+export const logDebug = (...args: any[]) => loggerApi.debug(...args);
+
+// Export as "logger" for backward compatibility
+export const logger = loggerApi;
 
 // Also export default for `import log from '@/lib/logger'`
-export default logger;
+export default loggerApi;
