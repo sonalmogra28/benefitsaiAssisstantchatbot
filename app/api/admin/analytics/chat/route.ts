@@ -33,7 +33,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
 
     const companyId = userCompanyId;
     if (!companyId) {
-      logger.warn('Company ID not found for admin user', { userId: userId });
+      logger.warn({  userId: userId  }, 'Company ID not found for admin user');
       return NextResponse.json(
         { error: 'Company ID not found' },
         { status: 400 }
@@ -57,11 +57,11 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
           }
         : undefined;
 
-    logger.info('API Request: GET /api/admin/analytics/chat', {
+    logger.info({ 
       userId: userId,
       companyId,
       metric: params.metric
-    });
+     }, 'API Request: GET /api/admin/analytics/chat');
 
     // Get the requested analytics data
     switch (params.metric) {
@@ -69,11 +69,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
         const chatAnalytics = await analyticsService.getChatAnalytics(companyId);
         const duration = Date.now() - startTime;
         
-        logger.apiResponse('GET', '/api/admin/analytics/chat', 200, duration, {
-          userId: userId,
-          companyId,
-          metric: 'questions'
-        });
+        // logger.apiResponse removed
         
         return NextResponse.json({
           success: true,
@@ -89,11 +85,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
         const userActivity = await analyticsService.getUserActivity(companyId);
         const duration = Date.now() - startTime;
         
-        logger.apiResponse('GET', '/api/admin/analytics/chat', 200, duration, {
-          userId: userId,
-          companyId,
-          metric: 'users'
-        });
+        // logger.apiResponse removed
         
         return NextResponse.json({
           success: true,
@@ -108,11 +100,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
         const companyAnalytics = await analyticsService.getCompanyAnalytics(companyId);
         const duration = Date.now() - startTime;
         
-        logger.apiResponse('GET', '/api/admin/analytics/chat', 200, duration, {
-          userId: userId,
-          companyId,
-          metric: 'costs'
-        });
+        // logger.apiResponse removed
         
         return NextResponse.json({
           success: true,
@@ -134,11 +122,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
 
         const duration = Date.now() - startTime;
         
-        logger.apiResponse('GET', '/api/admin/analytics/chat', 200, duration, {
-          userId: userId,
-          companyId,
-          metric: 'overview'
-        });
+        // logger.apiResponse removed
 
         return NextResponse.json({
           success: true,
@@ -161,18 +145,18 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    logger.error('Analytics API error', {
+    logger.error({ 
       path: request.nextUrl.pathname,
       method: request.method,
       duration
-    }, error as Error);
+    , err: error as Error }, 'Analytics API error');
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { 
           success: false,
           error: 'Invalid parameters', 
-          details: error.errors 
+          details: error.issues 
         },
         { status: 400 }
       );
@@ -205,7 +189,7 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
 
     const companyId = userCompanyId;
     if (!companyId) {
-      logger.warn('Company ID not found for admin user', { userId: userId });
+      logger.warn({  userId: userId  }, 'Company ID not found for admin user');
       return NextResponse.json(
         { success: false, error: 'Company ID not found' },
         { status: 400 }
@@ -215,11 +199,11 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     const body = await request.json();
     const { format = 'json', dateRange } = body;
 
-    logger.info('API Request: POST /api/admin/analytics/chat', {
+    logger.info({ 
       userId: userId,
       companyId,
       format
-    });
+     }, 'API Request: POST /api/admin/analytics/chat');
 
     // Get all analytics data
     const [chatAnalytics, companyAnalytics, userActivity] = await Promise.all([
@@ -241,11 +225,7 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
 
     const duration = Date.now() - startTime;
     
-    logger.apiResponse('POST', '/api/admin/analytics/chat', 200, duration, {
-      userId: userId,
-      companyId,
-      format
-    });
+    // logger.apiResponse removed
 
     // Handle CSV export
     if (format === 'csv') {
@@ -281,11 +261,11 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    logger.error('Analytics export error', {
+    logger.error({ 
       path: request.nextUrl.pathname,
       method: request.method,
       duration
-    }, error as Error);
+    , err: error as Error }, 'Analytics export error');
 
     return NextResponse.json(
       { 
@@ -296,4 +276,5 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
     );
   }
 });
+
 
