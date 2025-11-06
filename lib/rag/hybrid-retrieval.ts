@@ -311,24 +311,28 @@ export async function retrieveBM25TopK(
  * Merge multiple result sets using Reciprocal Rank Fusion
  * RRF formula: score(chunk) = Σ(1 / (k + rank))
  * where k is a constant (default 60) and rank is 0-indexed
+ * 
+ * IMPORTANT: Deduplicates first, then slices only once at the end
  */
 export function rrfMerge(
   resultSets: Chunk[][],
   k: number = 60,
   topN: number = 12
 ): Chunk[] {
+  const id = (c: Chunk) => c.id ?? `${c.docId}:${c.position ?? 0}`;
   const scores = new Map<string, { chunk: Chunk; score: number }>();
 
-  // Calculate RRF scores for each chunk across all result sets
+  // Calculate RRF scores for each chunk across all result sets (do NOT slice before merge)
   for (const results of resultSets) {
     results.forEach((chunk, rank) => {
-      const existing = scores.get(chunk.id);
+      const key = id(chunk);
       const rrfScore = 1 / (k + rank + 1); // rank is 0-indexed
+      const existing = scores.get(key);
 
       if (existing) {
         existing.score += rrfScore;
       } else {
-        scores.set(chunk.id, {
+        scores.set(key, {
           chunk: {
             ...chunk,
             metadata: {
@@ -342,10 +346,9 @@ export function rrfMerge(
     });
   }
 
-  // Sort by RRF score descending and take top N
+  // Deduplicate and sort by RRF score, then slice only once at end
   const merged = Array.from(scores.values())
     .sort((a, b) => b.score - a.score)
-    .slice(0, topN)
     .map(({ chunk, score }) => ({
       ...chunk,
       metadata: {
@@ -353,9 +356,10 @@ export function rrfMerge(
         rrfScore: score,
         relevanceScore: score, // Use RRF as relevance
       },
-    }));
+    }))
+    .slice(0, topN);  // ONLY slice here, after merge and dedupe
 
-  console.log(`RRF merge: ${scores.size} unique chunks → top ${merged.length}`);
+  console.log(`[RRF] Merged ${Array.from(scores.values()).length} unique chunks → top ${merged.length}`);
   return merged;
 }
 

@@ -279,12 +279,24 @@ Dental benefits overview:
     }
     retrievalTime = Date.now() - retrievalStart;
 
+    // Deduplicate at chunk level (post-RRF)
+    const keyOf = (c: Chunk) => c.id ?? `${c.docId}:${c.position ?? 0}`;
+    const deduped = Array.from(
+      new Map(retrievalResult.chunks.map(c => [keyOf(c), c])).values()
+    );
+
+    console.log(`[QA] Dedup: ${retrievalResult.chunks.length} → ${deduped.length} unique chunks`);
+
+    // Show more, keep all for validation
+    const SHOWN_CITATIONS = 12;
+    const citationsToShow = deduped.slice(0, SHOWN_CITATIONS);
+
     // Build context string and citations from chunks
-    const context = retrievalResult.chunks
+    const context = citationsToShow
       .map((chunk, idx) => `[${idx + 1}] ${chunk.title}\n${chunk.content}`)
       .join('\n\n');
     
-    const citations: Citation[] = retrievalResult.chunks.map((chunk) => ({
+    const citations: Citation[] = citationsToShow.map((chunk) => ({
       chunkId: chunk.id,
       docId: chunk.docId,
       title: chunk.title,
@@ -384,6 +396,8 @@ Dental benefits overview:
       },
       metadata: {
         retrievalCount: retrievalResult.chunks.length,
+        usedCount: deduped.length,
+        shownCount: citationsToShow.length,
         groundingScore: validationResult!.grounding.score,
         escalated: retryCount > 0,
         cacheKey: buildCacheKey(normalizedQuery, request.companyId),
