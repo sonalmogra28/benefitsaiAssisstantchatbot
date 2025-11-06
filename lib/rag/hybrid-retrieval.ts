@@ -135,7 +135,7 @@ export async function retrieveVectorTopK(
     }
     const filterString = filters.join(" and ");
 
-    // Execute vector search
+    // Execute vector search with semantic ranking
     const results = await client.search(query, {
       vectorSearchOptions: {
         queries: [{
@@ -155,6 +155,13 @@ export async function retrieveVectorTopK(
         "content",
         "metadata",
       ],
+      semanticSearchOptions: {
+        configurationName: "default",
+        queryCaption: "extractive",
+        captions: "extractive|highlight=true"
+      },
+      queryType: "semantic",
+      semanticConfiguration: "default",
     });
 
     // Convert results to Chunk objects
@@ -246,7 +253,7 @@ export async function retrieveBM25TopK(
     }
     const filterString = filters.join(" and ");
 
-    // Execute BM25 search
+    // Execute BM25 search with semantic ranking capability
     const results = await client.search(query, {
       searchMode: "all",
       queryType: "full",
@@ -390,13 +397,13 @@ export async function hybridRetrieve(
 ): Promise<RetrievalResult> {
   const startTime = Date.now();
 
-  // Default configuration
+  // Default configuration - OPTIMIZED for production
   const cfg: HybridSearchConfig = {
-    vectorK: config?.vectorK ?? 24,
-    bm25K: config?.bm25K ?? 24,
+    vectorK: config?.vectorK ?? 40,          // Increased from 24 to 40 for better filtering
+    bm25K: config?.bm25K ?? 40,              // Increased from 24 to 40 for better filtering
     rrfK: config?.rrfK ?? 60,
-    finalTopK: config?.finalTopK ?? 12,
-    rerankedTopK: config?.rerankedTopK ?? 8,
+    finalTopK: config?.finalTopK ?? 16,      // Increased from 12 to 16 for more context
+    rerankedTopK: config?.rerankedTopK ?? 12, // Increased from 8 to 12 for more grounding
     enableReranking: config?.enableReranking ?? false,
   };
 
@@ -407,6 +414,8 @@ export async function hybridRetrieve(
       retrieveBM25TopK(query, context, cfg.bm25K),
     ]);
 
+    console.log(`[HybridRetrieve] Search results: vector=${vectorResults.length}, bm25=${bm25Results.length}, k=${cfg.vectorK}`);
+
     // Merge using RRF
     const merged = rrfMerge(
       [vectorResults, bm25Results],
@@ -414,10 +423,14 @@ export async function hybridRetrieve(
       cfg.finalTopK
     );
 
+    console.log(`[HybridRetrieve] After RRF merge: ${merged.length} unique chunks`);
+
     // Re-rank if enabled
     const final = cfg.enableReranking
       ? await rerankChunks(query, merged, cfg.rerankedTopK)
       : merged.slice(0, cfg.rerankedTopK);
+
+    console.log(`[HybridRetrieve] After reranking: ${final.length} final chunks (enableReranking=${cfg.enableReranking})`);
 
     const latencyMs = Date.now() - startTime;
 
