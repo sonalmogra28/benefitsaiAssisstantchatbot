@@ -7,10 +7,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function ensureErrorPages() {
   try {
-    // Create .next/export directory if it doesn't exist
+    // Create BOTH .next/export AND .next/server/pages directories
+    // Next.js 15.x tries to move 500.html from export to server/pages
     await mkdir('.next/export', { recursive: true });
+    await mkdir('.next/server/pages', { recursive: true });
     
-    // Create minimal 500.html that Next.js expects
+    // Create minimal 500.html that Next.js expects IN THE DESTINATION
+    // This prevents the ENOENT error when Next.js tries to move it
     const html500 = `<!DOCTYPE html>
 <html>
 <head>
@@ -31,8 +34,10 @@ async function ensureErrorPages() {
 </body>
 </html>`;
 
+    // Create in BOTH locations so rename will succeed
     await writeFile('.next/export/500.html', html500);
-    console.log('✓ Created .next/export/500.html');
+    await writeFile('.next/server/pages/500.html', html500);
+    console.log('✓ Created .next/export/500.html and .next/server/pages/500.html');
   } catch (error) {
     console.error('Failed to create error pages:', error);
     process.exit(1);

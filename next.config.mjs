@@ -3,11 +3,7 @@
 const nextConfig = {
   reactStrictMode: true,
   
-  // CRITICAL: Force standalone output to skip static export generation
-  // This prevents the 500.html ENOENT bug in Next.js 15.x
-  output: 'standalone',
-  
-  // Move skipMiddlewareUrlNormalize to top level per Next.js 15.1.0
+  // Move skipMiddlewareUrlNormalize to top level per Next.js 14
   skipMiddlewareUrlNormalize: true,
   
   experimental: {
