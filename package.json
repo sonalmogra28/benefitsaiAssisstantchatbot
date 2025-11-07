@@ -12,9 +12,10 @@
     "lint": "eslint .",
     "dev": "next dev --turbo --hostname localhost --port 8080",
     "build": "next build",
-    "build:vercel": "next build && node ./scripts/postbuild-fix-manifests.mjs",
+    "build:vercel": "node ./scripts/disable-routes-for-build.cjs && next build && node ./scripts/postbuild-fix-manifests.mjs && node ./scripts/restore-routes-after-build.cjs",
     "start": "next start -p 3000",
     "prebuild": "node ./scripts/ci-guard.mjs && npm run typecheck && npm run lint",
+    "postbuild": "node ./scripts/restore-routes-after-build.cjs",
     "test": "vitest run",
     "verify:production": "node ./scripts/verify-production-config.mjs",
     "load:test": "k6 run tests/load/k6-rag-scenarios.js"
