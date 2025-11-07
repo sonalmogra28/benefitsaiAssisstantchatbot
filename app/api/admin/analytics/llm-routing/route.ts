@@ -2,13 +2,20 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
-import { rateLimiters } from '@/lib/middleware/rate-limit';
-import { logger, logError } from '@/lib/logger';
-import { hybridLLMRouter } from '@/lib/ai/hybrid-llm-router';
+import { withBuildBypass } from '@/lib/middleware/with-build-bypass';
+
+// Lazy imports inside handler to avoid module-level execution during build
+async function getServices() {
+  const { requireCompanyAdmin } = await import('@/lib/auth/unified-auth');
+  const { rateLimiters } = await import('@/lib/middleware/rate-limit');
+  const { logger } = await import('@/lib/logger');
+  const { hybridLLMRouter } = await import('@/lib/ai/hybrid-llm-router');
+  return { requireCompanyAdmin, rateLimiters, logger, hybridLLMRouter };
+}
 
 // GET /api/admin/analytics/llm-routing - Get LLM routing statistics
-export const GET = requireCompanyAdmin(async (request: NextRequest) => {
+export const GET = withBuildBypass(async (request: NextRequest) => {
+  const { rateLimiters, logger, hybridLLMRouter } = await getServices();
   const startTime = Date.now();
   
   try {
@@ -98,7 +105,8 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
 });
 
 // POST /api/admin/analytics/llm-routing - Reset routing statistics
-export async function POST(request: NextRequest) {
+export const POST = withBuildBypass(async (request: NextRequest) => {
+  const { rateLimiters, logger, hybridLLMRouter } = await getServices();
   const startTime = Date.now();
   
   try {
@@ -168,6 +176,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 

@@ -2,13 +2,18 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
-import { analyticsService } from '@/lib/services/analytics.service';
-import { rateLimiters } from '@/lib/middleware/rate-limit';
-import { logger } from '@/lib/logger';
-import { CSVExporter } from '@/lib/utils/csv-export';
-import { ExcelExporter } from '@/lib/utils/excel-export';
+import { withBuildBypass } from '@/lib/middleware/with-build-bypass';
 import { z } from 'zod';
+
+// Lazy imports inside handler to avoid module-level execution during build
+async function getServices() {
+  const { analyticsService } = await import('@/lib/services/analytics.service');
+  const { rateLimiters } = await import('@/lib/middleware/rate-limit');
+  const { logger } = await import('@/lib/logger');
+  const { CSVExporter } = await import('@/lib/utils/csv-export');
+  const { ExcelExporter } = await import('@/lib/utils/excel-export');
+  return { analyticsService, rateLimiters, logger, CSVExporter, ExcelExporter };
+}
 
 // Schema for query parameters
 const querySchema = z.object({
@@ -18,19 +23,20 @@ const querySchema = z.object({
 });
 
 // Helper to extract auth from request
-async function extractAuth(request: NextRequest) {
+function extractAuth(request: NextRequest) {
   const userId = request.headers.get('x-user-id');
   const userCompanyId = request.headers.get('x-company-id');
   return { userId: userId || '', companyId: userCompanyId || '' };
 }
 
-// GET handler - Direct export without middleware wrapper
-export async function GET(request: NextRequest) {
+// GET handler wrapped with build bypass
+export const GET = withBuildBypass(async (request: NextRequest) => {
+  const { analyticsService, rateLimiters, logger } = await getServices();
   const startTime = Date.now();
 
   try {
-    // Extract auth without calling requireCompanyAdmin middleware
-    const { userId, companyId } = await extractAuth(request);
+    // Extract auth from headers
+    const { userId, companyId } = extractAuth(request);
 
     if (!companyId) {
       return NextResponse.json(
@@ -175,15 +181,16 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-// POST handler - Direct export without middleware wrapper
-export async function POST(request: NextRequest) {
+// POST handler wrapped with build bypass
+export const POST = withBuildBypass(async (request: NextRequest) => {
+  const { analyticsService, rateLimiters, logger, ExcelExporter, CSVExporter } = await getServices();
   const startTime = Date.now();
 
   try {
-    // Extract auth without calling requireCompanyAdmin middleware
-    const { userId, companyId } = await extractAuth(request);
+    // Extract auth from headers
+    const { userId, companyId } = extractAuth(request);
 
     if (!companyId) {
       return NextResponse.json(

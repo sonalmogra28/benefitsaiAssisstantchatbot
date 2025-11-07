@@ -2,7 +2,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {},
+  experimental: {
+    // Disable static optimization for API routes to prevent build failures
+    staticGenerationRetryCount: 0,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
