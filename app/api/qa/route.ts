@@ -210,6 +210,16 @@ export async function POST(req: NextRequest) {
       },
     };
 
+    // DIAGNOSTIC: Log request details
+    console.log('[QA][DEBUG] Request received:', {
+      query: request.query,
+      companyId: request.companyId,
+      userId: request.userId,
+      sessionId: request.context?.sessionId,
+      hasBodyCompanyId: !!body.companyId,
+      bodyCompanyId: body.companyId,
+    });
+
     if (!request.query || request.query.trim().length === 0) {
       return NextResponse.json(
         { error: 'Query is required' },
