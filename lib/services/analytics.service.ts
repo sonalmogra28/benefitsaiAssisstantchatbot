@@ -252,12 +252,12 @@ class AnalyticsService {
     try {
       const repositories = await getRepositories();
       
-      // Get basic counts
+      // Get basic counts using .list() for CosmosRepository and .queryAll() for DocumentRepository
       const [users, companies, conversations, documents, totalBenefitPlans] = await Promise.all([
-        repositories.users.getAll(),
-        repositories.companies.getAll(),
-        repositories.chats.getAll(),
-        repositories.documents.getAll(),
+        repositories.users.list(),
+        repositories.companies.list(),
+        repositories.chats.list(),
+        repositories.documents.queryAll('SELECT * FROM c'),
         benefitService.getTotalBenefitPlansCount()
       ]);
 
