@@ -50,6 +50,7 @@ function ensureSearchClient(): any | null {
 
   // DIAGNOSTIC: Log which index we're actually using
   console.log(`[SEARCH] Initializing client with index: ${indexName} (env: ${process.env.AZURE_SEARCH_INDEX || 'NOT_SET'})`);
+  console.log(`[SEARCH] Endpoint: ${endpoint?.substring(0, 40)}..., API Key: ${apiKey ? 'SET' : 'MISSING'}`);
 
   if ((!endpoint || !apiKey) && !isVitest) {
     throw new Error("Azure Search credentials not configured");
@@ -138,6 +139,8 @@ export async function retrieveVectorTopK(
       filters.push(`benefit_year eq ${context.planYear}`);
     }
     const filterString = filters.join(" and ");
+    
+    console.log(`[SEARCH][VECTOR] Query: "${query.substring(0, 50)}...", Filter: "${filterString}", K: ${k}`);
 
     // Execute vector search with semantic ranking
     const results = await client.search(query, {
@@ -192,7 +195,11 @@ export async function retrieveVectorTopK(
     }
 
     const latencyMs = Date.now() - startTime;
-    console.log(`Vector search: ${chunks.length} results in ${latencyMs}ms`);
+    console.log(`[SEARCH][VECTOR] ✅ ${chunks.length} results in ${latencyMs}ms`);
+    
+    if (chunks.length === 0) {
+      console.warn(`[SEARCH][VECTOR] ⚠️ Zero results! Filter: "${filterString}", Query: "${query.substring(0, 80)}"`);
+    }
 
     return chunks;
   } catch (error) {
@@ -298,11 +305,15 @@ export async function retrieveBM25TopK(
     }
 
     const latencyMs = Date.now() - startTime;
-    console.log(`BM25 search: ${chunks.length} results in ${latencyMs}ms`);
+    console.log(`[SEARCH][BM25] ✅ ${chunks.length} results in ${latencyMs}ms`);
+    
+    if (chunks.length === 0) {
+      console.warn(`[SEARCH][BM25] ⚠️ Zero results! Filter: "${filterString}", Query: "${query.substring(0, 80)}"`);
+    }
 
     return chunks;
   } catch (error) {
-    console.error("BM25 search failed:", error);
+    console.error("[SEARCH][BM25] ❌ Search failed:", error);
     throw new Error(`BM25 retrieval error: ${error}`);
   }
 }

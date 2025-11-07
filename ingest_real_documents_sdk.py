@@ -11,7 +11,6 @@ from pathlib import Path
 from azure.storage.blob import BlobServiceClient
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
-from azure.search.documents.indexes.models import IndexingAction
 import PyPDF2
 from docx import Document
 
@@ -92,22 +91,19 @@ def extract_docx_text(data: bytes) -> str:
 
 def generate_embedding(text: str) -> list:
     """Generate 3072-dimensional embedding using Azure OpenAI"""
-    import requests
+    from openai import AzureOpenAI
     
-    url = f"{AOAI_ENDPOINT}/openai/deployments/{EMB_DEPLOY}/embeddings?api-version=2024-02-15-preview"
-    headers = {
-        "api-key": AOAI_API_KEY,
-        "Content-Type": "application/json"
-    }
-    body = {
-        "input": text,
-        "model": "text-embedding-3-large"
-    }
+    client = AzureOpenAI(
+        api_key=AOAI_API_KEY,
+        api_version="2024-02-15-preview",
+        azure_endpoint=AOAI_ENDPOINT
+    )
     
-    response = requests.post(url, headers=headers, json=body)
-    response.raise_for_status()
-    result = response.json()
-    return result["data"][0]["embedding"]
+    response = client.embeddings.create(
+        input=text,
+        model=EMB_DEPLOY
+    )
+    return response.data[0].embedding
 
 # ============================================================================
 # Chunking

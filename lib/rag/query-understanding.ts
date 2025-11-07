@@ -87,7 +87,10 @@ export function detectIntent(query: string): IntentType {
     /^what is\b/.test(normalized) ||
     /^define\b/.test(normalized) ||
     /\bmeaning of\b/.test(normalized) ||
-    /^explain\b/.test(normalized)
+    /^explain\b/.test(normalized) ||
+    /^tell me about\b/.test(normalized) ||
+    /^what are\b/.test(normalized) ||
+    /^what's\b/.test(normalized)
   ) {
     return "definition";
   }
@@ -96,11 +99,70 @@ export function detectIntent(query: string): IntentType {
   if (
     /\bcompare\b/.test(normalized) ||
     /\bdifference between\b/.test(normalized) ||
+    /\bdifference\b/.test(normalized) ||
     /\bversus\b/.test(normalized) ||
     /\bvs\.?\b/.test(normalized) ||
+    /\bbetter\b/.test(normalized) ||
+    /\bwhich (one|plan|option)\b/.test(normalized) ||
+    /\bshould i (choose|pick|select)\b/.test(normalized) ||
     /\bor\b.*\bor\b/.test(normalized) // "A or B or C"
   ) {
     return "compare";
+  }
+  
+  // Calculation intent: money, costs, math
+  if (
+    /\bhow much\b/.test(normalized) ||
+    /\bcost\b/.test(normalized) ||
+    /\bprice\b/.test(normalized) ||
+    /\bpremium\b/.test(normalized) ||
+    /\bsave\b/.test(normalized) ||
+    /\bspend\b/.test(normalized) ||
+    /\bcalculate\b/.test(normalized) ||
+    /\bestimate\b/.test(normalized) ||
+    /\$\d+/.test(normalized) ||
+    /\bdeductible\b/.test(normalized) ||
+    /\bout.of.pocket\b/.test(normalized)
+  ) {
+    return "calculate";
+  }
+  
+  // Eligibility intent: enrollment, qualify
+  if (
+    /\beligible\b/.test(normalized) ||
+    /\bqualify\b/.test(normalized) ||
+    /\benroll\b/.test(normalized) ||
+    /\bsign up\b/.test(normalized) ||
+    /\bregister\b/.test(normalized) ||
+    /\bcan i\b/.test(normalized) ||
+    /\bam i (covered|allowed)\b/.test(normalized) ||
+    /\bdependent\b/.test(normalized) ||
+    /\bwaiting period\b/.test(normalized)
+  ) {
+    return "eligibility";
+  }
+  
+  // Procedure intent: how-to, process
+  if (
+    /^how (do|can|to)\b/.test(normalized) ||
+    /\bsteps? (to|for)\b/.test(normalized) ||
+    /\bprocess (of|for)\b/.test(normalized) ||
+    /\bprocedure\b/.test(normalized) ||
+    /\bwhat (do|should) i do\b/.test(normalized) ||
+    /\bwhere do i\b/.test(normalized) ||
+    /\bwhen (do|can) i\b/.test(normalized)
+  ) {
+    return "procedure";
+  }
+  
+  // Lookup intent: simple info retrieval
+  if (
+    /^what\b/.test(normalized) ||
+    /^is there\b/.test(normalized) ||
+    /^do (we|you) (have|offer|provide)\b/.test(normalized) ||
+    /\b(include|cover|available)\b/.test(normalized)
+  ) {
+    return "lookup";
   }
 
   // Calculation intent: "how much", "cost", "calculate", numbers + operators
