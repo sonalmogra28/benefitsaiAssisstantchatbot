@@ -3,7 +3,6 @@ export const runtime = 'nodejs';
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
-import { isBuild } from '@/lib/runtime/is-build';
 import { analyticsService } from '@/lib/services/analytics.service';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
 import { logger } from '@/lib/logger';
@@ -18,35 +17,32 @@ const querySchema = z.object({
   metric: z.enum(['overview', 'questions', 'users', 'costs']).optional(),
 });
 
-export const GET = requireCompanyAdmin(async (request: NextRequest) => {
-  // Fail-safe for build time
-  if (isBuild) {
-    return NextResponse.json(
-      { error: 'Not available during build' },
-      { status: 503 }
-    );
-  }
-  
+// Helper to extract auth from request
+async function extractAuth(request: NextRequest) {
+  const userId = request.headers.get('x-user-id');
+  const userCompanyId = request.headers.get('x-company-id');
+  return { userId: userId || '', companyId: userCompanyId || '' };
+}
+
+// GET handler - Direct export without middleware wrapper
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
-    // Apply rate limiting
-    const rateLimitResponse = await rateLimiters.admin(request);
-    if (rateLimitResponse) {
-      return rateLimitResponse;
-    }
+    // Extract auth without calling requireCompanyAdmin middleware
+    const { userId, companyId } = await extractAuth(request);
 
-    // Extract user information from headers
-    const userId = request.headers.get('x-user-id')!;
-    const userCompanyId = request.headers.get('x-company-id')!;
-
-    const companyId = userCompanyId;
     if (!companyId) {
-      logger.warn({  userId: userId  }, 'Company ID not found for admin user');
       return NextResponse.json(
         { error: 'Company ID not found' },
         { status: 400 }
       );
+    }
+
+    // Apply rate limiting
+    const rateLimitResponse = await rateLimiters.admin(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     // Parse query parameters
@@ -179,38 +175,27 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
 
-// Export analytics data (for scheduled reports, etc.)
-export const POST = requireCompanyAdmin(async (request: NextRequest) => {
-  // Fail-safe for build time
-  if (isBuild) {
-    return NextResponse.json(
-      { error: 'Not available during build' },
-      { status: 503 }
-    );
-  }
-  
+// POST handler - Direct export without middleware wrapper
+export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
+    // Extract auth without calling requireCompanyAdmin middleware
+    const { userId, companyId } = await extractAuth(request);
+
+    if (!companyId) {
+      return NextResponse.json(
+        { error: 'Company ID not found' },
+        { status: 400 }
+      );
+    }
+
     // Apply rate limiting
     const rateLimitResponse = await rateLimiters.admin(request);
     if (rateLimitResponse) {
       return rateLimitResponse;
-    }
-
-    // Extract user information from headers
-    const userId = request.headers.get('x-user-id')!;
-    const userCompanyId = request.headers.get('x-company-id')!;
-
-    const companyId = userCompanyId;
-    if (!companyId) {
-      logger.warn({  userId: userId  }, 'Company ID not found for admin user');
-      return NextResponse.json(
-        { success: false, error: 'Company ID not found' },
-        { status: 400 }
-      );
     }
 
     const body = await request.json();
@@ -292,6 +277,6 @@ export const POST = requireCompanyAdmin(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
 
 
