@@ -2,8 +2,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use standalone output - Vercel will handle this correctly
-  output: 'standalone',
+  // REMOVED: output: 'standalone' causes 500.html build errors in Next.js 15
+  // Vercel will handle serverless deployment automatically
   experimental: {
     // Disable static optimization for API routes to prevent build failures
     staticGenerationRetryCount: 0,
