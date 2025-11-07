@@ -99,6 +99,7 @@ export default function SubdomainChatPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
   const [showCalcOverlay, setShowCalcOverlay] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [calcPrefs, setCalcPrefs] = useState({ household: 'individual', usage: 'moderate', provider: 'any' });
   const quickPrompts = [
     'What is covered under my medical plan?',
@@ -211,7 +212,7 @@ export default function SubdomainChatPage() {
     setSelectedScenario(scenario.id);
     
     if (scenario.action === 'upload') {
-      alert('Document upload feature will open here. Integration with Azure Blob Storage pending.');
+      setShowUploadModal(true);
       return;
     }
     
@@ -434,6 +435,38 @@ export default function SubdomainChatPage() {
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowCalcOverlay(false)}>Cancel</Button>
                 <Button className="flex-1" onClick={submitCalculatorPrefs}>Get Recommendations</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Document Upload Modal */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Upload Benefits Document</CardTitle>
+              <CardDescription>Upload your benefits summary for AI-powered analysis</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-sm text-gray-600 mb-2">Drag and drop your document here</p>
+                <p className="text-xs text-gray-500 mb-4">or</p>
+                <Button variant="outline" size="sm">
+                  Browse Files
+                </Button>
+                <p className="text-xs text-gray-500 mt-4">Supported: PDF, DOCX, TXT (Max 10MB)</p>
+              </div>
+              <Alert>
+                <AlertDescription>
+                  Your document will be analyzed using Azure AI to extract key benefits information, coverage details, and cost estimates.
+                </AlertDescription>
+              </Alert>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowUploadModal(false)}>Cancel</Button>
+                <Button className="flex-1" disabled>Upload & Analyze</Button>
               </div>
             </CardContent>
           </Card>
