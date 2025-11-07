@@ -1,3 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, consolidated/** ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps (ci)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Logger usage guard
+        shell: pwsh
+        run: ./scripts/check-logger-usage.ps1
+
+      - name: Env contract check (AZURE_SEARCH_INDEX only)
+        shell: pwsh
+        run: ./scripts/env-contract-check.ps1
+
+  predeploy-probe:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Search Pre-Deploy Probe
+        shell: pwsh
+        env:
+          AZURE_SEARCH_ENDPOINT: ${{ secrets.AZURE_SEARCH_ENDPOINT }}
+          AZURE_SEARCH_API_KEY: ${{ secrets.AZURE_SEARCH_API_KEY }}
+          AZURE_SEARCH_INDEX: ${{ vars.AZURE_SEARCH_INDEX }}
+          COMPANY_ID: ${{ vars.COMPANY_ID || 'amerivet' }}
+        run: |
+          ./scripts/predeploy-acs-probe.ps1 -Endpoint $env:AZURE_SEARCH_ENDPOINT -ApiKey $env:AZURE_SEARCH_API_KEY -Index $env:AZURE_SEARCH_INDEX -CompanyId $env:COMPANY_ID -MinDocs 10
+
+  smoke:
+    runs-on: ubuntu-latest
+    needs: predeploy-probe
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Production Smoke Test (PowerShell)
+        shell: pwsh
+        env:
+          PROD_DOMAIN: ${{ vars.PROD_DOMAIN }}
+          COMPANY_ID: ${{ vars.COMPANY_ID || 'amerivet' }}
+        run: |
+          if (-not $env:PROD_DOMAIN) { Write-Error 'Set repository variable PROD_DOMAIN to your production URL.'; exit 1 }
+          ./scripts/smoke-test-prod.ps1 -Domain $env:PROD_DOMAIN -CompanyId $env:COMPANY_ID
 name: CI Quality Gates
 
 on:

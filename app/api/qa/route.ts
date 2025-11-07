@@ -49,7 +49,7 @@ const ENABLE_EXACT_CACHE = true;
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { cacheGet, cacheSet, isCacheAvailable } from '@/lib/cache';
-import { logger } from '@/lib/logger';
+import { log } from '@/lib/logger';
 
 async function getCachedResponse(cacheKey: string): Promise<QAResponse | null> {
   return cacheGet<QAResponse>(cacheKey);
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   if (!healthCheckInitialized) {
     healthCheckInitialized = true;
     await ensureIndexHealthy().catch(err => {
-      logger.error({ err: String(err) }, '[QA] Index health check failed');
+      log.error('[QA] Index health check failed', err as Error);
     });
   }
 
@@ -282,10 +282,7 @@ Dental benefits overview:
 
     // Handle zero-results case (index corpus starvation)
     if (retrievalResult.chunks.length === 0) {
-      logger.warn(
-        { query: normalizedQuery, companyId: request.companyId },
-        '[QA] Zero retrieval results; returning fallback response'
-      );
+      log.warn('[QA] Zero retrieval results; returning fallback response', { query: normalizedQuery, companyId: request.companyId });
       
       const fallbackResponse: QAResponse = {
         answer: "I don't have enough indexed documents to answer your question right now. Please try rephrasing your question or contact your HR administrator for assistance. Example questions I can typically help with: 'What dental coverage is available?' or 'How do I enroll in benefits?'",
@@ -304,6 +301,17 @@ Dental benefits overview:
           retrievalMethod: 'hybrid',
         },
       };
+
+      // Negative-cache zero results briefly to avoid repeated heavy calls
+      try {
+        if (isCacheAvailable()) {
+          const negKey = buildCacheKey(normalizedQuery, request.companyId);
+          await setCachedResponse(negKey, fallbackResponse, 300); // 5 minutes
+          log.info('[QA] Negative-cached zero-result fallback (300s)', { key: negKey });
+        }
+      } catch (err) {
+        log.warn('[QA] Negative-cache write failed (non-blocking)', { err: String(err) });
+      }
 
       return NextResponse.json(fallbackResponse);
     }
@@ -441,15 +449,20 @@ Dental benefits overview:
     // Step 10: Cache result (async, non-blocking)
     const cacheKey = buildCacheKey(normalizedQuery, request.companyId);
     const cacheTTL = getTTLForTier(currentTier);
-    
-    if (cacheTTL > 0 && isCacheAvailable()) {
+
+    // Only cache positive results when sufficiently grounded
+    const canCache = (retrievalResult.chunks.length >= 8) && (validationResult!.grounding.score >= 0.60);
+
+    if (cacheTTL > 0 && isCacheAvailable() && canCache) {
       setCachedResponse(cacheKey, qaResponse, cacheTTL).then(() => {
-        logger.info({ tier: currentTier, ttl: `${cacheTTL}s` }, '[QA] Cache write completed');
+        log.info('[QA] Cache write completed', { tier: currentTier, ttl: `${cacheTTL}s` });
       }).catch(err => {
-        logger.warn({ err: String(err) }, '[QA] Cache write failed (non-blocking)');
+        log.warn('[QA] Cache write failed (non-blocking)', { err: String(err) });
       });
     } else if (!isCacheAvailable()) {
-      logger.debug('[QA] Cache unavailable; skipping write');
+      log.debug('[QA] Cache unavailable; skipping write');
+    } else if (!canCache) {
+      log.debug('[QA] Skipping cache write (insufficient grounding or low retrieval)');
     }
 
     // Step 11: Record conversation quality metrics

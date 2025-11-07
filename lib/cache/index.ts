@@ -6,7 +6,7 @@
  */
 
 import { getRedis, cacheEnabled } from "./redis";
-import { logger } from "@/lib/logger";
+import { log } from "@/lib/logger";
 
 /**
  * Get cached value (returns null if cache miss or unavailable)
@@ -20,11 +20,11 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
     if (!value) return null;
 
     const parsed = JSON.parse(value) as T;
-    logger.debug({ key }, "[Cache] Hit");
+  log.debug("[Cache] Hit", { key });
     return parsed;
 
   } catch (err) {
-    logger.warn({ key, err: String(err) }, "[Cache] Get failed; returning null");
+  log.warn("[Cache] Get failed; returning null", { key, err: String(err) });
     return null;
   }
 }
@@ -43,10 +43,10 @@ export async function cacheSet(
   try {
     const serialized = JSON.stringify(value);
     await redis.setex(key, ttlSeconds, serialized);
-    logger.debug({ key, ttl: `${ttlSeconds}s` }, "[Cache] Set");
+  log.debug("[Cache] Set", { key, ttl: `${ttlSeconds}s` });
 
   } catch (err) {
-    logger.warn({ key, err: String(err) }, "[Cache] Set failed; ignoring");
+  log.warn("[Cache] Set failed; ignoring", { key, err: String(err) });
   }
 }
 
@@ -59,10 +59,10 @@ export async function cacheDel(key: string): Promise<void> {
 
   try {
     await redis.del(key);
-    logger.debug({ key }, "[Cache] Deleted");
+  log.debug("[Cache] Deleted", { key });
 
   } catch (err) {
-    logger.warn({ key, err: String(err) }, "[Cache] Delete failed; ignoring");
+  log.warn("[Cache] Delete failed; ignoring", { key, err: String(err) });
   }
 }
 

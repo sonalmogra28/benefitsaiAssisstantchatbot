@@ -6,7 +6,7 @@
  */
 
 import { SearchIndexClient, AzureKeyCredential } from "@azure/search-documents";
-import { logger } from "@/lib/logger";
+import { log } from "@/lib/logger";
 
 const MIN_HEALTHY_DOC_COUNT = 10; // Threshold for healthy index
 const FALLBACK_INDEX = "chunks_prod_v1"; // Known-good production index (499 docs)
@@ -27,7 +27,7 @@ export async function ensureIndexHealthy(): Promise<void> {
   const indexName = process.env.AZURE_SEARCH_INDEX || FALLBACK_INDEX;
 
   if (!endpoint || !apiKey) {
-    logger.warn("[Search] Missing credentials; skipping health check");
+    log.warn("[Search] Missing credentials; skipping health check");
     return;
   }
 
@@ -41,30 +41,18 @@ export async function ensureIndexHealthy(): Promise<void> {
     const docCount = stats?.documentCount ?? 0;
 
     if (docCount < MIN_HEALTHY_DOC_COUNT) {
-      logger.error(
-        { index: indexName, docCount, threshold: MIN_HEALTHY_DOC_COUNT },
-        "[Search] Index UNHEALTHY; forcing fallback to v1"
-      );
+  log.error("[Search] Index UNHEALTHY; forcing fallback to v1", undefined, { index: indexName, docCount, threshold: MIN_HEALTHY_DOC_COUNT });
       
       // Override environment variable for current process
       process.env.AZURE_SEARCH_INDEX = FALLBACK_INDEX;
       
-      logger.info(
-        { fallbackIndex: FALLBACK_INDEX },
-        "[Search] Auto-switched to fallback index"
-      );
+      log.info("[Search] Auto-switched to fallback index", { fallbackIndex: FALLBACK_INDEX });
     } else {
-      logger.info(
-        { index: indexName, docCount },
-        "[Search] Index health check PASSED"
-      );
+      log.info("[Search] Index health check PASSED", { index: indexName, docCount });
     }
 
   } catch (err) {
-    logger.error(
-      { index: indexName, err: String(err) },
-      "[Search] Health check failed; forcing fallback to v1"
-    );
+  log.error("[Search] Health check failed; forcing fallback to v1", undefined, { index: indexName, err: String(err) });
     
     // Override to fallback on any stats failure
     process.env.AZURE_SEARCH_INDEX = FALLBACK_INDEX;

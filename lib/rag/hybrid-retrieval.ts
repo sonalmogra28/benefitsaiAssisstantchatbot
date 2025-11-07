@@ -440,17 +440,62 @@ export async function hybridRetrieve(
 
     console.log(`[RAG] final=${final.length} (reranking=${cfg.enableReranking})`);
 
+    // Defensive guardrails: never return < 8 unless corpus starvation
+    let guardedFinal = final;
+    if (guardedFinal.length < 8) {
+      console.warn(`[RAG][GUARD] Low-results detected (final=${guardedFinal.length}). Expanding search…`);
+
+      // 1) Expand K aggressively and retry with same filters
+      const expandK = Math.max(cfg.vectorK, 80);
+      const [v2, b2] = await Promise.all([
+        retrieveVectorTopK(query, context, expandK),
+        retrieveBM25TopK(query, context, expandK),
+      ]);
+      const merged2 = rrfMerge([v2, b2], cfg.rrfK, Math.max(cfg.finalTopK, 24));
+      guardedFinal = cfg.enableReranking
+        ? await rerankChunks(query, merged2, Math.max(cfg.rerankedTopK, 12))
+        : merged2.slice(0, Math.max(cfg.rerankedTopK, 12));
+      console.log(`[RAG][GUARD] Expanded search results → final=${guardedFinal.length}`);
+
+      // 2) If still low and a planYear filter exists, drop planYear (keep company) and retry
+      if (guardedFinal.length < 8 && typeof context.planYear !== 'undefined') {
+        console.warn(`[RAG][GUARD] Still low after expansion; retrying without planYear filter`);
+        const contextNoYear: RetrievalContext = { ...context };
+        delete (contextNoYear as any).planYear;
+        const [v3, b3] = await Promise.all([
+          retrieveVectorTopK(query, contextNoYear, expandK),
+          retrieveBM25TopK(query, contextNoYear, expandK),
+        ]);
+        const merged3 = rrfMerge([v3, b3], cfg.rrfK, Math.max(cfg.finalTopK, 24));
+        guardedFinal = cfg.enableReranking
+          ? await rerankChunks(query, merged3, Math.max(cfg.rerankedTopK, 12))
+          : merged3.slice(0, Math.max(cfg.rerankedTopK, 12));
+        console.log(`[RAG][GUARD] No-year retry → final=${guardedFinal.length}`);
+      }
+
+      // 3) Last-resort: BM25-only wide sweep (company filter only)
+      if (guardedFinal.length < 8) {
+        console.warn(`[RAG][GUARD] Final fallback: BM25-only wide sweep`);
+        const contextNoYear: RetrievalContext = { ...context };
+        delete (contextNoYear as any).planYear;
+        const bWide = await retrieveBM25TopK(query, contextNoYear, 100);
+        const mergedWide = rrfMerge([bWide], cfg.rrfK, 32);
+        guardedFinal = mergedWide.slice(0, Math.max(8, cfg.rerankedTopK));
+        console.log(`[RAG][GUARD] BM25-wide → final=${guardedFinal.length}`);
+      }
+    }
+
     const latencyMs = Date.now() - startTime;
 
     return {
-      chunks: final,
+      chunks: guardedFinal,
       method: "hybrid",
       totalResults: vectorResults.length + bm25Results.length,
       latencyMs,
       scores: {
         vector: vectorResults.map((c) => c.metadata.vectorScore ?? 0),
         bm25: bm25Results.map((c) => c.metadata.bm25Score ?? 0),
-        rrf: merged.map((c) => c.metadata.rrfScore ?? 0),
+        rrf: (guardedFinal.length ? guardedFinal : final).map((c) => c.metadata.rrfScore ?? 0),
       },
     };
   } catch (error) {

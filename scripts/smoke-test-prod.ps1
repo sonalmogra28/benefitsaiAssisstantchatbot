@@ -22,13 +22,14 @@ function Test-HealthEndpoint {
     Write-Host "Test 1: Health Check" -ForegroundColor Yellow
     try {
         $response = Invoke-RestMethod "$Domain/api/health" -TimeoutSec 10
-        if ($response -eq "ok") {
-            Write-Host "✅ Health endpoint responding" -ForegroundColor Green
+        if ($null -ne $response -and ($response.status -eq "ok" -or $null -ne $response.services.azureSearch.index)) {
+            $idx = $response.services.azureSearch.index
+            $commit = $response.commit
+            Write-Host "✅ Health endpoint responding (index=$idx, commit=$commit)" -ForegroundColor Green
             return $true
-        } else {
-            Write-Host "❌ Unexpected health response: $response" -ForegroundColor Red
-            return $false
         }
+        Write-Host "❌ Unexpected health response" -ForegroundColor Red
+        return $false
     } catch {
         Write-Host "❌ Health check failed: $($_.Exception.Message)" -ForegroundColor Red
         return $false
@@ -135,18 +136,20 @@ if ($failureCount -gt 0) {
 }
 
 # Check retrieval metrics
-$avgRetrieval = ($results | Where-Object { $_.retrievalCount } | Measure-Object -Property retrievalCount -Average).Average
-$avgGrounding = ($results | Where-Object { $_.groundingScore } | Measure-Object -Property groundingScore -Average).Average
+$avgRetrieval = ($results | Where-Object { $_.retrievalCount -ne $null } | Measure-Object -Property retrievalCount -Average).Average
+$avgGrounding = ($results | Where-Object { $_.groundingScore -ne $null } | Measure-Object -Property groundingScore -Average).Average
+$avgLatency = ($results | Where-Object { $_.latency -ne $null } | Measure-Object -Property latency -Average).Average
 
 Write-Host ""
 Write-Host "Metrics:" -ForegroundColor Gray
 Write-Host "  Avg Retrieval: $([Math]::Round($avgRetrieval, 1)) chunks" -ForegroundColor Gray
 Write-Host "  Avg Grounding: $([Math]::Round($avgGrounding * 100, 1))%" -ForegroundColor Gray
+Write-Host "  Avg Latency: $([Math]::Round($avgLatency, 0)) ms" -ForegroundColor Gray
 
-if ($avgRetrieval -ge 8 -and $avgGrounding -ge 0.60) {
+if ($avgRetrieval -ge 8 -and $avgGrounding -ge 0.60 -and $avgLatency -le 6000) {
     Write-Host ""
     Write-Host "✅ ALL TESTS PASSED - Production ready!" -ForegroundColor Green
 } else {
     Write-Host ""
-    Write-Host "⚠️  Some metrics below target. Review retrieval/grounding configuration." -ForegroundColor Yellow
+    Write-Host "⚠️  Some metrics below target. Targets: Retrieval ≥8, Grounding ≥60%, Avg Latency ≤6000ms" -ForegroundColor Yellow
 }

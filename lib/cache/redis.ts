@@ -9,7 +9,7 @@
  */
 
 import Redis from "ioredis";
-import { logger } from "@/lib/logger";
+import { log } from "@/lib/logger";
 
 let client: Redis | null = null;
 let disabled = false;
@@ -33,7 +33,7 @@ export function getRedis(): Redis | null {
       const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
       
       if (!url) {
-        logger.info("[Cache] No REDIS_URL configured; cache disabled");
+  log.info("[Cache] No REDIS_URL configured; cache disabled");
         disabled = true;
         return null;
       }
@@ -50,16 +50,16 @@ export function getRedis(): Redis | null {
 
       // Handle connection errors gracefully
       client.on("error", (err) => {
-        logger.warn({ err: String(err) }, "[Cache] Redis error; disabling cache");
+        log.warn("[Cache] Redis error; disabling cache", { err: String(err) });
         disabled = true;
         client = null;
       });
 
-      logger.info("[Cache] Redis client initialized (lazy connect)");
+      log.info("[Cache] Redis client initialized (lazy connect)");
       return client;
 
     } catch (err) {
-      logger.warn({ err: String(err) }, "[Cache] Redis initialization failed; cache disabled");
+      log.warn("[Cache] Redis initialization failed; cache disabled", { err: String(err) });
       disabled = true;
       return null;
     }
@@ -84,5 +84,5 @@ export function disableCache(): void {
     client.disconnect(false);
     client = null;
   }
-  logger.info("[Cache] Manually disabled");
+  log.info("[Cache] Manually disabled");
 }
