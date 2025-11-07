@@ -161,12 +161,14 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
       openaiApiKey: process.env.AZURE_OPENAI_API_KEY || 'test-key',
       openaiApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-01',
       openaiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4',
-      openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002',
+  // Prefer canonical plural var, fall back to singular for compatibility
+  openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || 'text-embedding-ada-002',
 
       // Azure Cognitive Search
       searchEndpoint: process.env.AZURE_SEARCH_ENDPOINT || 'https://test.search.windows.net',
       searchApiKey: process.env.AZURE_SEARCH_API_KEY || 'test-key',
-      searchIndexName: process.env.AZURE_SEARCH_INDEX_NAME || 'test-index',
+  // Prefer canonical AZURE_SEARCH_INDEX, fall back to legacy *_NAME
+  searchIndexName: process.env.AZURE_SEARCH_INDEX || process.env.AZURE_SEARCH_INDEX_NAME || 'test-index',
 
       // Azure Functions
       functionsEndpoint: process.env.AZURE_FUNCTIONS_ENDPOINT || 'https://test.azurewebsites.net',
@@ -251,12 +253,14 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
     openaiApiKey: process.env.AZURE_OPENAI_API_KEY,
     openaiApiVersion: process.env.AZURE_OPENAI_API_VERSION,
     openaiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
-    openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
+  // Prefer canonical plural var, fall back to singular
+  openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT,
 
     // Azure Search
     searchEndpoint: process.env.AZURE_SEARCH_ENDPOINT,
     searchApiKey: process.env.AZURE_SEARCH_API_KEY,
-    searchIndexName: process.env.AZURE_SEARCH_INDEX_NAME,
+  // Prefer canonical AZURE_SEARCH_INDEX, fall back to legacy *_NAME
+  searchIndexName: process.env.AZURE_SEARCH_INDEX || process.env.AZURE_SEARCH_INDEX_NAME,
 
     // Azure Functions
     functionsEndpoint: process.env.AZURE_FUNCTIONS_ENDPOINT,

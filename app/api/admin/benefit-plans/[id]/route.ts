@@ -2,12 +2,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { type NextRequest, NextResponse } from 'next/server';
-import { protectAdminEndpoint } from '@/lib/middleware/auth';
-import { rateLimiters } from '@/lib/middleware/rate-limit';
-import { logger } from '@/lib/logging/logger';
-import { benefitService } from '@/lib/services/benefit-service';
-import { updateBenefitPlanSchema } from '@/lib/schemas/benefits';
 import { z } from 'zod';
+import { isBuild } from '@/lib/runtime/is-build';
 
 interface RouteParams {
   params: Promise<{
@@ -17,6 +13,13 @@ interface RouteParams {
 
 // GET /api/admin/benefit-plans/[id] - Get a specific benefit plan
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  if (isBuild) {
+    return NextResponse.json({ message: 'Build-time placeholder' }, { status: 503 });
+  }
+  const { rateLimiters } = await import('@/lib/middleware/rate-limit');
+  const { protectAdminEndpoint } = await import('@/lib/middleware/auth');
+  const { logger } = await import('@/lib/logging/logger');
+  const { benefitService } = await import('@/lib/services/benefit-service');
   const startTime = Date.now();
   const { id: planId } = await params;
   
@@ -91,6 +94,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 // PUT /api/admin/benefit-plans/[id] - Update a benefit plan
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  if (isBuild) {
+    return NextResponse.json({ message: 'Build-time placeholder' }, { status: 503 });
+  }
+  const { rateLimiters } = await import('@/lib/middleware/rate-limit');
+  const { protectAdminEndpoint } = await import('@/lib/middleware/auth');
+  const { logger } = await import('@/lib/logging/logger');
+  const { benefitService } = await import('@/lib/services/benefit-service');
+  const { updateBenefitPlanSchema } = await import('@/lib/schemas/benefits');
   const startTime = Date.now();
   const { id: planId } = await params;
   
@@ -160,7 +171,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { 
           success: false,
           error: 'Invalid data format', 
-          details: error.errors 
+          details: error.issues 
         },
         { status: 400 }
       );
@@ -185,6 +196,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE /api/admin/benefit-plans/[id] - Delete a benefit plan
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  if (isBuild) {
+    return NextResponse.json({ message: 'Build-time placeholder' }, { status: 503 });
+  }
+  const { rateLimiters } = await import('@/lib/middleware/rate-limit');
+  const { protectAdminEndpoint } = await import('@/lib/middleware/auth');
+  const { logger } = await import('@/lib/logging/logger');
+  const { benefitService } = await import('@/lib/services/benefit-service');
   const startTime = Date.now();
   const { id: planId } = await params;
   

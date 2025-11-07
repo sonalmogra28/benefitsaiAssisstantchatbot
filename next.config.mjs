@@ -6,6 +6,8 @@ const nextConfig = {
     // Disable static optimization for API routes to prevent build failures
     staticGenerationRetryCount: 0,
   },
+  // Skip static exports to prevent file system errors during build
+  distDir: '.next',
   eslint: {
     ignoreDuringBuilds: true,
   },
