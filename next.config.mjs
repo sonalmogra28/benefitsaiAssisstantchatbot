@@ -6,10 +6,7 @@ const nextConfig = {
   // Move skipMiddlewareUrlNormalize to top level per Next.js 14
   skipMiddlewareUrlNormalize: true,
   
-  experimental: {
-    // Disable static optimization for API routes to prevent build failures
-    staticGenerationRetryCount: 0,
-  },
+  // Note: removed invalid experimental.staticGenerationRetryCount (not supported in 14.x)
   eslint: {
     ignoreDuringBuilds: true,
   },

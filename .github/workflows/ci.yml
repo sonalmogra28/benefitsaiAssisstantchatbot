@@ -100,23 +100,12 @@ jobs:
       - name: Run Guard Script
         run: npm run guard
 
-      - name: Type Check
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Run Tests
-        run: npm run test
+      - name: Verify (typecheck, lint, test, build)
+        run: npm run verify
         env:
           NODE_ENV: test
           VITEST: true
-
-      - name: Build Check
-        run: npm run build
-        env:
           NEXT_PHASE: phase-production-build
-          # Build-time guards will use dummy values
 
   deployment-ready:
     name: Deployment Readiness
