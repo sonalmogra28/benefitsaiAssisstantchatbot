@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
+import { isBuild } from '@/lib/runtime/is-build';
 import { analyticsService } from '@/lib/services/analytics.service';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
 import { logger } from '@/lib/logger';
@@ -18,6 +19,14 @@ const querySchema = z.object({
 });
 
 export const GET = requireCompanyAdmin(async (request: NextRequest) => {
+  // Fail-safe for build time
+  if (isBuild) {
+    return NextResponse.json(
+      { error: 'Not available during build' },
+      { status: 503 }
+    );
+  }
+  
   const startTime = Date.now();
   
   try {
@@ -174,6 +183,14 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
 
 // Export analytics data (for scheduled reports, etc.)
 export const POST = requireCompanyAdmin(async (request: NextRequest) => {
+  // Fail-safe for build time
+  if (isBuild) {
+    return NextResponse.json(
+      { error: 'Not available during build' },
+      { status: 503 }
+    );
+  }
+  
   const startTime = Date.now();
   
   try {
