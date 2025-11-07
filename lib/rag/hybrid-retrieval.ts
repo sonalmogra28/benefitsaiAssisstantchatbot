@@ -48,6 +48,9 @@ function ensureSearchClient(): any | null {
   // Production index locked to chunks_prod_v1 (499 docs). Do NOT use chunks_prod_v2 (3 test docs).
   const indexName = process.env.AZURE_SEARCH_INDEX || "chunks_prod_v1";
 
+  // DIAGNOSTIC: Log which index we're actually using
+  console.log(`[SEARCH] Initializing client with index: ${indexName} (env: ${process.env.AZURE_SEARCH_INDEX || 'NOT_SET'})`);
+
   if ((!endpoint || !apiKey) && !isVitest) {
     throw new Error("Azure Search credentials not configured");
   }
