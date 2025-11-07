@@ -190,8 +190,9 @@ export async function POST(req: NextRequest) {
       entities: queryProfile.entities.length,
     });
 
-    // Step 2: Check L0 exact cache
-    if (ENABLE_EXACT_CACHE) {
+    // Step 2: Check L0 exact cache (TEMPORARILY DISABLED FOR DEBUGGING)
+    const CACHE_DEBUG_BYPASS = true;
+    if (ENABLE_EXACT_CACHE && !CACHE_DEBUG_BYPASS) {
       const cacheCheckStart = Date.now();
       const exactCacheKey = buildCacheKey(normalizedQuery, request.companyId);
       const cachedExact = await getCachedResponse(exactCacheKey);
@@ -209,6 +210,8 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+    } else if (CACHE_DEBUG_BYPASS) {
+      console.log('[QA] Cache BYPASSED for debugging');
     }
 
     // Step 3: Check L1 semantic cache

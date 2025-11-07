@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 describe('Document Ingestion with RAG Integration', () => {
-  const testCompanyId = 'test-company-rag-integration';
+  const testCompanyId = 'amerivet-rag-integration';
   let documentProcessor: DocumentProcessor;
 
   beforeAll(() => {

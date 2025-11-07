@@ -270,14 +270,14 @@ export const createMockUser = (overrides = {}) => ({
   email: 'test@example.com',
   name: 'Test User',
   roles: ['employee'],
-  companyId: 'test-company-id',
+  companyId: '-id',
   permissions: ['view_benefits', 'chat_with_ai'],
   metadata: {},
   ...overrides
 });
 
 export const createMockCompany = (overrides = {}) => ({
-  id: 'test-company-id',
+  id: 'amerivet',
   name: 'Test Company',
   domain: 'test.com',
   status: 'active',
@@ -294,7 +294,7 @@ export const createMockDocument = (overrides = {}) => ({
   fileName: 'test.pdf',
   mimeType: 'application/pdf',
   fileSize: 1024,
-  companyId: 'test-company-id',
+  companyId: 'amerivet',
   uploadedBy: 'test-user-id',
   category: 'benefits',
   tags: ['test'],

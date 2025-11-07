@@ -416,11 +416,25 @@ export async function hybridRetrieve(
   };
 
   try {
-    // Execute vector and BM25 searches in parallel
-    const [vectorResults, bm25Results] = await Promise.all([
+    // Execute vector and BM25 searches in parallel with fallback
+    const [vectorResultsOrError, bm25ResultsOrError] = await Promise.allSettled([
       retrieveVectorTopK(query, context, cfg.vectorK),
       retrieveBM25TopK(query, context, cfg.bm25K),
     ]);
+
+    const vectorResults = vectorResultsOrError.status === 'fulfilled' ? vectorResultsOrError.value : [];
+    const bm25Results = bm25ResultsOrError.status === 'fulfilled' ? bm25ResultsOrError.value : [];
+
+    if (vectorResultsOrError.status === 'rejected') {
+      console.warn(`[RAG] Vector search failed (graceful degradation): ${vectorResultsOrError.reason}`);
+    }
+    if (bm25ResultsOrError.status === 'rejected') {
+      console.error(`[RAG] BM25 search failed (CRITICAL):`, bm25ResultsOrError.reason);
+      // If both fail, throw error
+      if (vectorResultsOrError.status === 'rejected') {
+        throw new Error('Both vector and BM25 search failed');
+      }
+    }
 
     console.log(`[RAG] v=${vectorResults.length} b=${bm25Results.length} (requested k=${cfg.vectorK})`);
 
@@ -447,10 +461,12 @@ export async function hybridRetrieve(
 
       // 1) Expand K aggressively and retry with same filters
       const expandK = Math.max(cfg.vectorK, 80);
-      const [v2, b2] = await Promise.all([
+      const [v2OrError, b2OrError] = await Promise.allSettled([
         retrieveVectorTopK(query, context, expandK),
         retrieveBM25TopK(query, context, expandK),
       ]);
+      const v2 = v2OrError.status === 'fulfilled' ? v2OrError.value : [];
+      const b2 = b2OrError.status === 'fulfilled' ? b2OrError.value : [];
       const merged2 = rrfMerge([v2, b2], cfg.rrfK, Math.max(cfg.finalTopK, 24));
       guardedFinal = cfg.enableReranking
         ? await rerankChunks(query, merged2, Math.max(cfg.rerankedTopK, 12))
@@ -462,10 +478,12 @@ export async function hybridRetrieve(
         console.warn(`[RAG][GUARD] Still low after expansion; retrying without planYear filter`);
         const contextNoYear: RetrievalContext = { ...context };
         delete (contextNoYear as any).planYear;
-        const [v3, b3] = await Promise.all([
+        const [v3OrError, b3OrError] = await Promise.allSettled([
           retrieveVectorTopK(query, contextNoYear, expandK),
           retrieveBM25TopK(query, contextNoYear, expandK),
         ]);
+        const v3 = v3OrError.status === 'fulfilled' ? v3OrError.value : [];
+        const b3 = b3OrError.status === 'fulfilled' ? b3OrError.value : [];
         const merged3 = rrfMerge([v3, b3], cfg.rrfK, Math.max(cfg.finalTopK, 24));
         guardedFinal = cfg.enableReranking
           ? await rerankChunks(query, merged3, Math.max(cfg.rerankedTopK, 12))
