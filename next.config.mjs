@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Use standalone output to avoid static export issues
+  // Use standalone output - Vercel will handle this correctly
   output: 'standalone',
   experimental: {
     // Disable static optimization for API routes to prevent build failures

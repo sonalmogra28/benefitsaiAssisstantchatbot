@@ -82,7 +82,7 @@ Here's what I know from your benefits documents:
 ${context}
 
 Guidelines:
-- Speak conversationally, like you're explaining to a colleague
+- Speak conversationally, politely like you're explaining to a colleague
 - Reference specific documents when helpful (e.g., "According to your 2026 Benefits Guide...")
 - If you're not sure about something, be honest - say "I don't see that information in your current benefits documents"
 - Keep answers clear and practical
@@ -190,9 +190,8 @@ export async function POST(req: NextRequest) {
       entities: queryProfile.entities.length,
     });
 
-    // Step 2: Check L0 exact cache (TEMPORARILY DISABLED FOR DEBUGGING)
-    const CACHE_DEBUG_BYPASS = true;
-    if (ENABLE_EXACT_CACHE && !CACHE_DEBUG_BYPASS) {
+    // Step 2: Check L0 exact cache
+    if (ENABLE_EXACT_CACHE) {
       const cacheCheckStart = Date.now();
       const exactCacheKey = buildCacheKey(normalizedQuery, request.companyId);
       const cachedExact = await getCachedResponse(exactCacheKey);
@@ -210,8 +209,6 @@ export async function POST(req: NextRequest) {
           },
         });
       }
-    } else if (CACHE_DEBUG_BYPASS) {
-      console.log('[QA] Cache BYPASSED for debugging');
     }
 
     // Step 3: Check L1 semantic cache
