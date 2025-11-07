@@ -2,15 +2,31 @@
 
 const level = (process.env.LOG_LEVEL ?? "info").toLowerCase();
 
-const baseOptions: pino.LoggerOptions = {
-  level,
-  base: undefined,
-  timestamp: pino.stdTimeFunctions.isoTime,
-};
+// Build-safe logger initialization with fallback
+let logger: pino.Logger;
 
-// Create logger without custom levels to avoid build-time issues
-// Custom levels cause "default level:info must be included" errors in pino v10+
-export const logger = pino(baseOptions);
+try {
+  const baseOptions: pino.LoggerOptions = {
+    level,
+    base: undefined,
+    timestamp: pino.stdTimeFunctions.isoTime,
+  };
+
+  // Create logger without custom levels to avoid build-time issues
+  logger = pino(baseOptions);
+} catch (error) {
+  // Fallback to console logging if pino fails during build
+  logger = {
+    info: (...args: any[]) => console.log(...args),
+    warn: (...args: any[]) => console.warn(...args),
+    error: (...args: any[]) => console.error(...args),
+    debug: (...args: any[]) => console.debug(...args),
+    fatal: (...args: any[]) => console.error(...args),
+    trace: (...args: any[]) => console.log(...args),
+  } as any as pino.Logger;
+}
+
+export { logger };
 
 // Single adapter to forbid wrong call signatures
 export const log = {
