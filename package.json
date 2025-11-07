@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "dev": "next dev -p 3000 -H 127.0.0.1",
     "dev:turbo": "next dev --turbo -p 3000 -H 127.0.0.1",
-    "verify": "npm run typecheck && npm run lint && npm test && npm run build",
+    "verify": "npm run typecheck && npm run lint && npm test && npm run build:vercel",
     "validate:rag": "node ./scripts/validate-rag.mjs",
   "build": "next build",
     "build:vercel": "node ./scripts/prebuild-fix-dirs.mjs && node ./scripts/disable-routes-for-build.cjs && next build && node ./scripts/postbuild-fix-manifests.mjs && node ./scripts/restore-routes-after-build.cjs",
