@@ -2,12 +2,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Use standalone output to avoid static export issues
+  output: 'standalone',
   experimental: {
     // Disable static optimization for API routes to prevent build failures
     staticGenerationRetryCount: 0,
   },
-  // Skip static exports to prevent file system errors during build
-  distDir: '.next',
   eslint: {
     ignoreDuringBuilds: true,
   },
