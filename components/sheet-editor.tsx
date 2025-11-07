@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo, useEffect, useMemo, useState } from 'react';
-import { DataGrid, textEditor } from 'react-data-grid';
+import { DataGrid } from 'react-data-grid';
 
 import { parse, unparse } from 'papaparse';
 import { useTheme } from 'next-themes';
@@ -18,8 +18,8 @@ type SheetEditorProps = {
 const MIN_ROWS = 50;
 const MIN_COLS = 26;
 
-// Simple text editor for cells
-const textEditor = ({ row, column, onRowChange, onClose }: any) => {
+// Custom text editor for cells
+const customTextEditor = ({ row, column, onRowChange, onClose }: any) => {
   return (
     <input
       value={row[column.key] || ''}
@@ -72,7 +72,7 @@ const PureSpreadsheetEditor = ({
     const dataColumns = Array.from({ length: MIN_COLS }, (_, i) => ({
       key: i.toString(),
       name: String.fromCharCode(65 + i),
-      renderEditCell: textEditor,
+      renderEditCell: customTextEditor,
       width: 120,
       cellClass: cn(`border-t dark:bg-zinc-950 dark:text-zinc-50`, {
         'border-l': i !== 0,

@@ -2,20 +2,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // REMOVED: output: 'standalone' causes 500.html build errors in Next.js 15
-  // Vercel will handle serverless deployment automatically
   
-  // CRITICAL: Skip error pages generation to avoid 500.html ENOENT bug
-  // This is a workaround for Next.js 15.5.5 bug
-  generateBuildId: async () => {
-    return `build-${Date.now()}`;
-  },
+  // CRITICAL: Force standalone output to skip static export generation
+  // This prevents the 500.html ENOENT bug in Next.js 15.x
+  output: 'standalone',
+  
+  // Move skipMiddlewareUrlNormalize to top level per Next.js 15.1.0
+  skipMiddlewareUrlNormalize: true,
   
   experimental: {
     // Disable static optimization for API routes to prevent build failures
     staticGenerationRetryCount: 0,
-    // Skip generating error pages
-    skipMiddlewareUrlNormalize: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
