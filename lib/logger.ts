@@ -2,13 +2,15 @@
 
 const level = (process.env.LOG_LEVEL ?? "info").toLowerCase();
 
-export const logger = pino({
+const baseOptions: pino.LoggerOptions = {
   level,
-  // Keep standard levels; do NOT set useOnlyCustomLevels
-  customLevels: { http: 25, analytics: 15 },
   base: undefined,
   timestamp: pino.stdTimeFunctions.isoTime,
-});
+};
+
+// Create logger without custom levels to avoid build-time issues
+// Custom levels cause "default level:info must be included" errors in pino v10+
+export const logger = pino(baseOptions);
 
 // Single adapter to forbid wrong call signatures
 export const log = {
@@ -27,7 +29,8 @@ export const log = {
       msg
     ),
   debug: (msg: string, ctx: Record<string, unknown> = {}) => logger.debug(ctx, msg),
-  http: (msg: string, ctx: Record<string, unknown> = {}) => logger.http(ctx, msg),
+  // Map http to debug level since custom levels are disabled
+  http: (msg: string, ctx: Record<string, unknown> = {}) => logger.debug(ctx, msg),
 };
 
 export default logger;
