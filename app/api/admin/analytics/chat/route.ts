@@ -284,6 +284,6 @@ export const POST = withBuildBypass(async (request: NextRequest) => {
       { status: 500 }
     );
   }
-}
+});
 
 
