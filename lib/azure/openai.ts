@@ -1,6 +1,6 @@
 import type { AzureOpenAI } from 'openai';
 import { getOpenAIConfig } from './config';
-import { logger } from '@/lib/logger';
+import { logger, logError } from '@/lib/logger';
 
 // Lazy client initialization
 let client: AzureOpenAI | null = null;
@@ -81,10 +81,10 @@ export class AzureOpenAIService {
 
       return content;
     } catch (error) {
-      logger.error('Failed to generate text', {
+      logError('Failed to generate text', error as Error, { 
         promptLength: prompt.length,
         options
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -155,10 +155,10 @@ export class AzureOpenAIService {
         }
       };
     } catch (error) {
-      logger.error('Failed to generate chat completion', {
+      logError('Failed to generate chat completion', error as Error, { 
         messageCount: messages.length,
         options
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -199,9 +199,9 @@ export class AzureOpenAIService {
 
       return embedding;
     } catch (error) {
-      logger.error('Failed to generate embedding', {
+      logError('Failed to generate embedding', error as Error, { 
         textLength: text.length
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -227,9 +227,9 @@ export class AzureOpenAIService {
 
       return embeddings;
     } catch (error) {
-      logger.error('Failed to generate embeddings', {
+      logError('Failed to generate embeddings', error as Error, { 
         textCount: texts.length
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -275,10 +275,10 @@ export class AzureOpenAIService {
 
       return this.processStream(stream);
     } catch (error) {
-      logger.error('Failed to start chat completion stream', {
+      logError('Failed to start chat completion stream', error as Error, { 
         messageCount: messages.length,
         options
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -333,9 +333,9 @@ export class AzureOpenAIService {
         }
       };
     } catch (error) {
-      logger.error('Failed to moderate content', {
+      logError('Failed to moderate content', error as Error, { 
         textLength: text.length
-      }, error as Error);
+       });
       throw error;
     }
   }
@@ -367,4 +367,5 @@ export const azureOpenAIService = new AzureOpenAIService();
 
 // Export the client getter for advanced operations
 export { getOpenAIClient };
+
 

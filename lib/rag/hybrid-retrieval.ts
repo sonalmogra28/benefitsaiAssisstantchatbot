@@ -38,16 +38,15 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // Azure Search Client (Lazy Initialization)
 // ============================================================================
 
-let searchClient: SearchClient<any> | null = null;
+let searchClient: any | null = null;
 
-function ensureSearchClient(): SearchClient<any> | null {
+function ensureSearchClient(): any | null {
   if (searchClient) return searchClient;
 
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
   const apiKey = process.env.AZURE_SEARCH_API_KEY;
-  // HOTFIX: chunks_prod_v2 only has 3 test docs. Use chunks_prod_v1 (499 docs) for production.
-  // TODO: Rebuild chunks_prod_v2 with full ingestion pipeline when ready.
-  const indexName = process.env.AZURE_SEARCH_INDEX_NAME || "chunks_prod_v1";
+  // Production index locked to chunks_prod_v1 (499 docs). Do NOT use chunks_prod_v2 (3 test docs).
+  const indexName = process.env.AZURE_SEARCH_INDEX || "chunks_prod_v1";
 
   if ((!endpoint || !apiKey) && !isVitest) {
     throw new Error("Azure Search credentials not configured");

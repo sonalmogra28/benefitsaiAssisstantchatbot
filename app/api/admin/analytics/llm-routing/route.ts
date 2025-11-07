@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 import { type NextRequest, NextResponse } from 'next/server';
 import { requireCompanyAdmin } from '@/lib/auth/unified-auth';
 import { rateLimiters } from '@/lib/middleware/rate-limit';
-import { logger } from '@/lib/logger';
+import { logger, logError } from '@/lib/logger';
 import { hybridLLMRouter } from '@/lib/ai/hybrid-llm-router';
 
 // GET /api/admin/analytics/llm-routing - Get LLM routing statistics
@@ -21,10 +21,10 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
     const userId = request.headers.get('x-user-id')!;
     const companyId = request.headers.get('x-company-id')!;
 
-    logger.info('API Request: GET /api/admin/analytics/llm-routing', {
+    logger.info({ 
       userId,
       companyId
-    });
+     }, 'API Request: GET /api/admin/analytics/llm-routing');
 
     const stats = hybridLLMRouter.getStats();
     
@@ -36,10 +36,7 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
 
     const duration = Date.now() - startTime;
     
-    logger.apiResponse('GET', '/api/admin/analytics/llm-routing', 200, duration, {
-      userId,
-      companyId
-    });
+    // logger.apiResponse removed
 
     return NextResponse.json({
       success: true,
@@ -84,11 +81,11 @@ export const GET = requireCompanyAdmin(async (request: NextRequest) => {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    logger.error('LLM routing analytics error', {
+    logError('LLM routing analytics error', error as Error, { 
       path: request.nextUrl.pathname,
       method: request.method,
       duration
-    }, error as Error);
+     });
     
     return NextResponse.json(
       { 
@@ -118,7 +115,7 @@ export async function POST(request: NextRequest) {
 
     const companyId = userCompanyId;
     if (!companyId) {
-      logger.warn('Company ID not found for admin user', { userId: userId });
+      logger.warn({  userId: userId  }, 'Company ID not found for admin user');
       return NextResponse.json(
         { success: false, error: 'Company ID not found' },
         { status: 400 }
@@ -128,22 +125,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { action } = body;
 
-    logger.info('API Request: POST /api/admin/analytics/llm-routing', {
+    logger.info({ 
       userId: userId,
       companyId,
       action
-    });
+     }, 'API Request: POST /api/admin/analytics/llm-routing');
 
     if (action === 'reset') {
       hybridLLMRouter.resetStats();
       
       const duration = Date.now() - startTime;
       
-      logger.apiResponse('POST', '/api/admin/analytics/llm-routing', 200, duration, {
-        userId: userId,
-        companyId,
-        action
-      });
+      // logger.apiResponse removed
       
       return NextResponse.json({ 
         success: true,
@@ -161,11 +154,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const duration = Date.now() - startTime;
     
-    logger.error('LLM routing reset error', {
+    logError('LLM routing reset error', error as Error, { 
       path: request.nextUrl.pathname,
       method: request.method,
       duration
-    }, error as Error);
+     });
     
     return NextResponse.json(
       { 
@@ -176,4 +169,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 

@@ -7,7 +7,7 @@ import { getContainer } from '@/lib/azure/cosmos-db';
 import { generateEmbedding, generateEmbeddings } from './embeddings';
 import { isVitest, isNodeRuntime } from '@/lib/ai/runtime';
 
-let searchClient: SearchClient<any> | null = null;
+let searchClient: any | null = null;
 
 async function ensureInitialized() {
   if (isBuild || DISABLE_AZURE) return null;

@@ -24,7 +24,7 @@ export async function ensureIndexHealthy(): Promise<void> {
 
   const endpoint = process.env.AZURE_SEARCH_ENDPOINT;
   const apiKey = process.env.AZURE_SEARCH_API_KEY;
-  const indexName = process.env.AZURE_SEARCH_INDEX_NAME || FALLBACK_INDEX;
+  const indexName = process.env.AZURE_SEARCH_INDEX || FALLBACK_INDEX;
 
   if (!endpoint || !apiKey) {
     logger.warn("[Search] Missing credentials; skipping health check");
@@ -47,7 +47,7 @@ export async function ensureIndexHealthy(): Promise<void> {
       );
       
       // Override environment variable for current process
-      process.env.AZURE_SEARCH_INDEX_NAME = FALLBACK_INDEX;
+      process.env.AZURE_SEARCH_INDEX = FALLBACK_INDEX;
       
       logger.info(
         { fallbackIndex: FALLBACK_INDEX },
@@ -67,7 +67,7 @@ export async function ensureIndexHealthy(): Promise<void> {
     );
     
     // Override to fallback on any stats failure
-    process.env.AZURE_SEARCH_INDEX_NAME = FALLBACK_INDEX;
+    process.env.AZURE_SEARCH_INDEX = FALLBACK_INDEX;
   }
 }
 
@@ -75,7 +75,7 @@ export async function ensureIndexHealthy(): Promise<void> {
  * Get current active index name (post-fallback)
  */
 export function getActiveIndexName(): string {
-  return process.env.AZURE_SEARCH_INDEX_NAME || FALLBACK_INDEX;
+  return process.env.AZURE_SEARCH_INDEX || FALLBACK_INDEX;
 }
 
 /**
