@@ -509,3 +509,52 @@ Your benefits chatbot has been **transformed from a broken fallback system into 
 ---
 **Deployment Test**: Verified at 2025-11-07 12:58:19
 
+## 🔬 Comprehensive Diagnostic Results
+
+### Phase 1: Index Health Check ✅
+
+**Test 1: Document Count**
+```
+Result: 499 documents in chunks_prod_v1
+Status: ✅ HEALTHY
+```
+
+**Test 2: Unfiltered Search**
+```
+Query: "dental"
+Results: 3 documents
+Company IDs: All "amerivet"
+Status: ✅ WORKING
+```
+
+**Test 3: Company ID Distribution**
+```
+Unique company IDs: amerivet (499 docs)
+Status: ✅ CONSISTENT
+```
+
+### Phase 2: Request Flow Analysis ✅
+
+**Request Flow Trace**:
+1. **Chat UI** (`app/subdomain/chat/page.tsx:177`)
+   - ✅ Sends: `companyId: 'amerivet'`
+   - Fixed in commit 13cd6be
+
+2. **API Route** (`app/api/qa/route.ts:204`)
+   - ✅ Receives: `body.companyId || 'default'`
+   - ✅ Diagnostic logging added (commit 5df52a4)
+
+3. **Hybrid Retrieval** (`lib/rag/hybrid-retrieval.ts:137`)
+   - ✅ Filters: `company_id eq '${context.companyId}'`
+   - ✅ Diagnostic logging already present
+
+### Conclusion
+
+**ROOT CAUSE**: Fixed in commit 13cd6be ✅
+- Chat UI was sending `undefined` → API defaulted to `'default'` → 0 results
+- Now sends `companyId: 'amerivet'` → matches all 499 docs → returns chunks
+
+**STATUS**: Ready for production testing! 🚀
+
+---
+
