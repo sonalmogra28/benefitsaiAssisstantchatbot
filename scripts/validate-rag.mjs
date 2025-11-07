@@ -22,7 +22,6 @@ async function main() {
   const results = [];
   for (const task of tasks) {
     console.log(`\n— Running ${task.name} —`);
-    // eslint-disable-next-line no-await-in-loop
     results.push(await runTask(task));
   }
   const failed = results.filter(r => r.code !== 0);
@@ -42,4 +41,3 @@ main().catch((err) => {
   console.error('RAG validation crashed:', err);
   process.exit(1);
 });
-
