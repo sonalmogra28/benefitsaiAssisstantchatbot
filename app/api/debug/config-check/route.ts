@@ -6,6 +6,7 @@ import { getOpenAIConfig, getRedisConfig } from '@/lib/azure/config';
 /**
  * Diagnostic endpoint to check Azure configuration parsing
  * Returns sanitized config values to verify parsing is correct
+ * NOTE: Public endpoint for debugging - no auth required
  */
 export async function GET() {
   try {

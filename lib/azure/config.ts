@@ -157,12 +157,13 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
       redisUrl: process.env.AZURE_REDIS_URL || 'redis://localhost:6379',
 
       // Azure OpenAI Service
-      openaiEndpoint: process.env.AZURE_OPENAI_ENDPOINT || 'https://test.openai.azure.com/',
-      openaiApiKey: process.env.AZURE_OPENAI_API_KEY || 'test-key',
-      openaiApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-01',
-      openaiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4',
-  // Prefer canonical plural var, fall back to singular for compatibility
-  openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || 'text-embedding-ada-002',
+      // Trim here as well because dev .env files often include Windows CR/LF characters.
+      openaiEndpoint: (process.env.AZURE_OPENAI_ENDPOINT || 'https://test.openai.azure.com/').trim(),
+      openaiApiKey: (process.env.AZURE_OPENAI_API_KEY || 'test-key').trim(),
+      openaiApiVersion: (process.env.AZURE_OPENAI_API_VERSION || '2024-02-01').trim(),
+      openaiDeploymentName: (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4').trim(),
+      // Prefer canonical plural var, fall back to singular for compatibility
+      openaiEmbeddingDeployment: (process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002').trim(),
 
       // Azure Cognitive Search
       searchEndpoint: process.env.AZURE_SEARCH_ENDPOINT || 'https://test.search.windows.net',
