@@ -1,6 +1,28 @@
 # Quick Reference: Fix Azure Search Semantic Config
 
-## 🔍 Diagnose First
+## � ONE COMMAND FIX (Recommended)
+
+```powershell
+.\fix-qa-assistant.ps1
+```
+
+This automated script will:
+1. ✓ Diagnose current issues
+2. ✓ Update index with semantic configuration
+3. ✓ Populate documents from Azure Blob Storage
+4. ✓ Verify everything works
+5. ✓ Test QA endpoint
+
+**What you need:**
+- Azure Search Service Name (e.g., `amerivetasschatbotsearch`)
+- Azure Search Admin API Key (from Azure Portal → Search Service → Keys)
+- Documents uploaded to Azure Blob Storage `documents` container
+
+**Time:** ~15-35 minutes (mostly document ingestion)
+
+---
+
+## 🔍 Manual Diagnosis (Alternative)
 
 ```powershell
 cd infra\azure
@@ -15,7 +37,7 @@ This will tell you:
 - ✓ How many documents are indexed?
 - ✓ Does a test search work?
 
-## Immediate Actions
+## Manual Step-by-Step Actions
 
 ### 1. Update Azure Search Index (Choose One Method)
 
