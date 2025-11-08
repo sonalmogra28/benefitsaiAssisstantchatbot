@@ -128,7 +128,7 @@ curl -X POST https://your-domain.com/api/qa \
 
 - **`lib/rag/chunking.ts`** - `ingestDocument()` - Sliding window chunking
 - **`lib/ai/vector-search.ts`** - `upsertDocumentChunks()` - Azure AI Search indexing
-- **`lib/ai/embeddings.ts`** - `generateEmbedding()` - OpenAI text-embedding-ada-002
+- **`lib/ai/embeddings.ts`** - `generateEmbedding()` - OpenAI text-embedding-3-large
 - **`pdf-parse`** - PDF text extraction (version 2.4.5)
 
 ## Performance Expectations

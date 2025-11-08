@@ -43,7 +43,7 @@ const PureSpreadsheetEditor = ({
     if (!content) return Array(MIN_ROWS).fill(Array(MIN_COLS).fill(''));
     const result = parse<string[]>(content, { skipEmptyLines: true });
 
-    const paddedData = result.data.map((row) => {
+    const paddedData = result.data.map((row: string[]) => {
       const paddedRow = [...row];
       while (paddedRow.length < MIN_COLS) {
         paddedRow.push('');
@@ -86,7 +86,7 @@ const PureSpreadsheetEditor = ({
   }, []);
 
   const initialRows = useMemo(() => {
-    return parseData.map((row, rowIndex) => {
+    return parseData.map((row: string[], rowIndex: number) => {
       const rowData: any = {
         id: rowIndex,
         rowNumber: rowIndex + 1,
@@ -140,7 +140,7 @@ const PureSpreadsheetEditor = ({
           </tr>
         </thead>
         <tbody>
-          {localRows.map((row, rowIndex) => (
+          {localRows.map((row: any, rowIndex: number) => (
             <tr key={rowIndex}>
               {columns.map((col) => (
                 <td

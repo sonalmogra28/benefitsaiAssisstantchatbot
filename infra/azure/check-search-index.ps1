@@ -1,4 +1,4 @@
-# Check Azure Search Index Status
+﻿# Check Azure Search Index Status
 # This script verifies the index exists and has documents
 
 param(

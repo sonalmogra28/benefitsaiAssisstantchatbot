@@ -1,4 +1,4 @@
-# Quick Start: Populate Azure Search Index
+﻿# Quick Start: Populate Azure Search Index
 # This script runs the ingestion using environment variables from Vercel
 
 Write-Host "=== Azure Search Index Population ===" -ForegroundColor Cyan
@@ -58,9 +58,9 @@ Write-Host "Starting document ingestion..." -ForegroundColor Cyan
 Write-Host "This may take 10-30 minutes depending on document count..." -ForegroundColor Gray
 Write-Host ""
 
-try {
-    python ingest_real_documents_sdk.py
-    
+python ingest_real_documents_sdk.py
+
+if ($LASTEXITCODE -eq 0) {
     Write-Host ""
     Write-Host "=== Ingestion Complete ===" -ForegroundColor Cyan
     Write-Host ""
@@ -73,15 +73,13 @@ try {
     Write-Host ""
     Write-Host "3. Test production:" -ForegroundColor Gray
     Write-Host "   Visit https://benefitsaichatbot-2jcvb7ll0-melodie-s-projects.vercel.app" -ForegroundColor DarkGray
-    
-} catch {
+} else {
     Write-Host ""
-    Write-Host "✗ Ingestion failed!" -ForegroundColor Red
-    Write-Host $_.Exception.Message -ForegroundColor Red
+    Write-Host "X Ingestion failed!" -ForegroundColor Red
     Write-Host ""
     Write-Host "Troubleshooting:" -ForegroundColor Yellow
     Write-Host "- Check that Azure credentials in secrets file are correct" -ForegroundColor Gray
-    Write-Host "- Verify documents exist in Azure Blob Storage 'documents' container" -ForegroundColor Gray
+    Write-Host "- Verify documents exist in Azure Blob Storage documents container" -ForegroundColor Gray
     Write-Host "- Check Python dependencies are installed" -ForegroundColor Gray
     exit 1
 }

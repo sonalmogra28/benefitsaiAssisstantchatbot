@@ -1,4 +1,4 @@
-<#
+﻿<#
 	Script: sync-vercel-env.ps1
 	Purpose:
 		Bidirectional helper for managing Vercel environment variables in a repeatable, auditable way.

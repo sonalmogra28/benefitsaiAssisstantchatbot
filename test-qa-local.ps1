@@ -1,4 +1,4 @@
-# Test QA endpoint locally with correct payload structure
+﻿# Test QA endpoint locally with correct payload structure
 # Usage: .\test-qa-local.ps1
 
 Write-Host "=== Testing QA Endpoint Locally ===" -ForegroundColor Cyan

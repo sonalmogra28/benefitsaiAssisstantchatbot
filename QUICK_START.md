@@ -44,13 +44,33 @@ curl -X POST http://localhost:8080/api/qa \
 ## 🔧 Key Configuration
 
 ### Environment Variables (`.env.local`)
-```bash
-AZURE_SEARCH_INDEX=chunks_prod_v1          # ⚠️ Must be exact name
-AZURE_SEARCH_ENDPOINT=https://amerivetsearch.search.windows.net
-AZURE_SEARCH_API_KEY=<YOUR_AZURE_SEARCH_KEY>  # From Azure portal or secrets folder
-AZURE_OPENAI_ENDPOINT=https://amerivetopenai.openai.azure.com
-AZURE_OPENAI_API_KEY=<YOUR_AZURE_OPENAI_KEY>  # From Azure portal or secrets folder
+
+#### Quick Setup (Recommended)
+```powershell
+# Run this to automatically fetch all Azure keys
+./setup-env-from-azure.ps1
 ```
+
+This script:
+- Fetches all API keys directly from Azure CLI
+- Cleans ANSI/CRLF characters automatically
+- Generates clean UTF-8/LF .env.local file
+- Prompts before overwriting existing configuration
+- Sets up all 21 documents with proper embeddings
+
+#### Manual Configuration
+If you need to set up manually, use these values:
+```bash
+AZURE_SEARCH_INDEX_NAME=chunks_prod_v1          # Uses 21 documents, 1536 dims
+AZURE_SEARCH_ENDPOINT=https://amerivetsearch.search.windows.net
+AZURE_SEARCH_ADMIN_KEY=<YOUR_AZURE_SEARCH_KEY>
+AZURE_OPENAI_ENDPOINT=https://amerivetopenai.openai.azure.com
+AZURE_OPENAI_API_KEY=<YOUR_AZURE_OPENAI_KEY>
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o-mini
+AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT=text-embedding-3-large
+```
+
+> Important: The script sets dimensions to 1536 (not 3072) to match your search index. All 21 documents (18 PDFs + 3 DOCs) are already indexed and ready.
 
 ### Critical Settings
 - **Index:** `chunks_prod_v1` (499 documents)

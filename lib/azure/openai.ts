@@ -185,7 +185,8 @@ export class AzureOpenAIService {
     try {
       const response = await client.embeddings.create({
         model: config.embeddingDeployment,
-        input: text
+        input: text,
+        dimensions: 1536  // Force 1536 dimensions for text-embedding-3-large to match index
       });
 
       const embedding = response.data[0]?.embedding;
@@ -229,7 +230,8 @@ export class AzureOpenAIService {
     try {
       const response = await client.embeddings.create({
         model: config.embeddingDeployment,
-        input: texts
+        input: texts,
+        dimensions: 1536  // Force 1536 dimensions for text-embedding-3-large to match index
       });
 
       const embeddings = response.data.map((item: any) => item.embedding);

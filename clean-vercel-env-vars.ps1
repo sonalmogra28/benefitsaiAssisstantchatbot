@@ -1,4 +1,4 @@
-# Clean Vercel Environment Variables
+﻿# Clean Vercel Environment Variables
 # This script removes and recreates env vars to eliminate CRLF characters
 
 Write-Host "=== Clean Vercel Environment Variables ===" -ForegroundColor Cyan
@@ -55,7 +55,7 @@ foreach ($var in $varsToClean) {
     & vercel env rm $var.Name production --yes 2>&1 | Out-Null
     
     # Add clean value
-    Write-Host "  Adding clean value: '$($var.Value)'" -ForegroundColor DarkGray
+    Write-Host "  Adding clean value: $($var.Value)" -ForegroundColor DarkGray
     $var.Value | vercel env add $var.Name production 2>&1 | Out-Null
     
     if ($LASTEXITCODE -eq 0) {
@@ -79,5 +79,5 @@ Write-Host "3. Update Azure Search index:" -ForegroundColor Gray
 Write-Host "   cd infra\azure; .\update-search-index.ps1" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "4. Populate documents:" -ForegroundColor Gray
-Write-Host "   cd ..\\..; .\populate-search-index.ps1" -ForegroundColor DarkGray
+Write-Host "   cd ..\..; .\populate-search-index.ps1" -ForegroundColor DarkGray
 Write-Host ""

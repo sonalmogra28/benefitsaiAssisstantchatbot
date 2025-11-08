@@ -163,7 +163,7 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
       openaiApiVersion: (process.env.AZURE_OPENAI_API_VERSION || '2024-02-01').trim(),
       openaiDeploymentName: (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4').trim(),
       // Prefer canonical plural var, fall back to singular for compatibility
-      openaiEmbeddingDeployment: (process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-ada-002').trim(),
+      openaiEmbeddingDeployment: (process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || 'text-embedding-3-large').trim(),
 
       // Azure Cognitive Search
       searchEndpoint: process.env.AZURE_SEARCH_ENDPOINT || 'https://test.search.windows.net',

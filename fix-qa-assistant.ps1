@@ -1,4 +1,4 @@
-# ONE COMMAND FIX: Populate Azure Search and Fix QA Assistant
+﻿# ONE COMMAND FIX: Populate Azure Search and Fix QA Assistant
 # This script does everything needed to fix the fallback message issue
 
 Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
@@ -99,7 +99,7 @@ Write-Host "Production site should now work:" -ForegroundColor Cyan
 Write-Host "https://benefitsaichatbot-2jcvb7ll0-melodie-s-projects.vercel.app" -ForegroundColor White
 Write-Host ""
 Write-Host "Test queries:" -ForegroundColor Yellow
-Write-Host "• 'What dental and vision benefits are available?'" -ForegroundColor Gray
-Write-Host "• 'Should I choose an HSA plan?'" -ForegroundColor Gray
-Write-Host "• 'How much is the company contribution for health insurance?'" -ForegroundColor Gray
+Write-Host "- What dental and vision benefits are available?" -ForegroundColor Gray
+Write-Host "- Should I choose an HSA plan?" -ForegroundColor Gray
+Write-Host "- How much is the company contribution for health insurance?" -ForegroundColor Gray
 Write-Host ""

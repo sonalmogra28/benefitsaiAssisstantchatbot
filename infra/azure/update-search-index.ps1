@@ -1,4 +1,4 @@
-# Update Azure Search Index with Semantic Configuration
+﻿# Update Azure Search Index with Semantic Configuration
 # This script adds/updates the semantic configuration for chunks_prod_v1 index
 # Run this script to enable semantic search capabilities
 
