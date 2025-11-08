@@ -180,9 +180,11 @@ export class AzureOpenAIService {
 
   async generateEmbedding(text: string): Promise<number[]> {
     const client = await this.ensureClient();
+    const config = getOpenAIConfig();
+    
     try {
       const response = await client.embeddings.create({
-        model: (getOpenAIConfig()).embeddingDeployment,
+        model: config.embeddingDeployment,
         input: text
       });
 
@@ -198,19 +200,35 @@ export class AzureOpenAIService {
       }, 'Embedding generated successfully');
 
       return embedding;
-    } catch (error) {
-      log.error('Failed to generate embedding', error as Error, {  
-        textLength: text.length
+    } catch (error: any) {
+      // Provide detailed error for deployment not found
+      if (error?.status === 404 || error?.message?.includes('Resource not found')) {
+        const errorMsg = `Azure OpenAI embedding deployment "${config.embeddingDeployment}" not found. ` +
+          `Please verify AZURE_OPENAI_EMBEDDING_DEPLOYMENT matches your Azure OpenAI deployment name exactly. ` +
+          `Current endpoint: ${config.endpoint}`;
+        log.error(errorMsg, error as Error, {
+          deployment: config.embeddingDeployment,
+          endpoint: config.endpoint,
+          textLength: text.length
         });
+        throw new Error(errorMsg);
+      }
+      
+      log.error('Failed to generate embedding', error as Error, {  
+        deployment: config.embeddingDeployment,
+        textLength: text.length
+      });
       throw error;
     }
   }
 
   async generateEmbeddings(texts: string[]): Promise<number[][]> {
     const client = await this.ensureClient();
+    const config = getOpenAIConfig();
+    
     try {
       const response = await client.embeddings.create({
-        model: (getOpenAIConfig()).embeddingDeployment,
+        model: config.embeddingDeployment,
         input: texts
       });
 
@@ -226,10 +244,24 @@ export class AzureOpenAIService {
       }, 'Embeddings generated successfully');
 
       return embeddings;
-    } catch (error) {
-      log.error('Failed to generate embeddings', error as Error, {  
-        textCount: texts.length
+    } catch (error: any) {
+      // Provide detailed error for deployment not found
+      if (error?.status === 404 || error?.message?.includes('Resource not found')) {
+        const errorMsg = `Azure OpenAI embedding deployment "${config.embeddingDeployment}" not found. ` +
+          `Please verify AZURE_OPENAI_EMBEDDING_DEPLOYMENT matches your Azure OpenAI deployment name exactly. ` +
+          `Current endpoint: ${config.endpoint}`;
+        log.error(errorMsg, error as Error, {
+          deployment: config.embeddingDeployment,
+          endpoint: config.endpoint,
+          textCount: texts.length
         });
+        throw new Error(errorMsg);
+      }
+      
+      log.error('Failed to generate embeddings', error as Error, {  
+        deployment: config.embeddingDeployment,
+        textCount: texts.length
+      });
       throw error;
     }
   }

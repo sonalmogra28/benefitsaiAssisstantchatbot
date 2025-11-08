@@ -243,9 +243,41 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
     storageContainerImages: process.env.AZURE_STORAGE_CONTAINER_IMAGES || 'images',
 
     // Azure Cache for Redis (REQUIRED for cache)
-    redisHost: process.env.AZURE_REDIS_HOST || process.env.REDIS_URL?.match(/\/\/(.+?):/)?.[1] || 'localhost',
+    // Parse Redis URL properly to extract host, port, and password
+    redisHost: (() => {
+      if (process.env.AZURE_REDIS_HOST) return process.env.AZURE_REDIS_HOST;
+      if (process.env.REDIS_URL) {
+        // Handle various Redis URL formats:
+        // redis://host:port
+        // rediss://:password@host:port
+        // https://:password@host:port (incorrect but handle gracefully)
+        try {
+          const url = new URL(process.env.REDIS_URL.replace('rediss://', 'https://').replace('redis://', 'http://'));
+          return url.hostname;
+        } catch {
+          // Fallback regex for malformed URLs
+          const match = process.env.REDIS_URL.match(/@([^:@]+)/);
+          return match ? match[1] : 'localhost';
+        }
+      }
+      return 'localhost';
+    })(),
     redisPort: process.env.AZURE_REDIS_PORT ? parseInt(process.env.AZURE_REDIS_PORT, 10) : 6380,
-    redisPassword: process.env.AZURE_REDIS_PASSWORD || process.env.REDIS_URL?.match(/:(.+?)@/)?.[1] || '',
+    redisPassword: (() => {
+      if (process.env.AZURE_REDIS_PASSWORD) return process.env.AZURE_REDIS_PASSWORD;
+      if (process.env.REDIS_URL) {
+        // Extract password from URL: redis://:password@host or rediss://:password@host
+        try {
+          const url = new URL(process.env.REDIS_URL.replace('rediss://', 'https://').replace('redis://', 'http://'));
+          return url.password || '';
+        } catch {
+          // Fallback regex: extract between first : and @
+          const match = process.env.REDIS_URL.match(/:\/\/:([^@]+)@/);
+          return match ? match[1] : '';
+        }
+      }
+      return '';
+    })(),
     redisSsl: process.env.AZURE_REDIS_SSL !== 'false',
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 
