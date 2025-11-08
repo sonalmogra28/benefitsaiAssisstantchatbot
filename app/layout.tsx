@@ -10,8 +10,18 @@ import './globals.css';
 
 const { appUrl } = getConfig();
 
+function safeMetadataBase(): URL {
+  try {
+    const val = (appUrl || '').trim();
+    if (!val) return new URL('https://benefitsbot.com');
+    return new URL(val);
+  } catch {
+    return new URL('https://benefitsbot.com');
+  }
+}
+
 export const metadata = {
-  metadataBase: new URL(appUrl),
+  metadataBase: safeMetadataBase(),
   title: 'AmeriVet Benefits AI Assistant',
   description: 'Your personal AmeriVet benefits advisor powered by AI',
 };
