@@ -180,10 +180,12 @@ export default function SubdomainChatPage() {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
+      formData.append('companyId', 'amerivet'); // TODO: Get from subdomain/session
 
-      const response = await fetch('/api/documents/upload-simple', {
+      const response = await fetch('/api/subdomain/documents/upload', {
         method: 'POST',
         body: formData,
+        credentials: 'include', // Include session cookie
       });
 
       if (!response.ok) {
