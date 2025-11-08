@@ -101,6 +101,9 @@ export default function SubdomainChatPage() {
   const [showCalcOverlay, setShowCalcOverlay] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [calcPrefs, setCalcPrefs] = useState({ household: 'individual', usage: 'moderate', provider: 'any' });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const quickPrompts = [
     'What is covered under my medical plan?',
     'What is my deductible and out-of-pocket maximum?',
@@ -146,6 +149,66 @@ export default function SubdomainChatPage() {
       }
     } catch (err) {
       console.error('Auth check failed:', err);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Please upload a PDF, DOCX, or TXT file');
+        return;
+      }
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setError('');
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/documents/upload-simple', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      
+      // Add success message
+      const successMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `✅ Document uploaded successfully! I've analyzed your ${selectedFile.name}. Here's what I found:\n\n${result.summary || 'Document is being processed. You can now ask questions about it!'}`,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, successMessage]);
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      
+    } catch (err) {
+      setError('Failed to upload document. Please try again.');
+      console.error('Upload error:', err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -454,21 +517,82 @@ export default function SubdomainChatPage() {
             <CardContent className="space-y-4">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                 <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <p className="text-sm text-gray-600 mb-2">Drag and drop your document here</p>
-                <p className="text-xs text-gray-500 mb-4">or</p>
-                <Button variant="outline" size="sm">
-                  Browse Files
-                </Button>
-                <p className="text-xs text-gray-500 mt-4">Supported: PDF, DOCX, TXT (Max 10MB)</p>
+                {selectedFile ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-500">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setSelectedFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                    >
+                      Change File
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-600 mb-2">Drag and drop your document here</p>
+                    <p className="text-xs text-gray-500 mb-4">or</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      Browse Files
+                    </Button>
+                    <p className="text-xs text-gray-500 mt-4">Supported: PDF, DOCX, TXT (Max 10MB)</p>
+                  </>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.docx,.txt"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
               </div>
-              <Alert>
-                <AlertDescription>
-                  Your document will be analyzed using Azure AI to extract key benefits information, coverage details, and cost estimates.
-                </AlertDescription>
-              </Alert>
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {!error && (
+                <Alert>
+                  <AlertDescription>
+                    Your document will be analyzed using Azure AI to extract key benefits information, coverage details, and cost estimates.
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setShowUploadModal(false)}>Cancel</Button>
-                <Button className="flex-1" disabled>Upload & Analyze</Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setSelectedFile(null);
+                    setError('');
+                  }}
+                  disabled={isUploading}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={handleFileUpload}
+                  disabled={!selectedFile || isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    'Upload & Analyze'
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
