@@ -224,8 +224,8 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
     adB2CEditProfilePolicy: process.env.AZURE_AD_B2C_EDIT_PROFILE_POLICY || 'not-set',
 
     // Azure Cosmos DB (optional)
-    cosmosEndpoint: process.env.AZURE_COSMOS_ENDPOINT || 'https://not-set.documents.azure.com',
-    cosmosKey: process.env.AZURE_COSMOS_KEY || 'not-set',
+    cosmosEndpoint: (process.env.AZURE_COSMOS_ENDPOINT || 'https://not-set.documents.azure.com').trim(),
+    cosmosKey: (process.env.AZURE_COSMOS_KEY || 'not-set').trim(),
     cosmosDatabase: process.env.AZURE_COSMOS_DATABASE || 'BenefitsChat',
     cosmosContainerUsers: process.env.AZURE_COSMOS_CONTAINER_USERS || 'Users',
     cosmosContainerCompanies: process.env.AZURE_COSMOS_CONTAINER_COMPANIES || 'Companies',
@@ -282,16 +282,17 @@ const parseAzureConfig = (): z.infer<typeof azureConfigSchema> => {
     redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
 
     // Azure OpenAI Service (REQUIRED for RAG)
-    openaiEndpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
-    openaiApiKey: process.env.AZURE_OPENAI_API_KEY || '',
-    openaiApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
-    openaiDeploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || process.env.AZURE_OPENAI_DEPLOYMENT || '',
-    openaiEmbeddingDeployment: process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || '',
+    // CRITICAL: .trim() to remove whitespace/CRLF from env var values (Windows line endings)
+    openaiEndpoint: (process.env.AZURE_OPENAI_ENDPOINT || '').trim(),
+    openaiApiKey: (process.env.AZURE_OPENAI_API_KEY || '').trim(),
+    openaiApiVersion: (process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview').trim(),
+    openaiDeploymentName: (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || process.env.AZURE_OPENAI_DEPLOYMENT || '').trim(),
+    openaiEmbeddingDeployment: (process.env.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT || process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT || '').trim(),
 
     // Azure Search (REQUIRED for RAG)
-    searchEndpoint: process.env.AZURE_SEARCH_ENDPOINT || '',
-    searchApiKey: process.env.AZURE_SEARCH_API_KEY || '',
-    searchIndexName: process.env.AZURE_SEARCH_INDEX || process.env.AZURE_SEARCH_INDEX_NAME || 'chunks_prod_v1',
+    searchEndpoint: (process.env.AZURE_SEARCH_ENDPOINT || '').trim(),
+    searchApiKey: (process.env.AZURE_SEARCH_API_KEY || '').trim(),
+    searchIndexName: (process.env.AZURE_SEARCH_INDEX || process.env.AZURE_SEARCH_INDEX_NAME || 'chunks_prod_v1').trim(),
 
     // Azure Functions (optional)
     functionsEndpoint: process.env.AZURE_FUNCTIONS_ENDPOINT || 'https://not-set.azurewebsites.net',
