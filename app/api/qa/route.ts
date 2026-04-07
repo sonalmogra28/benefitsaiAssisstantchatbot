@@ -334,29 +334,89 @@ function detectDecision(query: string): { category: string; decision: string; st
 function isSummaryRequest(query: string): boolean {
   const lower = query.toLowerCase();
   return /\b(summary|summarize|summarise|recap|review|what\s+(?:have\s+i|did\s+i)\s+(?:decided|chosen|picked|selected)|show\s+(?:me\s+)?my\s+(?:choices|selections|decisions)|wrap\s*up|overview\s+of\s+my)\b/i.test(lower);
+
 }
 
-function compileSummary(decisions: Record<string, any>, userName: string): string {
+type TopicAction = 'overview' | 'comparison' | 'pricing' | 'question';
+type TopicHistoryEntry = { topic: string; action: TopicAction; at: number };
+
+function describeTopicAction(topic: string, action: TopicAction): string {
+  if (action === 'comparison') return `${topic} comparison`;
+  if (action === 'pricing') return `${topic} pricing`;
+  if (action === 'question') return `${topic} questions`;
+  return `${topic} overview`;
+}
+
+function buildTopicRecap(
+  topicHistory: TopicHistoryEntry[] | undefined,
+  completedTopics: string[] | undefined
+): string[] {
+  const items: string[] = [];
+  const seen = new Set<string>();
+
+  if (topicHistory && topicHistory.length > 0) {
+    const sorted = [...topicHistory].sort((a, b) => a.at - b.at);
+    for (const entry of sorted) {
+      const label = describeTopicAction(entry.topic, entry.action);
+      if (seen.has(label)) continue;
+      seen.add(label);
+      items.push(label);
+    }
+    return items;
+  }
+
+  if (completedTopics && completedTopics.length > 0) {
+    for (const topic of completedTopics) {
+      const label = describeTopicAction(topic, 'overview');
+      if (seen.has(label)) continue;
+      seen.add(label);
+      items.push(label);
+    }
+  }
+
+  return items;
+}
+
+function compileSummary(
+  decisions: Record<string, any>,
+  userName: string,
+  completedTopics?: string[],
+  topicHistory?: TopicHistoryEntry[]
+): string {
   const entries = Object.entries(decisions);
-  if (entries.length === 0) {
+  const topicRecap = buildTopicRecap(topicHistory, completedTopics);
+  if (entries.length === 0 && topicRecap.length === 0) {
     return `I don't have any benefit decisions recorded yet, ${userName}. Would you like to start exploring? Available benefits include: ${ALL_BENEFITS_SHORT}`;
   }
 
-  let summary = `Here's a summary of your benefit decisions so far, ${userName}:\n\n`;
-  for (const [category, value] of entries) {
-    const entry = typeof value === 'string' ? { status: 'selected', value } : value;
-    if (entry.status === 'selected') {
-      summary += `- ${category}: ${entry.value || 'Selected'}\n`;
-    } else if (entry.status === 'declined') {
-      summary += `- ${category}: Declined\n`;
-    } else {
-      summary += `- ${category}: Interested (no final decision yet)\n`;
+  let summary = `Here's a quick recap so far, ${userName}:\n\n`;
+  if (topicRecap.length > 0) {
+    summary += `Topics covered:\n`;
+    for (const item of topicRecap) {
+      summary += `- ${item}\n`;
+    }
+    summary += `\n`;
+  }
+
+  if (entries.length > 0) {
+    summary += `Decisions recorded:\n`;
+    for (const [category, value] of entries) {
+      const entry = typeof value === 'string' ? { status: 'selected', value } : value;
+      if (entry.status === 'selected') {
+        summary += `- ${category}: ${entry.value || 'Selected'}\n`;
+      } else if (entry.status === 'declined') {
+        summary += `- ${category}: Declined\n`;
+      } else {
+        summary += `- ${category}: Interested (no final decision yet)\n`;
+      }
     }
   }
 
   const allCategories = ['Medical', 'Dental', 'Vision', 'Life Insurance', 'Disability', 'Critical Illness', 'Accident/AD&D', 'HSA/FSA'];
   const remaining = allCategories.filter(c => !decisions[c]);
-  if (remaining.length > 0) {
+  if (entries.length === 0) {
+    summary += `No benefit decisions recorded yet. Want to choose a plan or explore another benefit?`;
+  } else if (remaining.length > 0) {
     summary += `\nBenefits you haven't explored yet: ${remaining.join(', ')}\n`;
     summary += `\nWould you like to look into any of these?`;
   } else {
@@ -1446,6 +1506,19 @@ const buildTopicSummaryMarkdown = (topicLabel: string): string => {
   return `Quick summary of ${topicLabel.toLowerCase()}:`;
 };
 
+function recordTopicInteraction(session: Session, topic: string, action: TopicAction) {
+  const safeTopic = topic?.trim();
+  if (!safeTopic) return;
+  session.context = session.context || {};
+  const history = session.context.topicHistory || [];
+  const last = history[history.length - 1];
+  if (last && last.topic === safeTopic && last.action === action) return;
+  const next = [...history, { topic: safeTopic, action, at: Date.now() }];
+  session.context.topicHistory = next.slice(-8);
+  if (!session.completedTopics) session.completedTopics = [];
+  if (!session.completedTopics.includes(safeTopic)) session.completedTopics.push(safeTopic);
+}
+
 type PreprocessSignals = {
   hasQLEIntent: boolean;
   hasFilingOrderIntent: boolean;
@@ -2116,7 +2189,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] SUMMARY requested`);
         const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
         const decisions = session.decisionsTracker || {};
-        const msg = compileSummary(decisions, nameRef);
+        const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
         session.lastBotMessage = plainMsg;
         await updateSession(sessionId, session);
@@ -2322,6 +2395,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         msg += `\nWould you like more detail on any plan, a different coverage tier, or to move on to Dental/Vision?`;
       }
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
+      recordTopicInteraction(session, 'Medical', 'comparison');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'medical-comparison' } });
@@ -2514,6 +2588,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] YES-COMPARE-DENTAL-VISION`);
       const msg = buildDentalVisionComparisonResponse(session);
       const plainMsg = toPlainAssistantText(msg);
+      recordTopicInteraction(session, 'Dental vs Vision', 'comparison');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'compare-dental-vision-yes' } });
@@ -2527,6 +2602,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] COMPARE-DENTAL-VISION`);
       const msg = buildDentalVisionComparisonResponse(session);
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
+      recordTopicInteraction(session, 'Dental vs Vision', 'comparison');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'compare-dental-vision' } });
@@ -2539,6 +2615,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       let msg = `AmeriVet offers one comprehensive dental plan: **${amerivetBenefits2024_2025.dentalPlan.name}** (${amerivetBenefits2024_2025.dentalPlan.provider}).\n\n`;
       msg += `If you'd like a full “Teeth & Eyes” overview, I can compare it side-by-side with the vision plan.`;
       const plainMsg = toPlainAssistantText(applyPricingExclusion(session.noPricingMode ? stripPricingDetails(msg) : msg, session.noPricingMode || intent.noPricing));
+      recordTopicInteraction(session, 'Dental', 'overview');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'compare-dental-only' } });
@@ -2590,6 +2667,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] CATEGORY-EXPLORATION: ${normalizeBenefitCategory(lowerQuery)}`);
         // Track current topic so "no thanks" / "skip" can decline it
         session.currentTopic = normalizeBenefitCategory(lowerQuery);
+        recordTopicInteraction(session, session.currentTopic, 'overview');
       const plainCategoryResponse = toPlainAssistantText(applyPricingExclusion(categoryExplorationIntercept, session.noPricingMode || intent.noPricing));
         session.lastBotMessage = plainCategoryResponse;
         await updateSession(sessionId, session);
@@ -2857,7 +2935,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
           logger.info(`[REQ:${reqId}][GATE2 FALLBACK] SUMMARY requested after gate failure`);
           const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
           const decisions = session.decisionsTracker || {};
-          const msg = compileSummary(decisions, nameRef);
+          const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
           const plainMsg = toPlainAssistantText(msg);
           session.lastBotMessage = plainMsg;
           await updateSession(sessionId, session);
@@ -3459,7 +3537,7 @@ Answer directly from the IMMUTABLE CATALOG. Name the plan. State the exact figur
           logger.info(`[REQ:${reqId}][STEP-11 FALLBACK] SUMMARY requested after validation gate failure`);
           const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
           const decisions = session.decisionsTracker || {};
-          const msg = compileSummary(decisions, nameRef);
+          const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
           const plainMsg = toPlainAssistantText(msg);
           session.lastBotMessage = plainMsg;
           if (!session.messages) session.messages = [];
