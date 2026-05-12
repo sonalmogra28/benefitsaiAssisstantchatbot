@@ -4,6 +4,7 @@ import {
   findMedicalPlanSummaryByAlias,
   type MedicalPlanSummary,
 } from '@/lib/data/amerivet-plan-summaries';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 import {
   type BenefitPlan,
   type BenefitTier,
@@ -156,7 +157,7 @@ function buildCoverageTierExplanation(query: string, session: Session): string {
   return [
     `A coverage tier is just the level of people you are enrolling, which changes the payroll deduction and which family members are covered.`,
     ``,
-    `AmeriVet's medical coverage tiers are:`,
+    `${COMPANY_NAME}'s medical coverage tiers are:`,
     `- Employee Only`,
     `- Employee + Spouse`,
     `- Employee + Child(ren)`,
@@ -187,7 +188,7 @@ function buildMedicalTermExplanation(
     return [
       `PPO stands for **Preferred Provider Organization**.`,
       ``,
-      `In AmeriVet's package, the BCBSTX medical options use a PPO-style network, which usually means you can use a broader network of doctors and facilities outside the Kaiser integrated model.`,
+      `In ${COMPANY_NAME}'s package, the BCBSTX medical options use a PPO-style network, which usually means you can use a broader network of doctors and facilities outside the Kaiser integrated model.`,
       ``,
       `The practical question is whether you want that broader-network PPO setup or the tighter Kaiser HMO structure.`,
       `If you want, I can compare the BCBSTX PPO options against Kaiser next.`,
@@ -198,7 +199,7 @@ function buildMedicalTermExplanation(
     return [
       `HMO stands for **Health Maintenance Organization**.`,
       ``,
-      `In AmeriVet's package, the Kaiser Standard HMO uses an integrated-network HMO structure, which usually means you pick a primary care doctor inside Kaiser's system and get referrals for specialty care through that network.`,
+      `In ${COMPANY_NAME}'s package, the Kaiser Standard HMO uses an integrated-network HMO structure, which usually means you pick a primary care doctor inside Kaiser's system and get referrals for specialty care through that network.`,
       ``,
       `The practical tradeoff against the BCBSTX PPO-style plans is network breadth versus lower overall cost and tighter coordination inside one system.`,
       `If you want, I can compare Kaiser Standard HMO against the BCBSTX PPO options next.`,
@@ -209,9 +210,9 @@ function buildMedicalTermExplanation(
     return [
       `BCBSTX stands for **Blue Cross Blue Shield of Texas**.`,
       ``,
-      `In AmeriVet's package, BCBSTX is the carrier behind the Standard HSA and Enhanced HSA medical plans.`,
+      `In ${COMPANY_NAME}'s package, BCBSTX is the carrier behind the Standard HSA and Enhanced HSA medical plans.`,
       ``,
-      `So when you see BCBSTX in the plan list, that is the PPO carrier side of AmeriVet's medical package rather than the Kaiser option.`,
+      `So when you see BCBSTX in the plan list, that is the PPO carrier side of ${COMPANY_NAME}'s medical package rather than the Kaiser option.`,
       `If you want, I can compare the BCBSTX plans against Kaiser next.`,
     ].join('\n');
   }
@@ -220,10 +221,10 @@ function buildMedicalTermExplanation(
     return [
       `A copay is the flat dollar amount you pay at the time of a covered service, before you even start talking about bigger deductible or coinsurance math.`,
       ``,
-      `In AmeriVet's package, copays usually matter most for services like primary care, specialist visits, urgent care, and some prescription tiers.`,
+      `In ${COMPANY_NAME}'s package, copays usually matter most for services like primary care, specialist visits, urgent care, and some prescription tiers.`,
       ``,
       `The practical question is not just "is there a copay?" but whether the plan uses more flat copays versus more deductible-first cost sharing.`,
-      `If you want, I can compare AmeriVet's medical plans specifically on copays next.`,
+      `If you want, I can compare ${COMPANY_NAME}'s medical plans specifically on copays next.`,
     ].join('\n');
   }
 
@@ -231,10 +232,10 @@ function buildMedicalTermExplanation(
     return [
       `A deductible is the amount you usually pay out of pocket before the plan starts sharing more of the cost for many services.`,
       ``,
-      `In AmeriVet's medical plans, the deductible is one of the biggest tradeoffs between the lower-premium option and the stronger-protection option.`,
+      `In ${COMPANY_NAME}'s medical plans, the deductible is one of the biggest tradeoffs between the lower-premium option and the stronger-protection option.`,
       ``,
       `The practical way to think about it is: a higher deductible usually keeps premium lower, while a lower deductible usually means you pay more up front in payroll but get help sooner when care happens.`,
-      `If you want, I can compare AmeriVet's plans specifically on deductible and out-of-pocket exposure.`,
+      `If you want, I can compare ${COMPANY_NAME}'s plans specifically on deductible and out-of-pocket exposure.`,
     ].join('\n');
   }
 
@@ -244,8 +245,8 @@ function buildMedicalTermExplanation(
       ``,
       `So if a plan says 20% coinsurance, that usually means you are paying 20% of the allowed in-network amount and the plan is paying the rest.`,
       ``,
-      `In AmeriVet's package, coinsurance matters most when you are comparing in-network versus out-of-network cost sharing and stronger versus lighter medical coverage.`,
-      `If you want, I can compare the AmeriVet medical plans on coinsurance next.`,
+      `In ${COMPANY_NAME}'s package, coinsurance matters most when you are comparing in-network versus out-of-network cost sharing and stronger versus lighter medical coverage.`,
+      `If you want, I can compare the ${COMPANY_NAME} medical plans on coinsurance next.`,
     ].join('\n');
   }
 
@@ -255,8 +256,8 @@ function buildMedicalTermExplanation(
       ``,
       `That is why it matters so much in higher-use years: even if premium is not the cheapest, a lower out-of-pocket max can make the stronger-protection plan feel safer.`,
       ``,
-      `In AmeriVet's package, this is one of the biggest guardrail numbers to compare across medical plans.`,
-      `If you want, I can compare the AmeriVet plans specifically on deductible versus out-of-pocket max.`,
+      `In ${COMPANY_NAME}'s package, this is one of the biggest guardrail numbers to compare across medical plans.`,
+      `If you want, I can compare the ${COMPANY_NAME} plans specifically on deductible versus out-of-pocket max.`,
     ].join('\n');
   }
 
@@ -264,9 +265,9 @@ function buildMedicalTermExplanation(
     return [
       `Primary care usually means your everyday doctor visit layer, like routine sick visits, check-ins, and the place many people start before moving to specialty care.`,
       ``,
-      `In AmeriVet's package, primary care is useful to compare because some plans use a flat office-visit copay while others lean more heavily on deductible-first cost sharing.`,
+      `In ${COMPANY_NAME}'s package, primary care is useful to compare because some plans use a flat office-visit copay while others lean more heavily on deductible-first cost sharing.`,
       ``,
-      `If you want, I can compare AmeriVet's plans specifically on primary care visit costs next.`,
+      `If you want, I can compare ${COMPANY_NAME}'s plans specifically on primary care visit costs next.`,
     ].join('\n');
   }
 
@@ -274,9 +275,9 @@ function buildMedicalTermExplanation(
     return [
       `A specialist visit means care from a doctor focused on a specific area like dermatology, cardiology, orthopedics, or similar specialty care.`,
       ``,
-      `In AmeriVet's package, specialist costs are one of the most practical comparisons because the stronger-protection plans often make repeated specialty care feel more manageable.`,
+      `In ${COMPANY_NAME}'s package, specialist costs are one of the most practical comparisons because the stronger-protection plans often make repeated specialty care feel more manageable.`,
       ``,
-      `If you want, I can compare AmeriVet's plans specifically on specialist visit costs next.`,
+      `If you want, I can compare ${COMPANY_NAME}'s plans specifically on specialist visit costs next.`,
     ].join('\n');
   }
 
@@ -284,9 +285,9 @@ function buildMedicalTermExplanation(
     return [
       `Urgent care is the in-between level for problems that need prompt treatment but are not severe enough for the emergency room.`,
       ``,
-      `In AmeriVet's package, the practical question is whether the plan gives you a predictable urgent-care copay or pushes more of that cost through deductible and coinsurance.`,
+      `In ${COMPANY_NAME}'s package, the practical question is whether the plan gives you a predictable urgent-care copay or pushes more of that cost through deductible and coinsurance.`,
       ``,
-      `If you want, I can compare AmeriVet's plans specifically on urgent-care cost sharing next.`,
+      `If you want, I can compare ${COMPANY_NAME}'s plans specifically on urgent-care cost sharing next.`,
     ].join('\n');
   }
 
@@ -294,9 +295,9 @@ function buildMedicalTermExplanation(
     return [
       `Emergency room coverage matters for true emergencies, and the key question is usually how much cost sharing the plan leaves with you when something serious happens.`,
       ``,
-      `In AmeriVet's package, ER cost sharing is part of the bigger tradeoff between lower premium and stronger protection in a bad health year.`,
+      `In ${COMPANY_NAME}'s package, ER cost sharing is part of the bigger tradeoff between lower premium and stronger protection in a bad health year.`,
       ``,
-      `If you want, I can compare AmeriVet's plans specifically on emergency-room cost sharing next.`,
+      `If you want, I can compare ${COMPANY_NAME}'s plans specifically on emergency-room cost sharing next.`,
     ].join('\n');
   }
 
@@ -304,10 +305,10 @@ function buildMedicalTermExplanation(
     return [
       `Prescription coverage is the part of the medical plan that helps with generic, brand, and specialty drugs.`,
       ``,
-      `In AmeriVet's current source summaries, I do not have the full prescription tier table yet, so I do not want to guess at generic versus brand copays.`,
+      `In ${COMPANY_NAME}'s current source summaries, I do not have the full prescription tier table yet, so I do not want to guess at generic versus brand copays.`,
       ``,
       `What I can say confidently is that prescription use is one of the strongest reasons to compare the lower-cost versus stronger-protection medical options more closely.`,
-      `If you want, I can still compare the AmeriVet plans at a high level for someone who expects ongoing prescriptions.`,
+      `If you want, I can still compare the ${COMPANY_NAME} plans at a high level for someone who expects ongoing prescriptions.`,
     ].join('\n');
   }
 
@@ -316,8 +317,8 @@ function buildMedicalTermExplanation(
     ``,
     `Out-of-network means you are going outside that network, which usually means higher cost sharing and sometimes very limited coverage depending on the plan.`,
     ``,
-    `In AmeriVet's package, this matters most when comparing the BCBSTX PPO-style options versus the Kaiser integrated-network option.`,
-    `If you want, I can compare AmeriVet's medical plans specifically on in-network versus out-of-network rules.`,
+    `In ${COMPANY_NAME}'s package, this matters most when comparing the BCBSTX PPO-style options versus the Kaiser integrated-network option.`,
+    `If you want, I can compare ${COMPANY_NAME}'s medical plans specifically on in-network versus out-of-network rules.`,
   ].join('\n');
 }
 
@@ -325,7 +326,7 @@ function buildTradeoffComparison(query: string, session: Session): string {
   const plans = availableMedicalSummaries(session);
   const coverageTier = getCoverageTierForQuery(query, session);
   const lines = [
-    `Here is the practical tradeoff across AmeriVet's medical options:`,
+    `Here is the practical tradeoff across ${COMPANY_NAME}'s medical options:`,
     ``,
   ];
 
@@ -502,7 +503,7 @@ function buildAccumulatorComparisonAnswer(session: Session): string {
     ].join('\n');
   }
 
-  return `I can compare deductible and out-of-pocket exposure across AmeriVet's medical plans, but I do not want to guess if I am missing one of the plans in the current summary.`;
+  return `I can compare deductible and out-of-pocket exposure across ${COMPANY_NAME}'s medical plans, but I do not want to guess if I am missing one of the plans in the current summary.`;
 }
 
 function buildLowestOutOfPocketAnswer(queryLower: string, session: Session): string {
@@ -553,7 +554,7 @@ function buildLowestOutOfPocketAnswer(queryLower: string, session: Session): str
     ].join('\n');
   }
 
-  return `I can answer lowest out-of-pocket questions from the current AmeriVet plan summaries, but I do not want to guess if I am missing one of the medical options.`;
+  return `I can answer lowest out-of-pocket questions from the current ${COMPANY_NAME} plan summaries, but I do not want to guess if I am missing one of the medical options.`;
 }
 
 function buildLowestOopConfirmationAnswer(queryLower: string, session: Session): string | null {
@@ -652,7 +653,7 @@ export function buildMedicalPlanDetailAnswer(
     return [
       `Usually yes — therapy visits are generally closer to **specialist / behavioral-health care** than to primary care for cost-sharing purposes.`,
       ``,
-      `In AmeriVet's current summaries, the safest grounded proxy when there is not a separate therapy copay line is the **specialist** cost line for the plan.`,
+      `In ${COMPANY_NAME}'s current summaries, the safest grounded proxy when there is not a separate therapy copay line is the **specialist** cost line for the plan.`,
       ``,
       `If you want, I can compare the medical plans specifically on therapy / specialist cost-sharing next.`,
     ].join('\n');
@@ -815,8 +816,8 @@ export function buildMedicalPlanDetailAnswer(
     const virtualVisit = plan?.coverage?.copays?.virtualVisit;
     if (virtualVisit !== undefined) {
       return virtualVisit === 0
-        ? `${summary.displayName}: virtual visits are handled as deductible-first / no separate flat copay is listed in the current AmeriVet source data.`
-        : `${summary.displayName}: virtual visits have a $${virtualVisit} copay in the current AmeriVet source data.`;
+        ? `${summary.displayName}: virtual visits are handled as deductible-first / no separate flat copay is listed in the current ${COMPANY_NAME} source data.`
+        : `${summary.displayName}: virtual visits have a $${virtualVisit} copay in the current ${COMPANY_NAME} source data.`;
     }
     return `${summary.displayName}: I do not have a separate virtual-visit copay line in the current summary, so I do not want to guess.`;
   }
@@ -879,7 +880,7 @@ export function buildMedicalPlanDetailAnswer(
       summary.outOfNetworkCoinsurance ? `- Out-of-network coinsurance: ${summary.outOfNetworkCoinsurance}` : '',
       plan ? `- ${coverageTier} premium: ${formatCoverageTierPremium(plan, coverageTier)}` : '',
       ``,
-      `If you want, I can also compare this plan against the other AmeriVet medical options on maternity, prescriptions, network access, or total cost exposure.`,
+      `If you want, I can also compare this plan against the other ${COMPANY_NAME} medical options on maternity, prescriptions, network access, or total cost exposure.`,
     ].filter(Boolean).join('\n');
   }
 

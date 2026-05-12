@@ -116,6 +116,7 @@ export const dynamic = 'force-dynamic';
 // Enrollment portal URL — use env var to avoid hardcoding
 const ENROLLMENT_PORTAL_URL = process.env.ENROLLMENT_PORTAL_URL || 'https://wd5.myworkday.com/amerivet/login.html';
 const HR_PHONE = process.env.HR_PHONE_NUMBER || '888-217-4728';
+const COMPANY_NAME = process.env.COMPANY_NAME ?? 'AmeriVet';
 const ACTIVE_AMERIVET_PACKAGE = getAmerivetBenefitsPackage();
 const ACTIVE_AMERIVET_CATALOG = ACTIVE_AMERIVET_PACKAGE.catalog;
 
@@ -335,7 +336,7 @@ function extractCategory(msg: string): string | null {
 // ============================================================================
 const ALL_BENEFITS_SHORT = 'Medical, Dental, Vision, Life Insurance, Disability, Critical Illness, Accident/AD&D, and HSA/FSA';
 
-const ALL_BENEFITS_MENU = `Here are all the benefits available to you as an AmeriVet employee:
+const ALL_BENEFITS_MENU = `Here are all the benefits available to you as a ${COMPANY_NAME} employee:
 - Medical (Standard HSA, Enhanced HSA — BCBSTX nationwide PPO network; Kaiser HMO where available)
 - Dental (BCBSTX Dental PPO)
 - Vision (VSP Vision Plus)
@@ -762,7 +763,7 @@ ${irsBlock}
   Remaining: ${remainingText}
 </Session>
 
-<Role>AmeriVet Senior Benefits Advisor — data-sovereign, zero-hallucination, expert in IRS rules for HSA/FSA conflicts.</Role>
+<Role>${COMPANY_NAME} Senior Benefits Advisor — data-sovereign, zero-hallucination, expert in IRS rules for HSA/FSA conflicts.</Role>
 
 <Reasoning>
 Before answering:
@@ -791,10 +792,10 @@ NO-HALLUCINATION:
 - Age-banded products: "Log in at ${ENROLLMENT_PORTAL_URL} for your personalized rate"
 
 FORBIDDEN:
-- Rightway — NOT an AmeriVet resource
-- Phone (305) 851-7310 — NOT an AmeriVet number
+- Rightway — NOT a ${COMPANY_NAME} resource
+- Phone (305) 851-7310 — NOT a ${COMPANY_NAME} number
 - Medical "PPO plan" — no standalone PPO exists. Standard/Enhanced HSA use PPO network.
-- DHMO dental — AmeriVet only offers BCBSTX Dental PPO
+- DHMO dental — ${COMPANY_NAME} only offers BCBSTX Dental PPO
 
 NO-LOOP: You have Name=${session.userName || '?'}, Age=${session.userAge || '?'}, State=${userState || '?'}. NEVER re-ask.
 
@@ -883,7 +884,7 @@ function buildShortCategoryAnswer(
     // Kaiser state check - KEEP this hard rule
     if (/\b(kaiser|hmo)\b/i.test(queryLower)) {
       if (isKaiserEligible) {
-        return `Yes ΓÇö Kaiser HMO is available in your state (${userState}). AmeriVet offers the Kaiser Standard HMO for employees in CA, GA, WA, and OR.`;
+        return `Yes ΓÇö Kaiser HMO is available in your state (${userState}). ${COMPANY_NAME} offers the Kaiser Standard HMO for employees in CA, GA, WA, and OR.`;
       }
       if (userState) {
         return `Kaiser HMO is only available in CA, GA, WA, and OR ΓÇö it is not available in ${userState}. Your medical options are the Standard HSA and Enhanced HSA plans through BCBSTX.`;
@@ -1307,7 +1308,7 @@ export async function POST(req: NextRequest) {
       } else {
         // Default Welcome
         logger.info(`[REQ:${reqId}][STEP-5 INTERCEPT] WELCOME-PROMPT: No name detected, asking for name`);
-        const msg = `Hi there! Welcome!\n\nI'm your AmeriVet Benefits Assistant. I'm here to help you compare plans and find the right fit.\n\nLet's get started - what's your name?`;
+        const msg = `Hi there! Welcome!\n\nI'm your ${COMPANY_NAME} Benefits Assistant. I'm here to help you compare plans and find the right fit.\n\nLet's get started - what's your name?`;
         session.lastBotMessage = msg;
       await updateSession(sessionId, session);
         return NextResponse.json({ answer: msg, tier: 'L1', sessionContext: buildSessionContext(session) });
@@ -1848,7 +1849,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       msg += `- Funds grow tax-free (interest and investments)\n`;
       msg += `- Withdrawals for eligible medical expenses are tax-free (triple tax advantage)\n`;
       msg += `- Unused funds roll over year to year ΓÇö there is no "use it or lose it"\n`;
-      msg += `- The account is yours ΓÇö it stays with you even if you leave AmeriVet\n`;
+      msg += `- The account is yours ΓÇö it stays with you even if you leave ${COMPANY_NAME}\n`;
       msg += `\nAlso consider:\n`;
       msg += `- FSA (Flexible Spending Account): Pre-tax dollars for healthcare expenses, but funds typically don't roll over\n`;
       msg += `- Commuter Benefits: Pre-tax transit and parking deductions\n`;
@@ -2133,7 +2134,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] PACKAGE-GUIDANCE`);
       const remaining = getRemainingBenefits(session.decisionsTracker || {}).filter((benefit) => benefit !== session.currentTopic);
       const msg = remaining.length > 0
-        ? `Beyond ${session.currentTopic ? session.currentTopic.toLowerCase() : 'this topic'}, the other parts of your AmeriVet benefits package worth considering are: ${remaining.join(', ')}.\n\nA practical next order is usually medical, dental/vision, life and disability, then supplemental benefits like critical illness or accident, plus HSA/FSA if they fit your situation.\n\nWhich of those would you like to look at next?`
+        ? `Beyond ${session.currentTopic ? session.currentTopic.toLowerCase() : 'this topic'}, the other parts of your ${COMPANY_NAME} benefits package worth considering are: ${remaining.join(', ')}.\n\nA practical next order is usually medical, dental/vision, life and disability, then supplemental benefits like critical illness or accident, plus HSA/FSA if they fit your situation.\n\nWhich of those would you like to look at next?`
         : `You have already touched most of the main benefit categories. The last thing I would usually make sure we cover is whether life, disability, supplemental benefits, or HSA/FSA deserve a closer look before you enroll.\n\nWhich one do you want to review next?`;
       session.lastBotMessage = msg;
       await updateSession(sessionId, session);
@@ -2142,7 +2143,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
 
     if (deterministicConversationInterceptsEnabled && asksDentalAlternatives) {
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] DENTAL-ALTERNATIVES`);
-      const msg = `AmeriVet offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan options to choose from.\n\nIf you want, I can help you decide whether that dental plan looks worth it for your household, or we can move on to vision, life, disability, or supplemental benefits next.`;
+      const msg = `${COMPANY_NAME} offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan options to choose from.\n\nIf you want, I can help you decide whether that dental plan looks worth it for your household, or we can move on to vision, life, disability, or supplemental benefits next.`;
       session.currentTopic = 'Dental';
       session.lastBotMessage = msg;
       await updateSession(sessionId, session);
@@ -2160,7 +2161,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
 
     if (deterministicConversationInterceptsEnabled && asksPhysicalTherapy) {
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] PHYSICAL-THERAPY-COVERAGE`);
-      const msg = `I do not have a plan-specific physical therapy copay in the structured AmeriVet data I trust enough to quote as a flat number.\n\nFor the Standard HSA, therapy services are more likely to be treated like medical services that count toward the deductible and then coinsurance, rather than a simple office-visit copay, but you should confirm the exact outpatient therapy benefit in Workday before relying on that.\n\nIf you want, I can still help you compare the Standard vs Enhanced plan more generally for expected medical usage.`;
+      const msg = `I do not have a plan-specific physical therapy copay in the structured ${COMPANY_NAME} data I trust enough to quote as a flat number.\n\nFor the Standard HSA, therapy services are more likely to be treated like medical services that count toward the deductible and then coinsurance, rather than a simple office-visit copay, but you should confirm the exact outpatient therapy benefit in Workday before relying on that.\n\nIf you want, I can still help you compare the Standard vs Enhanced plan more generally for expected medical usage.`;
       session.lastBotMessage = msg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: msg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'physical-therapy-coverage' } });
@@ -2224,7 +2225,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
     const lastBotMentionedPortal = /\bworkday|portal|enrollment\b/i.test(session.lastBotMessage || '');
     if (deterministicConversationInterceptsEnabled && asksForPortalLink && lastBotMentionedPortal) {
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] PORTAL-LINK-FOLLOWUP`);
-      const msg = `Here is the AmeriVet benefits enrollment portal: ${ENROLLMENT_PORTAL_URL}\n\nIf you want, I can also help you figure out which benefit to review before you enroll.`;
+      const msg = `Here is the ${COMPANY_NAME} benefits enrollment portal: ${ENROLLMENT_PORTAL_URL}\n\nIf you want, I can also help you figure out which benefit to review before you enroll.`;
       session.lastBotMessage = msg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: msg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'portal-link-followup' } });
@@ -2237,12 +2238,12 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
 
       if (topicLower.includes('dental')) {
         msg = session.completedTopics?.includes('Vision')
-          ? `AmeriVet offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan choices to compare.\n\nIf you want, we can move on to life, disability, or supplemental benefits next.`
-          : `AmeriVet offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan choices to compare.\n\nIf you want, I can give you a quick vision summary too, or we can move on to life, disability, or supplemental benefits next.`;
+          ? `${COMPANY_NAME} offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan choices to compare.\n\nIf you want, we can move on to life, disability, or supplemental benefits next.`
+          : `${COMPANY_NAME} offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). There are not multiple dental plan choices to compare.\n\nIf you want, I can give you a quick vision summary too, or we can move on to life, disability, or supplemental benefits next.`;
       } else if (topicLower.includes('vision')) {
         msg = session.completedTopics?.includes('Dental')
-          ? `AmeriVet offers one vision plan: **${ACTIVE_AMERIVET_CATALOG.visionPlan.name}** (${ACTIVE_AMERIVET_CATALOG.visionPlan.provider}). There are not multiple vision plan choices to compare.\n\nIf you want, we can move on to life, disability, or supplemental benefits next.`
-          : `AmeriVet offers one vision plan: **${ACTIVE_AMERIVET_CATALOG.visionPlan.name}** (${ACTIVE_AMERIVET_CATALOG.visionPlan.provider}). There are not multiple vision plan choices to compare.\n\nIf you want, I can give you a quick dental summary too, or we can move on to life, disability, or supplemental benefits next.`;
+          ? `${COMPANY_NAME} offers one vision plan: **${ACTIVE_AMERIVET_CATALOG.visionPlan.name}** (${ACTIVE_AMERIVET_CATALOG.visionPlan.provider}). There are not multiple vision plan choices to compare.\n\nIf you want, we can move on to life, disability, or supplemental benefits next.`
+          : `${COMPANY_NAME} offers one vision plan: **${ACTIVE_AMERIVET_CATALOG.visionPlan.name}** (${ACTIVE_AMERIVET_CATALOG.visionPlan.provider}). There are not multiple vision plan choices to compare.\n\nIf you want, I can give you a quick dental summary too, or we can move on to life, disability, or supplemental benefits next.`;
       } else if (topicLower.includes('critical') || topicLower.includes('accident') || topicLower.includes('disability') || topicLower.includes('supplemental')) {
         msg = buildCategoryExplorationResponse({
           queryLower: session.currentTopic.toLowerCase(),
@@ -2280,7 +2281,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
     const compareDentalOnlyRequested = /\bcompare\b/i.test(lowerQuery) && /\bdental\b/i.test(lowerQuery) && !/\bvision\b/i.test(lowerQuery);
     if (compareDentalOnlyRequested) {
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] COMPARE-DENTAL-ONLY`);
-      let msg = `AmeriVet offers one comprehensive dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}).\n\n`;
+      let msg = `${COMPANY_NAME} offers one comprehensive dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}).\n\n`;
       msg += `If you'd like, I can give you a quick vision summary too, or we can move on to life, disability, or supplemental benefits next.`;
       const plainMsg = toPlainAssistantText(applyPricingExclusion(session.noPricingMode ? stripPricingDetails(msg) : msg, session.noPricingMode || intent.noPricing));
       session.lastBotMessage = plainMsg;
@@ -2296,7 +2297,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       );
     if (deterministicConversationInterceptsEnabled && dentalPlanCountRequested) {
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] DENTAL-PLAN-COUNT`);
-      const msg = `AmeriVet offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). It is the only dental option in the AmeriVet benefits package.`;
+      const msg = `${COMPANY_NAME} offers one dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}). It is the only dental option in the ${COMPANY_NAME} benefits package.`;
       const plainMsg = toPlainAssistantText(applyPricingExclusion(session.noPricingMode ? stripPricingDetails(msg) : msg, session.noPricingMode || intent.noPricing));
       session.currentTopic = 'Dental';
       session.lastBotMessage = plainMsg;
@@ -2881,7 +2882,7 @@ ${intentHintText}
 Γû╢ EXACT QUESTION TO ANSWER: "${query}"
    Read this carefully. Answer SPECIFICALLY what is being asked ΓÇö do NOT default to a
    general category overview unless the user asks for one. If the user asks about a
-   contact/navigation service not in AmeriVet's package, say so clearly.
+   contact/navigation service not in ${COMPANY_NAME}'s package, say so clearly.
 
 RETRIEVAL CONTEXT (supplementary ΓÇö catalog in system prompt is authoritative):
 ${contextText}
@@ -2907,7 +2908,7 @@ Output your answer in EXACTLY this two-section format ΓÇö both sections requi
 to the employee. Write in flowing, well-constructed prose. Vary sentence structure. Lead with the
 most important finding. No [Source N] citations, no <thought> tags, no robotic bullet dumps.>
 ${confidenceHint}${alternativeHint}${noPricingHint}${policyRoutingHint}${tierLockHint}
-Remember: answer ONLY from the IMMUTABLE CATALOG. Do NOT ask for name, age, or state. Do NOT mention Rightway. Do NOT attribute Whole Life to Unum or Term Life to Allstate. Do NOT invent a "PPO" medical plan. Do NOT show [Source N] or [Doc N] citations in your response. AmeriVet does NOT offer a DHMO dental plan ΓÇö only the BCBSTX Dental PPO.`;
+Remember: answer ONLY from the IMMUTABLE CATALOG. Do NOT ask for name, age, or state. Do NOT mention Rightway. Do NOT attribute Whole Life to Unum or Term Life to Allstate. Do NOT invent a "PPO" medical plan. Do NOT show [Source N] or [Doc N] citations in your response. ${COMPANY_NAME} does NOT offer a DHMO dental plan ΓÇö only the BCBSTX Dental PPO.`;
 
     logger.info(`[REQ:${reqId}][STEP-9 LLM] Generating answer: chunks=${result.chunks.length} contextChars=${ctxStats.totalChars} confidenceTier=${confidenceTier} useDisclaimer=${useDisclaimer}`);
 
@@ -2970,7 +2971,7 @@ Remember: answer ONLY from the IMMUTABLE CATALOG. Do NOT ask for name, age, or s
         }
     }
     // Strip the (305) 851-7310 number if it appears - replace with real HR number
-    answer = answer.replace(BANNED_PHONE_RE, `AmeriVet HR/Benefits at ${HR_PHONE}`);
+    answer = answer.replace(BANNED_PHONE_RE, `${COMPANY_NAME} HR/Benefits at ${HR_PHONE}`);
 
     // POST-PROCESSING: Strip [Source N] / [Doc N] citation artifacts from LLM output
     answer = answer.replace(/\[(?:Source|Doc(?:ument)?|Ref(?:erence)?)\s*\d+\]/gi, '').replace(/\s{2,}/g, ' ').trim();
@@ -3015,7 +3016,7 @@ Remember: answer ONLY from the IMMUTABLE CATALOG. Do NOT ask for name, age, or s
     }
 
     // POST-PROCESSING: DHMO HALLUCINATION GUARD
-    // AmeriVet has NO DHMO plan. If LLM output mentions DHMO as if it exists, correct it.
+    // ${COMPANY_NAME} has NO DHMO plan. If LLM output mentions DHMO as if it exists, correct it.
     const DHMO_HALLUCINATION = /\b(?:dental\s+hmo|dhmo\s+plan|the\s+dhmo|dhmo\s+(?:option|coverage|premium|cost|rate|provider))\b/gi;
     if (DHMO_HALLUCINATION.test(answer)) {
       logger.warn('[DHMO-GUARD] Stripped hallucinated DHMO plan reference');
@@ -3431,7 +3432,7 @@ Answer directly from the IMMUTABLE CATALOG. Name the plan. State the exact figur
     }
     
     return NextResponse.json({ 
-      answer: `I hit a temporary issue processing your request. Please try again, or for immediate help contact AmeriVet HR/Benefits at ${HR_PHONE}. You can also visit the enrollment portal at ${ENROLLMENT_PORTAL_URL}.`,
+      answer: `I hit a temporary issue processing your request. Please try again, or for immediate help contact ${COMPANY_NAME} HR/Benefits at ${HR_PHONE}. You can also visit the enrollment portal at ${ENROLLMENT_PORTAL_URL}.`,
       error: errorMessage,
       tier: 'L1',
       sessionContext: null  // Session may be corrupted

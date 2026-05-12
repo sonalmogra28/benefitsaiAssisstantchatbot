@@ -4,6 +4,7 @@ import {
   BCG_EMPLOYER_GUIDANCE_RULES,
   findBCGEmployerGuidanceRule,
 } from '@/lib/data/bcg-employer-guidance';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 const ENROLLMENT_PORTAL_URL = process.env.ENROLLMENT_PORTAL_URL || 'https://wd5.myworkday.com/amerivet/login.html';
 
@@ -14,6 +15,18 @@ function getLifePlans() {
     term: lifePlans.find((plan) => /term life/i.test(plan.name)),
     whole: lifePlans.find((plan) => /whole life/i.test(plan.name)),
   };
+}
+
+function getDisabilityPlans() {
+  const disabilityPlans = getAmerivetBenefitsPackage().catalog.voluntaryPlans.filter((plan) => plan.voluntaryType === 'disability');
+  return {
+    std: disabilityPlans.find((plan) => /short.?term/i.test(plan.name)),
+    ltd: disabilityPlans.find((plan) => /long.?term/i.test(plan.name)),
+  };
+}
+
+function extractFeatureFact(features: string[], pattern: RegExp): string | undefined {
+  return features.find((f) => pattern.test(f));
 }
 
 function isPureVoluntaryTermAmountQuestion(queryLower: string): boolean {
@@ -277,7 +290,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       `- **Basic Life & AD&D** is employer-paid, so that base layer does not add an employee premium`,
       `- **Voluntary Term Life** is employee-paid and age-banded, so the exact cost depends on your age and election amount in Workday`,
       `- **Whole Life** is employee-paid, with rates locked at your enrollment age`,
-      `- **Disability** is also an employee-paid optional benefit, and the current AmeriVet summary does not list the exact premium inline`,
+      `- **Disability** is also an employee-paid optional benefit, and the current benefits summary does not list the exact premium inline`,
       ``,
       `So I can tell you which pieces are employer-paid versus employee-paid, but for the exact combined premium for life plus disability, the right source is Workday.`,
     ].join('\n');
@@ -308,7 +321,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Yes. You can add more life insurance on top of the employer-paid base.`,
         ``,
-        `Here is the practical layering in AmeriVet's package:`,
+        `Here is the practical layering in ${COMPANY_NAME}'s package:`,
         `- **${basic?.name || 'Basic Life & AD&D'}** is the included $25,000 employer-paid base — everyone eligible gets that automatically`,
         `- **${term?.name || 'Voluntary Term Life'}** is the main way to buy more coverage — the current summary lists it at 1x to 5x annual salary up to $500,000, employee-paid and age-banded, with guaranteed issue up to $200,000 during initial open enrollment`,
         `- **${whole?.name || 'Whole Life'}** is the permanent cash-value option you can layer on top as well, with rates locked at your enrollment age`,
@@ -319,7 +332,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
 
     if ((/\b(if i do nothing|what life insurance do i get|included life|included coverage|default life|automatic coverage|automatically enrolled|already included|included by default|get automatically|without having to pay more|without paying more|without extra cost)\b/i.test(lower) && /\b(life|coverage|insurance|plans?)\b/i.test(lower)) || /\bemployer-paid basic life\b/i.test(lower)) {
       return [
-        `If you do nothing, AmeriVet still gives you **${basic?.name || 'Basic Life & AD&D'}** as the included base layer.`,
+        `If you do nothing, ${COMPANY_NAME} still gives you **${basic?.name || 'Basic Life & AD&D'}** as the included base layer.`,
         ``,
         `What that means in practice:`,
         `- it is **employer-paid**`,
@@ -332,9 +345,9 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
 
     if (/\b(portable|portability)\b/i.test(lower)) {
       return [
-        `Portable means you may be able to keep that life coverage after leaving AmeriVet instead of losing it automatically when employment ends, subject to the carrier's conversion or portability rules.`,
+        `Portable means you may be able to keep that life coverage after leaving ${COMPANY_NAME} instead of losing it automatically when employment ends, subject to the carrier's conversion or portability rules.`,
         ``,
-        `In AmeriVet's current package:`,
+        `In ${COMPANY_NAME}'s current package:`,
         `- ${term?.name || 'Voluntary Term Life'} is described as portable`,
         `- ${whole?.name || 'Whole Life'} is also described as portable`,
         `- ${basic?.name || 'Basic Life'} is employer-paid core coverage and is not the one described as portable in the summary`,
@@ -347,7 +360,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Guaranteed issue means there is an amount you can elect during open enrollment without going through full medical underwriting.`,
         ``,
-        `In AmeriVet's current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is up to $200,000 — but only during initial open enrollment. This is not available in subsequent annual enrollment periods.`,
+        `In ${COMPANY_NAME}'s current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is up to $200,000 — but only during initial open enrollment. This is not available in subsequent annual enrollment periods.`,
         ``,
         `The practical point is that guaranteed issue makes it easier to add term life without extra health questions, at least up to the stated limit. If you miss this window, you will need to go through medical underwriting for amounts above the basic employer-paid coverage.`,
       ].join('\n');
@@ -357,7 +370,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Cash value is the savings-like component that builds inside a permanent life policy over time.`,
         ``,
-        `In AmeriVet's package, that applies to ${whole?.name || 'Whole Life'}, not to the employer-paid basic life benefit or the voluntary term life option.`,
+        `In ${COMPANY_NAME}'s package, that applies to ${whole?.name || 'Whole Life'}, not to the employer-paid basic life benefit or the voluntary term life option.`,
         ``,
         `So if you care about permanent coverage plus an accumulating value component, whole life is the life option that fits that description.`,
       ].join('\n');
@@ -367,7 +380,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Age-banded means the voluntary term life rate is tied to your age bracket rather than staying flat forever.`,
         ``,
-        `AmeriVet's current summaries also say ${whole?.name || 'Whole Life'} has rates locked at your enrollment age, which is different from the age-banded term life structure.`,
+        `${COMPANY_NAME}'s current summaries also say ${whole?.name || 'Whole Life'} has rates locked at your enrollment age, which is different from the age-banded term life structure.`,
         ``,
         `So the practical distinction is: term life is the age-banded option, while whole life is the one described as having rates locked at enrollment age.`,
       ].join('\n');
@@ -377,20 +390,20 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `For family members, the practical distinction is that the employer-paid basic life benefit is the employee's base coverage, while the voluntary term life option is the one whose summary explicitly says spouse and dependent child coverage are available.`,
         ``,
-        `So if you are asking about covering a spouse, husband, wife, kids, or family members more broadly, voluntary term life is the most relevant life-insurance option in the current AmeriVet summary.`,
+        `So if you are asking about covering a spouse, husband, wife, kids, or family members more broadly, voluntary term life is the most relevant life-insurance option in the current benefits summary.`,
       ].join('\n');
     }
 
     if (/\b(how much life insurance|how much can i get|coverage amount|1x|5x salary)\b/i.test(lower)) {
       return [
-        `Here is the practical difference across AmeriVet's life-insurance amounts:`,
+        `Here is the practical difference across ${COMPANY_NAME}'s life-insurance amounts:`,
         ``,
         `- ${basic?.name || 'Basic Life'} is the employer-paid base benefit, and the current summary lists it at $25,000`,
         `- ${term?.name || 'Voluntary Term Life'} is the employee-paid extra layer, and the current summary says coverage can be 1x to 5x annual salary up to $500,000`,
         `- ${term?.name || 'Voluntary Term Life'} is also the life option whose summary says spouse and dependent child coverage are available`,
         `- ${whole?.name || 'Whole Life'} is the permanent option with cash value, so the practical decision there is more about permanent coverage than maximizing the term amount`,
         ``,
-        `So if your question is how much extra life insurance you can get through AmeriVet, the main expandable amount is the voluntary term life option rather than the employer-paid basic life benefit.`,
+        `So if your question is how much extra life insurance you can get through ${COMPANY_NAME}, the main expandable amount is the voluntary term life option rather than the employer-paid basic life benefit.`,
       ].join('\n');
     }
 
@@ -411,10 +424,10 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Here is the practical takeaway on **${term?.name || 'Voluntary Term Life'}**:`,
         ``,
-        `- It is the extra employee-paid term coverage on top of AmeriVet's employer-paid basic life benefit`,
+        `- It is the extra employee-paid term coverage on top of ${COMPANY_NAME}'s employer-paid basic life benefit`,
         `- The summary describes it as **age-banded**, so the exact price depends on your age bracket and election amount in Workday`,
         `- The current summary also says spouse and dependent child coverage are available`,
-        `- It is described as portable if you leave AmeriVet`,
+        `- It is described as portable if you leave ${COMPANY_NAME}`,
         ``,
         `So the short version is that voluntary term life is usually the cleaner extra protection option when you want more life coverage without moving into whole-life cash-value design.`,
       ].join('\n');
@@ -434,7 +447,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
 
     if (/\b(whole life|term life|voluntary term(?:\s+life)?|basic life|voluntary life|difference|versus|vs\.?)\b/i.test(lower)) {
       return [
-        `Here is the practical difference across AmeriVet's life insurance options:`,
+        `Here is the practical difference across ${COMPANY_NAME}'s life insurance options:`,
         ``,
         `- ${basic?.name || 'Basic Life'} is the employer-paid base life and AD&D benefit`,
         `- ${term?.name || 'Voluntary Term Life'} is the extra employee-paid term coverage that is age-banded and can also cover spouse or dependent children`,
@@ -446,16 +459,36 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
   }
 
   if (topic === 'Disability') {
+    const { std, ltd } = getDisabilityPlans();
+    const stdSalaryFact = std ? extractFeatureFact(std.features, /replaces?.*salary/i) : undefined;
+    const stdDurationFact = std ? extractFeatureFact(std.features, /benefit period/i) : undefined;
+    const ltdSalaryFact = ltd ? extractFeatureFact(ltd.features, /replaces?.*salary/i) : undefined;
+    const ltdDurationFact = ltd ? extractFeatureFact(ltd.features, /benefit period/i) : undefined;
+
+    const stdSalaryPct = stdSalaryFact?.match(/(\d+)%/)?.[1] ?? '60';
+    const stdWeeks = stdDurationFact?.match(/(\d+)\s*weeks/i)?.[1] ?? '26';
+    const ltdSalaryPct = ltdSalaryFact?.match(/(\d+)%/)?.[1] ?? '60';
+
     if (costQuestion) {
+      const employerPaid = std?.features.some((f) => /employer.?paid/i.test(f));
+      if (employerPaid) {
+        return [
+          `Good news — both Short-Term Disability and Long-Term Disability are **employer-paid**, so there is no payroll deduction for this coverage.`,
+          ``,
+          `- **STD (${std?.provider ?? 'Unum'}):** replaces ${stdSalaryPct}% of salary, up to ${stdWeeks} weeks`,
+          `- **LTD (${ltd?.provider ?? 'Unum'}):** replaces ${ltdSalaryPct}% of salary once STD ends`,
+          ``,
+          `Since it costs you nothing, it is automatic coverage — you do not need to opt in.`,
+        ].join('\n');
+      }
       return [
-        `For disability cost, the current AmeriVet summary does **not** list the exact premium inline, so I do not want to guess.`,
+        `Both Short-Term Disability and Long-Term Disability through ${std?.provider ?? 'Unum'} are **voluntary, employee-paid** benefits — meaning you choose whether to enroll and the premium comes out of your paycheck.`,
         ``,
-        `What I can say confidently is:`,
-        `- Disability is an optional employee-paid protection benefit`,
-        `- It is meant to protect part of your income if illness or injury keeps you from working`,
-        `- The exact rate and any payroll deduction are the details to confirm in Workday`,
+        `Rates are **age-banded**, so the exact cost depends on your age at enrollment. You can see your specific rate in Workday during open enrollment.`,
         ``,
-        `So the grounded answer is: disability does cost extra, but the exact premium needs to come from Workday rather than me inventing a number.`,
+        `What the coverage provides:`,
+        `- **STD:** replaces ${stdSalaryPct}% of salary for up to ${stdWeeks} weeks (14-day elimination period for illness and injury)`,
+        `- **LTD:** replaces ${ltdSalaryPct}% of salary after STD ends; 180-day elimination period; maximum $5,000/month`,
       ].join('\n');
     }
 
@@ -463,19 +496,19 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Short-term disability and long-term disability are both income-protection benefits, but they solve different time horizons.`,
         ``,
-        `- **Short-Term Disability (STD):** replaces **60% of your salary** for up to **26 weeks** after the elimination period`,
-        `- **Long-Term Disability (LTD):** replaces **60% of your salary** for longer disabilities, once STD ends`,
+        `- **Short-Term Disability (STD) — ${std?.provider ?? 'Unum'}:** ${stdSalaryFact ?? `replaces ${stdSalaryPct}% of your salary`}, ${stdDurationFact ?? `for up to ${stdWeeks} weeks`}`,
+        `- **Long-Term Disability (LTD) — ${ltd?.provider ?? 'Unum'}:** ${ltdSalaryFact ?? `replaces ${ltdSalaryPct}% of your salary`}, ${ltdDurationFact ?? 'once STD ends'}`,
         ``,
-        `So the practical point is that short-term bridges the earlier phase, while long-term protects the paycheck if the work disruption lasts longer than expected. Both are through Unum.`,
+        `So the practical point is that short-term bridges the earlier phase, while long-term protects the paycheck if the disruption lasts beyond ${stdWeeks} weeks.`,
       ].join('\n');
     }
 
     if (/\b(waiting periods?|percentages?|maximum benefits?|max benefits?|how much.*pay|what percent|salary.*replac|replac.*salary)\b/i.test(lower)) {
       return [
-        `Both Short-Term Disability (STD) and Long-Term Disability (LTD) through Unum replace **60% of your pre-disability base salary**.`,
+        `Both Short-Term Disability (STD) and Long-Term Disability (LTD) through ${std?.provider ?? 'Unum'} replace **${stdSalaryPct}% of your pre-disability base salary**.`,
         ``,
-        `- **STD** pays 60% for up to **26 weeks** (after a short elimination period)`,
-        `- **LTD** takes over after STD ends and also pays 60%, for longer-lasting disabilities`,
+        `- **STD** pays ${stdSalaryPct}% for up to **${stdWeeks} weeks** (after the elimination period)`,
+        `- **LTD** takes over after STD ends and also pays ${ltdSalaryPct}%, for longer-lasting disabilities`,
         ``,
         `Exact elimination periods and any offsets depend on the Unum plan documents — confirm in Workday or your Unum certificate if you need the fine print.`,
       ].join('\n');
@@ -495,7 +528,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
   if (topic === 'Critical Illness') {
     if (costQuestion) {
       return [
-        `For critical illness pricing, I do **not** have a grounded flat-rate premium in the current AmeriVet summary, so I do not want to invent a ballpark.`,
+        `For critical illness pricing, I do **not** have a grounded flat-rate premium in the current benefits summary, so I do not want to invent a ballpark.`,
         ``,
         `What I can say confidently is:`,
         `- Critical illness is an optional employee-paid supplemental benefit`,
@@ -530,7 +563,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
   if (topic === 'Accident/AD&D') {
     if (costQuestion) {
       return [
-        `For accident coverage pricing, I do **not** have a grounded flat-rate premium in the current AmeriVet summary, so I do not want to invent a ballpark.`,
+        `For accident coverage pricing, I do **not** have a grounded flat-rate premium in the current benefits summary, so I do not want to invent a ballpark.`,
         ``,
         `What I can say confidently is:`,
         `- Accident/AD&D is an optional employee-paid supplemental benefit`,

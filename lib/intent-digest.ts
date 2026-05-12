@@ -123,7 +123,7 @@ export function digestIntent(
   if (stateCode === 'OR') {
     regionalCheck = 'REGIONAL CHECK: Oregon is Kaiser-eligible. Include Kaiser in medical options/comparisons and show in table form.';
   } else if (stateCode === 'GA') {
-    regionalCheck = 'REGIONAL CHECK: Georgia is Kaiser-eligible. Include Kaiser in medical options/comparisons and present the regional comparison in table form.';
+    regionalCheck = 'REGIONAL CHECK: Georgia is NOT Kaiser-eligible for 2026. Show only Standard HSA, Enhanced HSA, and PPO as medical options.';
   } else if (stateCode) {
     regionalCheck = `REGIONAL CHECK: ${stateCode} state lock applies. Only show region-eligible medical options.`;
   }

@@ -123,15 +123,15 @@ function isAllowedAmount(raw: string): boolean {
 // ── Plan name / carrier guard ─────────────────────────────────────────────────
 
 const KNOWN_PLAN_NAMES: readonly string[] = [
-  'standard hsa', 'enhanced hsa', 'kaiser standard hmo', 'kaiser',
-  'bcbstx dental ppo', 'bcbstx dental', 'vsp vision plus',
+  'standard hsa', 'enhanced hsa', 'bcbstx ppo', 'kaiser standard hmo', 'kaiser enhanced hmo', 'kaiser',
+  'bcbstx dental ppo', 'bcbstx dental', 'bcbstx vision', 'bcbstx vision plan',
   'unum basic life', 'unum basic life & ad&d', 'unum voluntary term life',
   'allstate whole life',
 ];
 
 const KNOWN_CARRIERS: readonly string[] = [
   'bcbstx', 'blue cross blue shield of texas', 'kaiser', 'kaiser permanente',
-  'vsp', 'unum', 'allstate',
+  'eyemed', 'unum', 'allstate', 'quantum health',
 ];
 
 function extractUnknownPlanNames(text: string): string[] {

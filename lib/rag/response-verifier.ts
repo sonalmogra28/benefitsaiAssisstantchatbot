@@ -202,8 +202,8 @@ function checkComparisonCompleteness(response: string, intent?: IntentType): str
 
   const lower = response.toLowerCase();
   const planNames = [
-    'standard hsa', 'enhanced hsa', 'kaiser', 'hmo',
-    'bcbstx', 'dental', 'vision', 'unum', 'vsp',
+    'standard hsa', 'enhanced hsa', 'kaiser', 'hmo', 'ppo',
+    'bcbstx', 'dental', 'vision', 'unum', 'eyemed',
   ];
   const mentioned = planNames.filter(name => lower.includes(name));
 

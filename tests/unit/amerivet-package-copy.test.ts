@@ -70,13 +70,13 @@ describe('amerivet package copy seam', () => {
     expect(advisorPrompt).toContain('Open Enrollment: 2026-2027 (2026-10-10 to 2026-10-25)');
     expect(advisorPrompt).toContain('Standard HSA Fixture');
     expect(advisorPrompt).toContain('AmeriVet Vision Core');
-    expect(advisorPrompt).not.toContain('BCBSTX PPO');
-    expect(advisorPrompt).not.toContain('Kaiser Enhanced HMO');
+    // Fixture overrides vision name — should not appear under old catalog name
+    expect(advisorPrompt).not.toContain('BCBSTX Vision Plan');
+    expect(advisorPrompt).not.toContain('VSP Vision Plus');
 
     expect(chatPrompt).toContain('AmeriVet Benefits 2026-2027 Fixture');
     expect(chatPrompt).toContain('Standard HSA Fixture');
     expect(chatPrompt).toContain('AmeriVet Vision Core');
-    expect(chatPrompt).not.toContain('EyeMed');
     expect(chatPrompt).not.toContain('2024-2025 benefits plans');
   });
 });

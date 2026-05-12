@@ -396,7 +396,7 @@ function tryComplianceFact(query: string, session: Session): DeterministicIntent
       const yourTierLine = tierAmt
         ? `\n\nAt your current tier (**${tierLabel}**), AmeriVet contributes **$${tierAmt}/year**.`
         : '';
-      contribText = `AmeriVet's HSA employer contribution by coverage tier:\n${allTierLines}${yourTierLine}`;
+      contribText = `AmeriVet contributes to your HSA based on your coverage tier:\n${allTierLines}${yourTierLine}`;
     }
     return {
       answer: [

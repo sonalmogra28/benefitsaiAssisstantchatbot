@@ -90,9 +90,9 @@ export const AMERIVET_MEDICAL_PLAN_SUMMARIES: MedicalPlanSummary[] = [
     displayName: 'Kaiser Standard HMO',
     provider: 'Kaiser',
     aliases: ['kaiser', 'kaiser hmo', 'kaiser standard', 'kaiser standard hmo'],
-    network: 'Integrated Kaiser network in CA, GA, WA, and OR',
-    deductible: '$1,000 individual / $2,000 family',
-    outOfPocketMax: '$4,500 individual',
+    network: 'Integrated Kaiser network in CA, OR, and WA (no Georgia for 2026)',
+    deductible: '$2,000 individual / $4,000 family',
+    outOfPocketMax: '$4,000 individual',
     preventiveCare: 'Preventive care is part of the integrated HMO benefit design',
     primaryCare: '$20 copay',
     specialist: '$45 copay',
@@ -110,7 +110,7 @@ export const AMERIVET_MEDICAL_PLAN_SUMMARIES: MedicalPlanSummary[] = [
       specialty: null,
       note: 'I do not yet have the prescription drug tier details in the current summary, so I do not want to guess.',
     },
-    notes: ['Available only in CA, GA, WA, and OR service areas'],
+    notes: ['Available only in CA, OR, and WA service areas (Georgia removed for 2026)'],
   },
 ];
 

@@ -1,4 +1,5 @@
 import type { Session } from '@/lib/rag/session-store';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 export function recordAssistantReply(session: Session, answer: string, query?: string): void {
   session.lastBotMessage = answer;
@@ -20,7 +21,7 @@ export function recordAssistantReply(session: Session, answer: string, query?: s
 }
 
 export function buildGateFailureEscalationMessage(hrPhone: string, enrollmentPortalUrl: string): string {
-  return `I don't have enough information to answer that accurately. Please contact the AmeriVet benefits team at ${hrPhone} or visit the enrollment portal at ${enrollmentPortalUrl} for assistance.`;
+  return `I don't have enough information to answer that accurately. Please contact the ${COMPANY_NAME} benefits team at ${hrPhone} or visit the enrollment portal at ${enrollmentPortalUrl} for assistance.`;
 }
 
 export function buildExplicitCategoryPrompt(category: string, enrollmentPortalUrl: string): string {
@@ -36,9 +37,9 @@ export function buildZeroChunkFallbackMessage(isContinuation: boolean, allBenefi
 }
 
 export function buildValidationSafeFallback(hrPhone: string, enrollmentPortalUrl: string): string {
-  return `I want to give you a fully accurate answer, but I could not validate this response with high confidence. Please rephrase your question in one sentence and include the exact benefit topic (medical, dental, vision, life, disability, or HSA/FSA). You can also contact AmeriVet HR/Benefits at ${hrPhone} or use ${enrollmentPortalUrl} for official plan details.`;
+  return `I want to give you a fully accurate answer, but I could not validate this response with high confidence. Please rephrase your question in one sentence and include the exact benefit topic (medical, dental, vision, life, disability, or HSA/FSA). You can also contact ${COMPANY_NAME} HR/Benefits at ${hrPhone} or use ${enrollmentPortalUrl} for official plan details.`;
 }
 
 export function buildSingleDentalPlanFallback(planName: string, provider: string): string {
-  return `AmeriVet offers a single dental plan: **${planName}** (${provider}).\n\nIf you'd like, I can compare it side-by-side with the vision plan or show pricing for a specific coverage tier.`;
+  return `${COMPANY_NAME} offers a single dental plan: **${planName}** (${provider}).\n\nIf you'd like, I can compare it side-by-side with the vision plan or show pricing for a specific coverage tier.`;
 }

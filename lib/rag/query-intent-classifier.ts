@@ -34,7 +34,7 @@ const YES_NO_PATTERNS = [
   /\b(is\s+(?:it|this|that)\s+(?:available|included|covered|portable|taxable))\b/i,
   /\b(am\s+i\s+(?:eligible|covered|enrolled))\b/i,
   /\b(do\s+i\s+(?:have|need|qualify|get))\b/i,
-  /\b(is\s+(?:kaiser|unum|allstate|bcbs|vsp)\s+(?:available|included))\b/i,
+  /\b(is\s+(?:kaiser|unum|allstate|bcbs|eyemed|bcbstx)\s+(?:available|included))\b/i,
 ];
 
 const FACTUAL_LOOKUP_PATTERNS = [

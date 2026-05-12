@@ -50,9 +50,9 @@ describe('Standard HSA (bcbstx-standard-hsa)', () => {
     expect(plan.coverage?.coinsurance?.inNetwork).toBe(0.2);
   });
 
-  it('out-of-pocket max is $6,500', () => {
-    expect(plan.benefits.outOfPocketMax).toBe(6500);
-    expect(plan.coverage?.outOfPocketMax).toBe(6500);
+  it('out-of-pocket max is $6,350', () => {
+    expect(plan.benefits.outOfPocketMax).toBe(6350);
+    expect(plan.coverage?.outOfPocketMax).toBe(6350);
   });
 
   it('is available nationwide', () => {
@@ -99,23 +99,24 @@ describe('Enhanced HSA (bcbstx-enhanced-hsa)', () => {
 describe('Kaiser Standard HMO (kaiser-standard-hmo)', () => {
   const plan = getPlan('kaiser-standard-hmo');
 
-  it('is available ONLY in California, Georgia, Washington, Oregon', () => {
+  it('is available ONLY in California, Oregon, and Washington (NOT Georgia — removed for 2026)', () => {
     const available = plan.regionalAvailability.map((r) => r.toLowerCase());
     expect(available).toContain('california');
-    expect(available).toContain('georgia');
     expect(available).toContain('washington');
     expect(available).toContain('oregon');
+    // Georgia removed for 2026
+    expect(available).not.toContain('georgia');
     // Must NOT include nationwide or Texas
     expect(available).not.toContain('nationwide');
     expect(available).not.toContain('texas');
   });
 
-  it('individual deductible is $1,000', () => {
-    expect(plan.benefits.deductible).toBe(1000);
+  it('individual deductible is $2,000 (2026 plan year)', () => {
+    expect(plan.benefits.deductible).toBe(2000);
   });
 
-  it('in-network coinsurance is 10%', () => {
-    expect(plan.benefits.coinsurance).toBe(0.1);
+  it('in-network coinsurance is 20% (2026 plan year)', () => {
+    expect(plan.benefits.coinsurance).toBe(0.2);
   });
 });
 
@@ -194,9 +195,14 @@ describe('HSA employer contributions', () => {
     expect(hsa.employerContribution).toBeDefined();
   });
 
-  it('Employee Only tier contribution is defined', () => {
+  it('Employee Only tier contribution is defined (Standard HSA gets more than Enhanced for 2026)', () => {
     if (typeof hsa.employerContribution === 'object') {
-      expect(hsa.employerContribution['Employee Only']).toBeGreaterThan(0);
+      // 2026: per-plan contributions — Standard HSA gets $750 individual, Enhanced gets $500 individual
+      const standardIndividual = hsa.employerContribution['Standard HSA - Individual (Employee Only)'];
+      const enhancedIndividual = hsa.employerContribution['Enhanced HSA - Individual (Employee Only)'];
+      expect(standardIndividual).toBeGreaterThan(0);
+      expect(enhancedIndividual).toBeGreaterThan(0);
+      expect(standardIndividual).toBeGreaterThan(enhancedIndividual);
     } else {
       expect(hsa.employerContribution).toBeGreaterThan(0);
     }

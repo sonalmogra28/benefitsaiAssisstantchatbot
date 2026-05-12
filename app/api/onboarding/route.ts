@@ -18,6 +18,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+const COMPANY_NAME = process.env.COMPANY_NAME ?? 'AmeriVet';
+
 // ============================================================================
 // 1. THE BRAIN: Entity Extraction & Intent Classification
 // ============================================================================
@@ -87,7 +89,7 @@ function classifyIntent(query: string) {
 // 2. SYSTEM PROMPT
 // ============================================================================
 function buildSystemPrompt(session: SessionState_Legacy): string {
-  return `You are the AmeriVet Benefits Assistant. You are helpful, professional, and focused on providing accurate benefits information.
+  return `You are the ${COMPANY_NAME} Benefits Assistant. You are helpful, professional, and focused on providing accurate benefits information.
 
 === USER CONTEXT ===
 User: ${session.userName || "Guest"}
@@ -155,7 +157,7 @@ export async function POST(req: NextRequest) {
         session.step = 'awaiting_demographics';
         // Fall through to next state
       } else {
-        const msg = `Hi there! Welcome! 🎉\n\nI'm your AmeriVet Benefits Assistant. I'm here to help you compare plans and find the right fit.\n\n🔒 *Your conversations are private. HR can see anonymous usage trends only — no one can read individual conversations or connect any topic to you personally.*\n\nLet's get started — what's your name?`;
+        const msg = `Hi there! Welcome! 🎉\n\nI'm your ${COMPANY_NAME} Benefits Assistant. I'm here to help you compare plans and find the right fit.\n\n🔒 *Your conversations are private. HR can see anonymous usage trends only — no one can read individual conversations or connect any topic to you personally.*\n\nLet's get started — what's your name?`;
         session.lastBotMessage = msg;
         await updateSession(sessionId, session);
         return NextResponse.json({ answer: msg, tier: 'L0' });
