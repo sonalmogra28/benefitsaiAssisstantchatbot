@@ -100,11 +100,13 @@ function buildEmployerLifeSplitGuidanceReply(query: string, session: Session): s
     || Boolean((session.familyDetails?.numChildren || 0) > 0)
     || /employee\s+\+\s+(spouse|child|family)/i.test(session.coverageTierLock || '')
     || /\b(wife|husband|spouse|partner|kids?|children|family|dependents?|other\s+people\s+rely\s+on\s+your\s+income|family\s+relies\s+on\s+your\s+income|depend(?:s)?\s+on\s+your\s+income|income\s+replacement|base\s+benefit\s+isn'?t\s+enough)\b/i.test(combined);
-  const intro = asksAmountOrProtectionDecision
-    ? hasFamilyOrIncomeContext
-      ? `If you are asking how I would structure extra life coverage once the included base benefit is not enough, AmeriVet's current employer guidance is **${rule.recommendationLabel}**.`
-      : `If you are asking how I would structure the paid life options on top of the included base benefit, AmeriVet's current employer guidance is **${rule.recommendationLabel}**.`
-    : `If you want a blended default between permanent coverage and extra term coverage, AmeriVet's current employer guidance is **${rule.recommendationLabel}**.`;
+  const intro = `Whole life insurance can be an important part of a well-rounded life insurance strategy.
+
+Term life insurance is designed to provide affordable protection during the years when your financial responsibilities are often highest, such as raising a family, paying a mortgage, or building your career. But term coverage typically ends later in life, often around ages 65 to 75. That can leave a gap at a time when your family may still need support for final expenses, legacy planning, estate needs, or ongoing financial protection.
+
+Whole life insurance helps fill that gap by providing guaranteed lifetime protection, as long as premiums are paid. It is coverage designed to stay with you, not just for a set number of years, but for your entire life.
+
+That is why a combination of term and whole life insurance can be so valuable. Term life can help protect your loved ones during your working years, while whole life can provide lasting protection for the years beyond. Together, they create a more complete plan that helps ensure your family has coverage when they need it most.`;
   const amountDecisionBullets = [
     `What that means in practice:`,
     `- Keep **${basic?.name || 'Basic Life'}** as the included base layer`,
@@ -184,7 +186,7 @@ function buildEmployerLifeSplitAdjustmentReply(query: string, session: Session):
   }
 
   return [
-    `The clean way I would use the **${defaultRule.recommendationLabel}** default is this: keep it as the starting split, then move off it only if the household clearly leans one direction.`,
+    `Here is a good way to think about the split between term and whole life: start with the larger share in **${term?.name || 'Voluntary Term Life'}** for income replacement, and keep a smaller permanent slice in **${whole?.name || 'Whole Life'}**. Adjust from there based on which goal matters more to you.`,
     ``,
     `- Keep **more ${term?.name || 'Voluntary Term Life'}** when the main job is bigger income replacement for the household`,
     `- Keep **more ${whole?.name || 'Whole Life'}** only when you specifically care about permanent coverage and cash-value features`,
@@ -608,7 +610,7 @@ export function buildLifeSizingGuidance(session: Session): string {
       `- Treat **${basic?.name || 'Basic Life'}** as the starting point, not the finished answer for a family that depends on your paycheck`,
       `- Make **${term?.name || 'Voluntary Term Life'}** the main added layer for income replacement`,
       `- Keep **${whole?.name || 'Whole Life'}** as the smaller permanent slice unless the cash-value / permanent-life features are part of the goal`,
-      `- In AmeriVet's default blended case, that usually means starting around **${defaultRule.recommendationLabel}**`,
+      `- A good starting point is a larger share in **${term?.name || 'Voluntary Term Life'}** for income replacement, with a smaller permanent slice in **${whole?.name || 'Whole Life'}**`,
       ``,
       `So my practical answer is: start by making sure the household has a meaningful **${term?.name || 'Voluntary Term Life'}** layer on top of the included base benefit, and only give **${whole?.name || 'Whole Life'}** a bigger role if the permanent-life features are truly part of why you are paying for more coverage.`,
     ].join('\n');

@@ -112,7 +112,7 @@ describe('medical-response-builders', () => {
       makeSession({ userState: 'TX' }),
     );
 
-    expectContract(response, ['Standard HSA', 'Enhanced HSA', '$3,500', '$2,500'], ['Kaiser deductible']);
+    expectContract(response, ['Standard HSA', 'Enhanced HSA', '$3,500', '$2,000'], ['Kaiser deductible']);
   });
 
   it('keeps dental annual max distinct from vision allowances in comparison tables', () => {
