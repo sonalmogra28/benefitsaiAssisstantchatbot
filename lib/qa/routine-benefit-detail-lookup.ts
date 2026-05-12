@@ -160,7 +160,7 @@ export function buildRoutineBenefitDetailAnswer(
       return [
         `The frame allowance is the amount the vision plan helps toward frames before you are paying the rest yourself.`,
         ``,
-        `In ${COMPANY_NAME}'s VSP Vision Plus plan, the source-backed perk is a $200 frame allowance.`,
+        `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), the frame allowance is **$130**, plus 20% off any balance above that.`,
         `So the practical question is whether your household actually buys glasses often enough for that allowance to matter.`,
       ].join('\n');
     }
@@ -170,7 +170,7 @@ export function buildRoutineBenefitDetailAnswer(
       return [
         `The LASIK discount means the vision plan gives you a discount arrangement for LASIK rather than treating it like standard medical coverage.`,
         ``,
-        lasikFeature ? `In ${COMPANY_NAME}'s VSP Vision Plus plan: ${lasikFeature}` : `In ${COMPANY_NAME}'s VSP Vision Plus plan, LASIK is mentioned as a discount feature rather than a full traditional coverage benefit.`,
+        lasikFeature ? `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network): ${lasikFeature}` : `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), LASIK is mentioned as a discount feature rather than a full traditional coverage benefit.`,
         `So this is more of a perk than a reason by itself to choose the plan unless someone in the household is already planning vision correction.`,
       ].join('\n');
     }

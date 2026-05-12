@@ -96,9 +96,9 @@ describe('Kaiser geography — Fix 30 (regionalAvailability + state-code expansi
     expect(plans.some(p => p.provider.toLowerCase().includes('kaiser'))).toBe(true);
   });
 
-  it('GA user gets Kaiser', () => {
+  it('GA user does NOT get Kaiser (removed for 2026)', () => {
     const plans = getAmerivetPlansByRegion('GA');
-    expect(plans.some(p => p.provider.toLowerCase().includes('kaiser'))).toBe(true);
+    expect(plans.some(p => p.provider.toLowerCase().includes('kaiser'))).toBe(false);
   });
 
   it('WA user gets Kaiser', () => {

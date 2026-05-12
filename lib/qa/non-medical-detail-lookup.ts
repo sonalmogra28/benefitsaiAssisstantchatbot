@@ -482,13 +482,13 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         ].join('\n');
       }
       return [
-        `For disability cost, the exact premium is not listed in the current benefits summary, so I do not want to guess.`,
+        `Both Short-Term Disability and Long-Term Disability through ${std?.provider ?? 'Unum'} are **voluntary, employee-paid** benefits — meaning you choose whether to enroll and the premium comes out of your paycheck.`,
         ``,
-        `What I can say confidently is:`,
-        `- Disability protects part of your income if illness or injury keeps you from working`,
-        `- STD replaces ${stdSalaryPct}% of salary for up to ${stdWeeks} weeks`,
-        `- LTD takes over after STD and also replaces ${ltdSalaryPct}% of salary`,
-        `- The exact payroll deduction is the part to confirm in Workday`,
+        `Rates are **age-banded**, so the exact cost depends on your age at enrollment. You can see your specific rate in Workday during open enrollment.`,
+        ``,
+        `What the coverage provides:`,
+        `- **STD:** replaces ${stdSalaryPct}% of salary for up to ${stdWeeks} weeks (14-day elimination period for illness and injury)`,
+        `- **LTD:** replaces ${ltdSalaryPct}% of salary after STD ends; 180-day elimination period; maximum $5,000/month`,
       ].join('\n');
     }
 

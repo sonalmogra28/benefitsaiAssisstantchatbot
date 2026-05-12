@@ -44,7 +44,7 @@ Here's where to search by plan:
 - **Medical (BCBSTX plans)**: bcbstx.com → Find a Doctor
 - **Medical (Kaiser)**: kp.org/care → Find a Doctor
 - **Dental (BCBSTX Dental PPO)**: bcbstx.com → Find a Dentist
-- **Vision (VSP)**: vsp.com → Find a Doctor
+- **Vision (BCBSTX / EyeMed network)**: bcbstx.com → Find a Doctor (Vision)
 
 All searches let you filter by specialty and ZIP code. Is there anything else I can help with — like comparing plan costs or checking what a service covers?`;
 

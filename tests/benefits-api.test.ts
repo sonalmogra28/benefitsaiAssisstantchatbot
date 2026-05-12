@@ -152,9 +152,9 @@ describe('Benefits Service', () => {
       expect(calculation).toBeDefined();
       expect(calculation?.planId).toBe('bcbstx-standard-hsa');
       expect(calculation?.tier).toBe('employeeOnly');
-      expect(calculation?.monthlyAmount).toBe(86.84);
-      expect(calculation?.biweeklyAmount).toBeCloseTo(40.08, 1);
-      expect(calculation?.annualAmount).toBe(1042.08);
+      expect(calculation?.monthlyAmount).toBe(108.55);
+      expect(calculation?.biweeklyAmount).toBeCloseTo(50.10, 1);
+      expect(calculation?.annualAmount).toBe(1302.60);
     });
 
     it('should calculate premium for different tiers', async () => {
@@ -260,8 +260,8 @@ describe('Benefits Service', () => {
       expect(enrollment).toBeDefined();
       expect(enrollment).toHaveProperty('year');
       expect(enrollment).toHaveProperty('effectiveDate');
-      expect(enrollment.year).toBe('2024-2025');
-      expect(enrollment.effectiveDate).toBe('2024-10-01');
+      expect(enrollment.year).toBe('2026');
+      expect(enrollment.effectiveDate).toBe('2026-01-01');
     });
   });
 

@@ -44,14 +44,14 @@ type TermEntry = {
 
 const TERMS: TermEntry[] = [
   {
-    aliases: ['vsp', 'vsp vision plus', 'vsp vision', 'vision service plan'],
+    aliases: ['eyemed', 'bcbstx vision', 'vsp', 'vsp vision plus', 'vsp vision', 'vision service plan'],
     topicContexts: ['Vision'],
     build: () => [
-      `VSP stands for **Vision Service Plan**.`,
+      `${COMPANY_NAME}'s vision plan is through **BCBSTX**, using the **EyeMed** provider network.`,
       ``,
-      `In ${COMPANY_NAME}'s package, VSP is the carrier behind the **VSP Vision Plus** plan — the vision coverage option.`,
+      `EyeMed has one of the largest vision networks in the country — you can find in-network eye doctors and optometrists at bcbstx.com.`,
       ``,
-      `So when you see VSP in the plan list, that is ${COMPANY_NAME}'s vision carrier.`,
+      `Note: AmeriVet switched from VSP to BCBSTX/EyeMed for the 2026 plan year.`,
     ].join('\n'),
   },
   {

@@ -62,15 +62,14 @@ GROUNDING RULES (non-negotiable):
 CARRIER LOCK (immutable - never re-assign a carrier to a different product):
   UNUM     = Basic Life & AD&D, Voluntary Term Life, Short-Term Disability, Long-Term Disability ONLY.
   ALLSTATE = Group Whole Life (Permanent), Accident Insurance, Critical Illness ONLY.
-  BCBSTX   = Medical (Standard HSA, Enhanced HSA) and Dental PPO ONLY.
-  VSP      = Vision ONLY.
-  KAISER   = Medical HMO - California, Oregon, Washington ONLY. NEVER mention in any other state.
+  BCBSTX   = Medical (Standard HSA, Enhanced HSA, PPO), Dental PPO, AND Vision Plan (EyeMed network) ONLY.
+  KAISER   = Medical HMO - California, Oregon, Washington ONLY. NEVER mention Kaiser for Georgia or any other state.
   RIGHTWAY = NOT an AmeriVet carrier. NEVER mention Rightway in any response under any circumstances.
 
 BANNED ENTITIES - NEVER include in responses:
-- "Rightway" or "Right Way" - NOT an AmeriVet resource or carrier.
+- "Rightway" or "Right Way" - NOT an AmeriVet resource. Use "Quantum Health" for care navigation (effective 2026).
 - "DHMO" - AmeriVet does NOT offer a DHMO dental plan. Only BCBSTX Dental PPO.
-- "PPO" as a medical plan name - AmeriVet medical plans are "Standard HSA" and "Enhanced HSA" (they use BCBSTX PPO network, but the plans are NOT called "PPO").
+- "VSP" - AmeriVet switched to BCBSTX Vision (EyeMed network) for 2026. Do not mention VSP.
 - Phone number (305) 851-7310 - this is NOT an AmeriVet number.
 
 DATA SCRUB RULES:

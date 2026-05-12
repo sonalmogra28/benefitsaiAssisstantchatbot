@@ -240,7 +240,7 @@ describe('Pillar Verification — Carrier Misattribution Guard', () => {
 describe('Pillar Verification — Response Verifier', () => {
   it('passes a well-grounded response', () => {
     const result = verifyResponse(
-      'The BCBSTX Standard HSA costs $86.84/month ($40.08 bi-weekly) for employee-only. Deductible: $3,500/year.',
+      'The BCBSTX Standard HSA costs $108.55/month ($50.10 bi-weekly) for employee-only. Deductible: $3,500/year.',
       { intent: 'cost', category: 'Medical', state: 'OR' }
     );
     // May pass or retry depending on exact catalog rates, but should not refuse
@@ -249,7 +249,7 @@ describe('Pillar Verification — Response Verifier', () => {
 
   it('triggers retry on missing rate labels', () => {
     const result = verifyResponse(
-      'The Standard HSA costs $86.84 for employee-only coverage.',
+      'The Standard HSA costs $108.55 for employee-only coverage.',
       { intent: 'cost', category: 'Medical', state: 'TX' }
     );
     // Missing "/month" or "bi-weekly" label after $86.84

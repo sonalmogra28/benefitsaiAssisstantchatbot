@@ -65,20 +65,24 @@ describe('conversation scenario regressions', () => {
     ]);
   });
 
-  it('answers Kaiser availability consistently for Georgia and Texas', () => {
+  it('answers Kaiser availability consistently — GA and TX are both non-Kaiser states for 2026', () => {
     const georgia = buildKaiserAvailabilityFaqAnswer('GA');
     const texas = buildKaiserAvailabilityFaqAnswer('TX');
+    const california = buildKaiserAvailabilityFaqAnswer('CA');
 
-    expectContractPhrases(georgia, ['Yes', 'GA', 'Kaiser HMO is available'], ['not available in GA']);
+    expectContractPhrases(georgia, ['not available in GA', 'Standard HSA', 'Enhanced HSA'], ['Kaiser HMO is available in GA']);
     expectContractPhrases(texas, ['not available in TX', 'Standard HSA', 'Enhanced HSA'], ['Yes — Kaiser HMO is available in TX']);
+    expectContractPhrases(california, ['Yes', 'CA', 'Kaiser HMO is available'], ['not available in CA']);
   });
 
-  it('clarifies standalone PPO requests instead of pretending there is a traditional medical PPO', () => {
+  it('acknowledges the BCBSTX PPO plan and HSA options when users ask about a PPO', () => {
     expect(isStandaloneMedicalPpoRequest('Do you have a PPO plan in Georgia?')).toBe(true);
 
     const response = buildPpoClarificationForState('GA');
-    expectContractPhrases(response, ['does not offer a standalone PPO medical plan', 'Kaiser Standard HMO', 'nationwide PPO network'], [
-      'traditional PPO is available',
+    // GA is NOT a Kaiser state for 2026; AmeriVet now has a BCBSTX PPO plan
+    expectContractPhrases(response, ['BCBSTX PPO', 'Standard HSA', 'Enhanced HSA', 'nationwide PPO network'], [
+      'Kaiser Standard HMO',
+      'does not offer a standalone PPO medical plan',
     ]);
   });
 
@@ -94,7 +98,7 @@ describe('conversation scenario regressions', () => {
 
     expect(response).toBeTruthy();
     expectContractPhrases(response!, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO'], [
-      'Kaiser Standard HMO is only available in CA, GA, WA, and OR.',
+      'Kaiser Standard HMO is only available in CA, OR, and WA.',
     ]);
   });
 
@@ -109,7 +113,7 @@ describe('conversation scenario regressions', () => {
     });
 
     expect(response).toBeTruthy();
-    expectContractPhrases(response!, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO is only available in CA, GA, WA, and OR'], [
+    expectContractPhrases(response!, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO is only available in CA, OR, and WA'], [
       '- Kaiser Standard HMO (Kaiser Permanente)',
     ]);
   });
@@ -145,7 +149,7 @@ describe('conversation scenario regressions', () => {
   it('produces a stable dental-versus-vision comparison table', () => {
     const response = buildDentalVisionComparisonResponse(makeSession());
 
-    expectContractPhrases(response, ['BCBSTX Dental PPO', 'VSP Vision Plus', '| Carrier |', '| Deductible |'], [
+    expectContractPhrases(response, ['BCBSTX Dental PPO', 'BCBSTX Vision', '| Carrier |', '| Deductible |'], [
       'DHMO',
     ]);
   });
@@ -301,7 +305,7 @@ describe('conversation scenario regressions', () => {
   it('redirects non-Kaiser states back to HSA comparison instead of forcing Kaiser', () => {
     const response = buildKaiserUnavailableFallback(makeSession({ userState: 'NY' }), 'redirect');
 
-    expectContractPhrases(response, ['Kaiser is only available in California, Georgia, Washington, and Oregon', 'Enhanced HSA', 'side-by-side comparison'], [
+    expectContractPhrases(response, ['Kaiser is only available in California, Oregon, and Washington', 'Enhanced HSA', 'side-by-side comparison'], [
       'Kaiser Standard HMO is available in NY',
     ]);
   });
@@ -345,7 +349,7 @@ describe('conversation scenario regressions', () => {
       expect(response).toBeTruthy();
       expectContractPhrases(
         response!,
-        ["I can't look up individual providers", 'bcbstx.com', 'vsp.com', 'kp.org'],
+        ["I can't look up individual providers", 'bcbstx.com', 'kp.org'],
         ['Standard HSA', 'Enhanced HSA'],
       );
     });

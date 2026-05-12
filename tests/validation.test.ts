@@ -28,8 +28,8 @@ describe('Validation Tests (converted from validation-tests.ts)', () => {
     const plan = 'Standard HSA';
     const monthly = monthlyPremiumForPlan(plan, 'employee + child');
     expect(monthly).toBeDefined();
-    // Canonical catalog premium
-    expect(monthly).toBe(190.31);
+    // Canonical catalog premium (2026: Standard HSA employee+child = $539.35/mo)
+    expect(monthly).toBe(539.35);
 
     const perPay = perPaycheckFromMonthly(monthly, 26);
     // cents-accurate biweekly premium
@@ -49,11 +49,11 @@ describe('Validation Tests (converted from validation-tests.ts)', () => {
     const decisionsTracker = {
       MEDICAL: { status: 'selected', value: 'Standard HSA' },
       DENTAL: { status: 'selected', value: 'BCBSTX Dental PPO' },
-      VISION: { status: 'selected', value: 'VSP Vision Plus' },
+      VISION: { status: 'selected', value: 'BCBSTX Vision Plan' },
     };
     const total = computeTotalMonthlyFromSelections(decisionsTracker, 'employee + child');
-    // 190.31 (medical) + 72.45 (dental) + 20.10 (vision)
-    expect(total).toBe(282.86);
+    // Standard HSA $539.35 + Dental PPO $75.04 + Vision Plan $10.48
+    expect(total).toBe(624.87);
   });
 
   it('ensure state consistency removes other states', () => {

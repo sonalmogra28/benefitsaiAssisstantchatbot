@@ -16,7 +16,7 @@ describe('benefits comparison tools', () => {
     });
 
     expect(result.costs).toHaveLength(2);
-    expect(result.costs[0].monthlyCost).toBe(86.84);
+    expect(result.costs[0].monthlyCost).toBe(108.55);
     expect(result.costs[1].monthlyCost).toBe(113.93);
   });
 

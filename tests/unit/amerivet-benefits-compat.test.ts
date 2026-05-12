@@ -27,8 +27,8 @@ describe('amerivet-benefits compatibility layer', () => {
   });
 
   it('accepts legacy coverage tier strings when calculating employee cost', () => {
-    expect(calculateEmployeeCost('bcbstx-standard-hsa', 'employee')).toBe(86.84);
-    expect(calculateEmployeeCost('bcbstx-standard-hsa', 'employee+family')).toBe(321.45);
+    expect(calculateEmployeeCost('bcbstx-standard-hsa', 'employee')).toBe(108.55);
+    expect(calculateEmployeeCost('bcbstx-standard-hsa', 'employee+family')).toBe(695.39);
   });
 
   it('can run against a fixture package for region and premium changes', () => {
