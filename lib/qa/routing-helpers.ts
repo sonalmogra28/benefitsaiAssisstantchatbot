@@ -21,7 +21,43 @@ type L1FAQEntry = {
   answer: (args: L1FAQArgs) => string;
 };
 
+const PROVIDER_DIRECTORY_PATTERNS: RegExp[] = [
+  /\bfind\s+(?:an?\s+)?(?:in[- ]network\s+)?(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\bin[- ]network\s+(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\b(?:where|how)\s+(?:can|do|should)\s+i\s+find\s+(?:an?\s+)?(?:in[- ]network\s+)?(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\bprovider\s+(?:directory|search|lookup|locator|finder)\b/i,
+  /\bfind\s+a\s+provider\b/i,
+  /\bnetwork\s+(?:provider|doctor|dentist|physician|specialist)\b/i,
+  /\bfind\s+(?:an?\s+)?in[- ]network\b/i,
+  /\bhow\s+(?:do|can)\s+i\s+(?:search|look\s+up|locate|find)\s+(?:a\s+)?(?:provider|doctor|dentist|specialist)\b/i,
+];
+
+const PROVIDER_DIRECTORY_EXCLUSIONS: RegExp[] = [
+  /\bis\s+my\s+(?:doctor|dentist|optometrist|provider|specialist)\s+in[- ]network\b/i,
+  /\bdoes\s+my\s+plan\s+cover\s+(?:providers?|doctors?)\s+in\b/i,
+  /\bam\s+i\s+covered\b/i,
+];
+
+const PROVIDER_DIRECTORY_ANSWER = `I can't look up individual providers — that requires the carrier's live provider directory, which I don't have access to.
+
+Here's where to search by plan:
+- **Medical (BCBSTX plans)**: bcbstx.com → Find a Doctor
+- **Medical (Kaiser)**: kp.org/care → Find a Doctor
+- **Dental (BCBSTX Dental PPO)**: bcbstx.com → Find a Dentist
+- **Vision (VSP)**: vsp.com → Find a Doctor
+
+All searches let you filter by specialty and ZIP code. Is there anything else I can help with — like comparing plan costs or checking what a service covers?`;
+
+export function isProviderDirectoryQuery(query: string): boolean {
+  if (PROVIDER_DIRECTORY_EXCLUSIONS.some(p => p.test(query))) return false;
+  return PROVIDER_DIRECTORY_PATTERNS.some(p => p.test(query));
+}
+
 const L1_FAQ: L1FAQEntry[] = [
+  {
+    patterns: PROVIDER_DIRECTORY_PATTERNS,
+    answer: () => PROVIDER_DIRECTORY_ANSWER,
+  },
   {
     patterns: [/\b(hr\s*(phone|number|contact|line)|phone\s*number.*hr|call\s*(hr|human\s*resources)|hr\s*hotline|how\s*do\s*i\s*(call|reach|contact)\s*(hr|amerivet))\b/i],
     answer: ({ enrollmentPortalUrl, hrPhone }) => `${COMPANY_NAME} HR/Benefits can be reached at ${hrPhone}. For self-service enrollment, visit ${enrollmentPortalUrl}.`,
@@ -326,6 +362,10 @@ export function checkL1FAQ(query: string, args: L1FAQArgs): string | null {
     const queryState = resolveQueryStateForFaq(query);
     const fallbackState = args.userState?.trim().toUpperCase() || undefined;
     return buildKaiserAvailabilityFaqAnswer(queryState ?? fallbackState);
+  }
+
+  if (isProviderDirectoryQuery(query)) {
+    return PROVIDER_DIRECTORY_ANSWER;
   }
 
   const lower = query.toLowerCase();
