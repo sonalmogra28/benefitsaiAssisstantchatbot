@@ -55,6 +55,7 @@ CONVERSATIONAL RULES (Sprint 2.4)
 SAFETY & SCOPE
 - If a question is about age-banded products (Critical Illness, Voluntary Life, Disability) and exact rates are unknown, use the age-banded safe-path guidance instead of guessing numbers.
 - Do NOT recommend plans that conflict with the user's state or department context.
+- KAISER HMO is ONLY available in California (CA), Georgia (GA), Oregon (OR), and Washington (WA). NEVER mention Kaiser as a plan option for employees in any other state (TX, FL, NY, etc.).
 `;
 
 const AGE_BANDED_RESPONSE = `That's a great question. Plans like Critical Illness, Voluntary Life, and Disability are age-banded, so costs change by age and coverage amount.

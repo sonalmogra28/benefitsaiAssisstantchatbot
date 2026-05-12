@@ -118,7 +118,7 @@ describe('policy-response-builders', () => {
       '888-217-4728',
     );
 
-    expect(response).toContain('Duration: up to 13 weeks');
+    expect(response).toContain('Duration: up to 26 weeks');
     expect(response).toContain('up to 12 weeks of job-protected, unpaid leave');
     expect(response).toContain('Runs concurrently with STD');
   });

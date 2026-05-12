@@ -94,7 +94,7 @@ export function buildParentalLeavePlan(enrollmentPortalUrl: string, hrPhone: str
 Step 1 - Short-Term Disability (STD) via Unum
 - STD covers disability from delivery itself (childbirth is a covered disability event).
 - Standard benefit: 60% of weekly salary after the elimination period (typically 7 days for illness).
-- Duration: up to 13 weeks from the qualifying disability date.
+- Duration: up to 26 weeks from the qualifying disability date.
 - File your STD claim with Unum before your due date. Unum will coordinate with your OB to confirm delivery date and disability period.
 
 Step 2 - FMLA (Federal Family and Medical Leave Act)

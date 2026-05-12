@@ -155,18 +155,18 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         employeeFamily: 412.37,
       },
       benefits: {
-        deductible: 2500,
+        deductible: 2000,
         outOfPocketMax: 5500,
-        coinsurance: 0.15,
+        coinsurance: 0.2,
         description: 'Lower deductible with enhanced employer HSA contribution.',
       },
       coverage: {
         deductibles: {
-          individual: 2500,
-          family: 5000,
+          individual: 2000,
+          family: 4000,
         },
         coinsurance: {
-          inNetwork: 0.15,
+          inNetwork: 0.2,
           outOfNetwork: 0.4,
         },
         copays: {
@@ -179,7 +179,6 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       features: [
         'Enhanced HSA contribution',
         'Nationwide provider access',
-        'Includes access to Centers of Excellence',
       ],
       limitations: [
         'Out-of-network deductible applies separately',
@@ -274,14 +273,11 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         basic: 0.2,
         major: 0.5,
       },
-      copays: {
-        orthodontia: 500,
-      },
       outOfPocketMax: 1500,
     },
     features: [
       'Preventive care covered at 100%',
-      'Orthodontia coverage available',
+      'Orthodontia: 50% covered, up to $1,000 lifetime maximum',
       'Nationwide PPO network',
     ],
     limitations: [
@@ -397,7 +393,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       features: [
         'Coverage: 1x to 5x annual salary (up to $500,000)',
-        'Guaranteed Issue: up to $150,000 during open enrollment',
+        'Guaranteed Issue: up to $200,000 during initial open enrollment only — not available in subsequent annual enrollment periods',
         'Spouse and dependent child coverage available',
         'Portable — can continue coverage after leaving AmeriVet',
       ],
