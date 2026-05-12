@@ -446,13 +446,91 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       voluntaryType: 'life',
     }),
+    // ── UNUM: Short-Term Disability (Employer-Paid) ──────────────────────────
+    createPlan({
+      id: 'unum-std',
+      name: 'Unum Short-Term Disability',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'disability',
+      description: 'Employer-paid short-term disability coverage replacing 60% of salary for up to 26 weeks.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Replaces 60% of base salary for up to 26 weeks after the elimination period.',
+      },
+      features: [
+        'Replaces 60% of pre-disability base salary',
+        'Benefit period: up to 26 weeks from qualifying disability date',
+        'Elimination period: typically 7 days for illness, 1 day for accident — confirm in plan docs',
+        'Employer-paid — no employee premium deducted',
+      ],
+      limitations: [
+        'Does not replace 100% of salary — replaces 60%',
+        'Benefit period capped at 26 weeks',
+      ],
+      eligibility: {
+        employeeType: 'all',
+        minHours: 20,
+      },
+    }),
+    // ── UNUM: Long-Term Disability (Employer-Paid) ───────────────────────────
+    createPlan({
+      id: 'unum-ltd',
+      name: 'Unum Long-Term Disability',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'disability',
+      description: 'Employer-paid long-term disability coverage replacing 60% of salary once STD exhausts.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Replaces 60% of base salary once short-term disability ends.',
+      },
+      features: [
+        'Replaces 60% of pre-disability base salary',
+        'Begins after short-term disability period ends (approximately 26 weeks)',
+        'Benefit period: to age 65 or Social Security Normal Retirement Age',
+        'Employer-paid — no employee premium deducted',
+      ],
+      limitations: [
+        'Does not replace 100% of salary — replaces 60%',
+        'Only activates after STD benefit period is exhausted',
+      ],
+      eligibility: {
+        employeeType: 'all',
+        minHours: 20,
+      },
+    }),
   ],
   regionalPlans: {
     California: ['kaiser-standard-hmo'],
     Georgia: ['kaiser-standard-hmo'],
     Oregon: ['kaiser-standard-hmo'],
     Washington: ['kaiser-standard-hmo'],
-    nationwide: ['bcbstx-standard-hsa', 'bcbstx-enhanced-hsa', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life', 'unum-voluntary-life', 'allstate-whole-life'],
+    nationwide: ['bcbstx-standard-hsa', 'bcbstx-enhanced-hsa', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life', 'unum-voluntary-life', 'allstate-whole-life', 'unum-std', 'unum-ltd'],
   },
   openEnrollment: {
     year: '2024-2025',

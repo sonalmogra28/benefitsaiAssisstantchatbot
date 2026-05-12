@@ -58,7 +58,7 @@ describe('conversation scenario regressions', () => {
     );
 
     expect(response).toBeTruthy();
-    expectContractPhrases(response!, ['Rightway is not an AmeriVet benefits resource', HR_PHONE], [
+    expectContractPhrases(response!, ['Rightway is not part of the', HR_PHONE], [
       'gold PPO',
       'Rightway support is included',
     ]);

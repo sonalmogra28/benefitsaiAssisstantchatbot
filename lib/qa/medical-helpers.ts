@@ -7,6 +7,7 @@ import {
   isKaiserEligibleForState,
   type AmerivetBenefitsPackage,
 } from '@/lib/data/amerivet-package';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 type KaiserUnavailableVariant = 'compare' | 'pricing' | 'redirect';
 type MedicalHelperOptions = {
@@ -187,10 +188,10 @@ export function buildPpoClarificationForState(
     : '';
 
   if (state && isKaiserEligibleForState(state, benefitsPackage) && kaiser) {
-    return `AmeriVet does not offer a standalone PPO medical plan. Your medical options are ${basePlanNames}${sharedProvider} plus ${kaiser.name} in ${state}. The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
+    return `${COMPANY_NAME} does not offer a standalone PPO medical plan. Your medical options are ${basePlanNames}${sharedProvider} plus ${kaiser.name} in ${state}. The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
   }
   const stateNote = state ? ` In ${state}, your medical options are ${basePlanNames}${sharedProvider}.` : '';
-  return `AmeriVet does not offer a standalone PPO medical plan.${stateNote} The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
+  return `${COMPANY_NAME} does not offer a standalone PPO medical plan.${stateNote} The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
 }
 
 export function buildPpoClarificationFallback(session: Pick<Session, 'userState'>): string {

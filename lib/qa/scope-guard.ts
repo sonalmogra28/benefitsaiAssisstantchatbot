@@ -1,3 +1,5 @@
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
+
 type ScopeGuardArgs = {
   enrollmentPortalUrl: string;
   hrPhone: string;
@@ -7,7 +9,7 @@ export function buildScopeGuardResponse(query: string, args: ScopeGuardArgs): st
   const lower = query.toLowerCase();
 
   if (/\b(password|passcode|credential|credentials)\b/i.test(lower) || (/\b(log\s*in|login|sign\s*in|enroll)\b/i.test(lower) && /\bfor\s+me\b/i.test(lower))) {
-    return `I cannot process credentials or log into accounts for you. Please use Workday directly at ${args.enrollmentPortalUrl} or contact AmeriVet HR/Benefits at ${args.hrPhone} for enrollment help.`;
+    return `I cannot process credentials or log into accounts for you. Please use Workday directly at ${args.enrollmentPortalUrl} or contact ${COMPANY_NAME} HR/Benefits at ${args.hrPhone} for enrollment help.`;
   }
 
   if (/\b(legal\s+advice|lawsuit|sue|attorney|lawyer)\b/i.test(lower)) {
@@ -27,7 +29,7 @@ export function buildScopeGuardResponse(query: string, args: ScopeGuardArgs): st
   }
 
   if (/\b(poem|dragons|homework|essay|story)\b/i.test(lower)) {
-    return 'I can help with AmeriVet benefits questions, including medical, dental, vision, life, disability, and HSA/FSA topics.';
+    return `I can help with ${COMPANY_NAME} benefits questions, including medical, dental, vision, life, disability, and HSA/FSA topics.`;
   }
 
   return null;
