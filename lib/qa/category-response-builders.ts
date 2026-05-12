@@ -298,6 +298,13 @@ export function buildCategoryExplorationResponse({
     }
 
     msg += `\nVoluntary life rates are age-banded — your exact premium depends on your age and the coverage amount you elect in Workday: ${enrollmentPortalUrl}.`;
+
+    msg += `\n\n---\n\n`;
+    msg += `**Why term and whole life work well together:**\n\n`;
+    msg += `Term life insurance is designed to provide affordable protection during the years when your financial responsibilities are often highest, such as raising a family, paying a mortgage, or building your career. But term coverage typically ends later in life, often around ages 65 to 75. That can leave a gap at a time when your family may still need support for final expenses, legacy planning, estate needs, or ongoing financial protection.\n\n`;
+    msg += `Whole life insurance helps fill that gap by providing guaranteed lifetime protection, as long as premiums are paid. It is coverage designed to stay with you, not just for a set number of years, but for your entire life.\n\n`;
+    msg += `That is why a combination of term and whole life insurance can be so valuable. Term life can help protect your loved ones during your working years, while whole life can provide lasting protection for the years beyond. Together, they create a more complete plan that helps ensure your family has coverage when they need it most.`;
+
     msg += `\n\n${buildPackageNextStepPrompt('Life', session)}`;
     return msg;
   };

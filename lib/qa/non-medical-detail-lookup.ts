@@ -310,7 +310,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         ``,
         `Here is the practical layering in AmeriVet's package:`,
         `- **${basic?.name || 'Basic Life & AD&D'}** is the included $25,000 employer-paid base — everyone eligible gets that automatically`,
-        `- **${term?.name || 'Voluntary Term Life'}** is the main way to buy more coverage — the current summary lists it at 1x to 5x annual salary up to $500,000, employee-paid and age-banded, with guaranteed issue up to $150,000 during open enrollment`,
+        `- **${term?.name || 'Voluntary Term Life'}** is the main way to buy more coverage — the current summary lists it at 1x to 5x annual salary up to $500,000, employee-paid and age-banded, with guaranteed issue up to $200,000 during initial open enrollment`,
         `- **${whole?.name || 'Whole Life'}** is the permanent cash-value option you can layer on top as well, with rates locked at your enrollment age`,
         ``,
         `So the short version is: the **$25,000** base is only the starting point — if that feels too small, voluntary term life is usually the cleaner first layer, and whole life is worth adding only if permanent coverage plus cash value is part of the goal.`,
@@ -347,9 +347,9 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Guaranteed issue means there is an amount you can elect during open enrollment without going through full medical underwriting.`,
         ``,
-        `In AmeriVet's current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is listed up to $150,000 during open enrollment.`,
+        `In AmeriVet's current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is up to $200,000 — but only during initial open enrollment. This is not available in subsequent annual enrollment periods.`,
         ``,
-        `The practical point is that guaranteed issue makes it easier to add term life without extra health questions, at least up to the stated limit.`,
+        `The practical point is that guaranteed issue makes it easier to add term life without extra health questions, at least up to the stated limit. If you miss this window, you will need to go through medical underwriting for amounts above the basic employer-paid coverage.`,
       ].join('\n');
     }
 
@@ -463,24 +463,21 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Short-term disability and long-term disability are both income-protection benefits, but they solve different time horizons.`,
         ``,
-        `- Short-term disability helps with temporary time away from work`,
-        `- Long-term disability matters when the disability lasts longer and the work interruption is not brief`,
-        `- In the current AmeriVet summary, the exact waiting periods, percentages, and maximum benefits still depend on the actual plan documents in Workday`,
+        `- **Short-Term Disability (STD):** replaces **60% of your salary** for up to **26 weeks** after the elimination period`,
+        `- **Long-Term Disability (LTD):** replaces **60% of your salary** for longer disabilities, once STD ends`,
         ``,
-        `So the practical point is that short-term bridges the earlier phase, while long-term protects the paycheck if the work disruption lasts longer than expected.`,
+        `So the practical point is that short-term bridges the earlier phase, while long-term protects the paycheck if the work disruption lasts longer than expected. Both are through Unum.`,
       ].join('\n');
     }
 
-    if (/\b(waiting periods?|percentages?|maximum benefits?|max benefits?)\b/i.test(lower)) {
+    if (/\b(waiting periods?|percentages?|maximum benefits?|max benefits?|how much.*pay|what percent|salary.*replac|replac.*salary)\b/i.test(lower)) {
       return [
-        `I can keep this grounded in the AmeriVet package, and the current summary does not list the exact disability waiting periods, replacement percentages, or maximum benefits inline.`,
+        `Both Short-Term Disability (STD) and Long-Term Disability (LTD) through Unum replace **60% of your pre-disability base salary**.`,
         ``,
-        `What it does say is:`,
-        `- Short-Term Disability helps with temporary time away from work`,
-        `- Long-Term Disability helps if the disability lasts longer`,
-        `- The exact waiting periods, percentages, and maximum benefits depend on the actual plan documents in Workday`,
+        `- **STD** pays 60% for up to **26 weeks** (after a short elimination period)`,
+        `- **LTD** takes over after STD ends and also pays 60%, for longer-lasting disabilities`,
         ``,
-        `So I do not want to guess at those numbers, but I can still help explain when disability is worth prioritizing.`,
+        `Exact elimination periods and any offsets depend on the Unum plan documents — confirm in Workday or your Unum certificate if you need the fine print.`,
       ].join('\n');
     }
 

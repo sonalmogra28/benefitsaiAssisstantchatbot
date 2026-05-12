@@ -83,7 +83,7 @@ function buildAllowedAmounts(): Set<string> {
 
   // Well-known plan limits mentioned in the catalog copy
   addAmt(25000);   // Basic Life flat benefit
-  addAmt(150000);  // Voluntary Term Life GI limit
+  addAmt(200000);  // Voluntary Term Life GI limit (initial open enrollment only)
   addAmt(500000);  // Voluntary Term Life max face value
   addAmt(300);     // Commuter monthly (already in commuter, but explicit)
   addAmt(750);     // HSA EE-only contribution

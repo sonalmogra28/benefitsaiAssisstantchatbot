@@ -68,22 +68,16 @@ export function buildRoutineBenefitDetailAnswer(
     const premium = dental.tiers[tierKey];
 
     if (/\borthodont(?:ia|ic|ics)?\b|\bbraces\b/i.test(lower)) {
-      const isAffirmativeAsk = /^\s*(?:do(?:es)?|is|are|can|will)\b/i.test(lower)
-        || /\bcover(?:s|ed)?\b/i.test(lower)
-        || /\b(?:included|include)\b/i.test(lower);
-      const leadIn = isAffirmativeAsk
-        ? `Yes — orthodontia is covered on AmeriVet's dental plan. Here's what to know:`
-        : `For braces, the practical question is not just whether orthodontia exists on the plan, but how much of the cost the plan actually helps with.`;
+      const orthodontiaFeature = dental.features.find((f) => /orthodont/i.test(f));
       return [
-        leadIn,
+        `Yes — orthodontia is covered on AmeriVet's dental plan.`,
         ``,
-        `${dental.name}: orthodontia is included rather than excluded outright.`,
-        '',
-        typeof orthoCopay === 'number' ? `- Orthodontia copay: $${orthoCopay}` : '',
-        typeof orthoCopay === 'number' ? `- In plain language, orthodontia copay is $${orthoCopay}` : '',
-        '- This is more helpful than a dental plan with no orthodontic benefit at all',
-        '- You still need to confirm any age limits, waiting periods, and orthodontic maximums in Workday before counting on a specific dollar outcome',
-      ].filter(Boolean).join('\n');
+        orthodontiaFeature
+          ? `${dental.name}: ${orthodontiaFeature}.`
+          : `${dental.name}: orthodontia is included.`,
+        ``,
+        `- Age limits and waiting periods may apply — confirm details in Workday before counting on a specific dollar outcome`,
+      ].join('\n');
     }
 
     if (/\b(waiting\s+period|how\s+long\s+before|when\s+does\s+major\s+service)\b/i.test(lower)) {
