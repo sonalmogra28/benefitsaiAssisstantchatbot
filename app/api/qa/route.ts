@@ -387,12 +387,6 @@ function detectDecision(query: string): { category: string; decision: string; st
   return null;
 }
 
-function isSummaryRequest(query: string): boolean {
-  const lower = query.toLowerCase();
-  return /\b(summary|summarize|summarise|recap|review|what\s+(?:have\s+i|did\s+i)\s+(?:decided|chosen|picked|selected)|show\s+(?:me\s+)?my\s+(?:choices|selections|decisions)|wrap\s*up|overview\s+of\s+my)\b/i.test(lower);
-
-}
-
 type TopicAction = 'overview' | 'comparison' | 'pricing' | 'question';
 type TopicHistoryEntry = { topic: string; action: TopicAction; at: number };
 
