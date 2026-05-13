@@ -22,6 +22,5 @@ export default defineConfig({
     include: ['tests/eval/llm-judge.test.ts'],
     environmentOptions: { jsdom: { url: 'http://localhost' } },
     coverage: { provider: 'v8' },
-    pool: isWindows ? 'forks' : 'threads',
   },
 });

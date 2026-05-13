@@ -31,6 +31,11 @@ export type Session = {
     lastTransitionPromptAt?: number;
     lastRecommendationPromptAt?: number;
     stateUpdatedAt?: number;
+    topicHistory?: Array<{
+      topic: string;
+      action: 'overview' | 'comparison' | 'pricing' | 'question';
+      at: number;
+    }>;
   };
   // Conversational UX state
   turn?: number;

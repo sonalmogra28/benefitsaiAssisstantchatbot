@@ -387,6 +387,101 @@ function detectDecision(query: string): { category: string; decision: string; st
   return null;
 }
 
+function isSummaryRequest(query: string): boolean {
+  const lower = query.toLowerCase();
+  return /\b(summary|summarize|summarise|recap|review|what\s+(?:have\s+i|did\s+i)\s+(?:decided|chosen|picked|selected)|show\s+(?:me\s+)?my\s+(?:choices|selections|decisions)|wrap\s*up|overview\s+of\s+my)\b/i.test(lower);
+
+}
+
+type TopicAction = 'overview' | 'comparison' | 'pricing' | 'question';
+type TopicHistoryEntry = { topic: string; action: TopicAction; at: number };
+
+function describeTopicAction(topic: string, action: TopicAction): string {
+  if (action === 'comparison') return `${topic} comparison`;
+  if (action === 'pricing') return `${topic} pricing`;
+  if (action === 'question') return `${topic} questions`;
+  return `${topic} overview`;
+}
+
+function buildTopicRecap(
+  topicHistory: TopicHistoryEntry[] | undefined,
+  completedTopics: string[] | undefined
+): string[] {
+  const items: string[] = [];
+  const seen = new Set<string>();
+
+  if (topicHistory && topicHistory.length > 0) {
+    const sorted = [...topicHistory].sort((a, b) => a.at - b.at);
+    for (const entry of sorted) {
+      const label = describeTopicAction(entry.topic, entry.action);
+      if (seen.has(label)) continue;
+      seen.add(label);
+      items.push(label);
+    }
+    return items;
+  }
+
+  if (completedTopics && completedTopics.length > 0) {
+    for (const topic of completedTopics) {
+      const label = describeTopicAction(topic, 'overview');
+      if (seen.has(label)) continue;
+      seen.add(label);
+      items.push(label);
+    }
+  }
+
+  return items;
+}
+
+function compileSummary(
+  decisions: Record<string, any>,
+  userName: string,
+  completedTopics?: string[],
+  topicHistory?: TopicHistoryEntry[]
+): string {
+  const entries = Object.entries(decisions);
+  const topicRecap = buildTopicRecap(topicHistory, completedTopics);
+  if (entries.length === 0 && topicRecap.length === 0) {
+    return `I don't have any benefit decisions recorded yet, ${userName}. Would you like to start exploring? Available benefits include: ${ALL_BENEFITS_SHORT}`;
+  }
+
+  let summary = `Here's a quick recap so far, ${userName}:\n\n`;
+  if (topicRecap.length > 0) {
+    summary += `Topics covered:\n`;
+    for (const item of topicRecap) {
+      summary += `- ${item}\n`;
+    }
+    summary += `\n`;
+  }
+
+  if (entries.length > 0) {
+    summary += `Decisions recorded:\n`;
+    for (const [category, value] of entries) {
+      const entry = typeof value === 'string' ? { status: 'selected', value } : value;
+      if (entry.status === 'selected') {
+        summary += `- ${category}: ${entry.value || 'Selected'}\n`;
+      } else if (entry.status === 'declined') {
+        summary += `- ${category}: Declined\n`;
+      } else {
+        summary += `- ${category}: Interested (no final decision yet)\n`;
+      }
+    }
+  }
+
+  const allCategories = ['Medical', 'Dental', 'Vision', 'Life Insurance', 'Disability', 'Critical Illness', 'Accident/AD&D', 'HSA/FSA'];
+  const remaining = allCategories.filter(c => !decisions[c]);
+  if (entries.length === 0) {
+    summary += `No benefit decisions recorded yet. Want to choose a plan or explore another benefit?`;
+  } else if (remaining.length > 0) {
+    summary += `\nBenefits you haven't explored yet: ${remaining.join(', ')}\n`;
+    summary += `\nWould you like to look into any of these?`;
+  } else {
+    summary += `\nYou've reviewed all available benefits! When you're ready to enroll, visit the portal at ${ENROLLMENT_PORTAL_URL}`;
+  }
+
+  return summary;
+}
+
 function getRemainingBenefits(decisions: Record<string, any>): string[] {
   const allCategories = ['Medical', 'Dental', 'Vision', 'Life Insurance', 'Disability', 'Critical Illness', 'Accident/AD&D', 'HSA/FSA'];
   return allCategories.filter(c => !decisions[c]);
@@ -932,6 +1027,19 @@ type IntentDomainRoute = 'policy' | 'pricing' | 'general';
 const buildTopicSummaryMarkdown = (topicLabel: string): string => {
   return `Quick summary of ${topicLabel.toLowerCase()}:`;
 };
+
+function recordTopicInteraction(session: Session, topic: string, action: TopicAction) {
+  const safeTopic = topic?.trim();
+  if (!safeTopic) return;
+  session.context = session.context || {};
+  const history = session.context.topicHistory || [];
+  const last = history[history.length - 1];
+  if (last && last.topic === safeTopic && last.action === action) return;
+  const next = [...history, { topic: safeTopic, action, at: Date.now() }];
+  session.context.topicHistory = next.slice(-8);
+  if (!session.completedTopics) session.completedTopics = [];
+  if (!session.completedTopics.includes(safeTopic)) session.completedTopics.push(safeTopic);
+}
 
 type PreprocessSignals = {
   hasQLEIntent: boolean;
@@ -1653,7 +1761,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] SUMMARY requested`);
         const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
         const decisions = session.decisionsTracker || {};
-        const msg = compileSummary(decisions, nameRef, ENROLLMENT_PORTAL_URL, ALL_BENEFITS_SHORT);
+        const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
         session.lastBotMessage = plainMsg;
         await updateSession(sessionId, session);
@@ -1821,8 +1929,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         noPricingMode: session.noPricingMode || intent.noPricing,
       });
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
-      session.currentTopic = 'Medical';
-      session.coverageTierLock = coverageTier;
+      recordTopicInteraction(session, 'Medical', 'comparison');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'medical-comparison' } });
@@ -2208,6 +2315,20 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       }
     }
 
+    // ========================================================================
+    // FOLLOW-UP: YES to compare dental vs vision
+    // ========================================================================
+    const lastAskedCompare = /compare\s+with\s+vision|compare\s+with\s+vision\s+coverage|compare\s+vision/i.test(session.lastBotMessage || '');
+    if (!pipelineFirstMode && isYes && lastAskedCompare && (session.currentTopic || '').toLowerCase().includes('dental')) {
+      logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] YES-COMPARE-DENTAL-VISION`);
+      const dentalVisionMsg = buildDentalVisionComparisonResponse(session);
+      const dentalVisionPlain = toPlainAssistantText(dentalVisionMsg);
+      recordTopicInteraction(session, 'Dental vs Vision', 'comparison');
+      session.lastBotMessage = dentalVisionPlain;
+      await updateSession(sessionId, session);
+      return NextResponse.json({ answer: dentalVisionPlain, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'yes-compare-dental-vision' } });
+    }
+
     const asksForBenefitsOverview =
       !!session.dataConfirmed &&
       /\b(all\s+(?:the\s+)?benefits|benefits\s+overview|what\s+(?:are|other)\s+(?:all\s+)?(?:the\s+)?benefits|what\s+benefits\s+do\s+i\s+(?:have|get|qualify\s+for)|what\s+other\s+benefits\s+do\s+i\s+qualify\s+for|show\s+me\s+(?:all\s+)?(?:my\s+)?benefits)\b/i.test(lowerQuery);
@@ -2272,6 +2393,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] COMPARE-DENTAL-VISION`);
       const msg = buildDentalVisionComparisonResponse(session);
       const plainMsg = toPlainAssistantText(applyPricingExclusion(msg, session.noPricingMode || intent.noPricing));
+      recordTopicInteraction(session, 'Dental vs Vision', 'comparison');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'compare-dental-vision' } });
@@ -2284,6 +2406,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       let msg = `${COMPANY_NAME} offers one comprehensive dental plan: **${ACTIVE_AMERIVET_CATALOG.dentalPlan.name}** (${ACTIVE_AMERIVET_CATALOG.dentalPlan.provider}).\n\n`;
       msg += `If you'd like, I can give you a quick vision summary too, or we can move on to life, disability, or supplemental benefits next.`;
       const plainMsg = toPlainAssistantText(applyPricingExclusion(session.noPricingMode ? stripPricingDetails(msg) : msg, session.noPricingMode || intent.noPricing));
+      recordTopicInteraction(session, 'Dental', 'overview');
       session.lastBotMessage = plainMsg;
       await updateSession(sessionId, session);
       return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { intercept: 'compare-dental-only' } });
@@ -2360,7 +2483,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         logger.info(`[REQ:${reqId}][STEP-7 INTERCEPT] CATEGORY-EXPLORATION: ${normalizeBenefitCategory(lowerQuery)}`);
         // Track current topic so "no thanks" / "skip" can decline it
         session.currentTopic = normalizeBenefitCategory(lowerQuery);
-        markTopicCompleted(session, session.currentTopic);
+        recordTopicInteraction(session, session.currentTopic, 'overview');
       const plainCategoryResponse = toPlainAssistantText(applyPricingExclusion(categoryExplorationIntercept, session.noPricingMode || intent.noPricing));
         session.lastBotMessage = plainCategoryResponse;
         await updateSession(sessionId, session);
@@ -2583,10 +2706,17 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
       logger.warn(`[REQ:${reqId}][GATE2 FAIL] ${result.gateFailReason}, topScore=${result.gateTopScore?.toFixed(3)}`);
 
       if (pipelineFirstMode) {
+        if (isSummaryRequest(query)) {
+          logger.info(`[REQ:${reqId}][GATE2 FALLBACK] SUMMARY requested after gate failure`);
+          const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
+          const decisions = session.decisionsTracker || {};
+          const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
+          const plainMsg = toPlainAssistantText(msg);
+          session.lastBotMessage = plainMsg;
+          await updateSession(sessionId, session);
+          return NextResponse.json({ answer: plainMsg, tier: 'L1', sessionContext: buildSessionContext(session), metadata: { gatePass: false, intercept: 'summary-fallback' } });
+        }
         const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
-        const summaryAnswer = isSummaryRequest(query)
-          ? toPlainAssistantText(compileSummary(session.decisionsTracker || {}, nameRef, ENROLLMENT_PORTAL_URL, ALL_BENEFITS_SHORT))
-          : null;
         const recommendationAnswer = buildRecommendationOverview(query, session)
           ? toPlainAssistantText(applyPricingExclusion(buildRecommendationOverview(query, session)!, session.noPricingMode || intent.noPricing))
           : null;
@@ -2596,7 +2726,7 @@ For enrollment: ${ENROLLMENT_PORTAL_URL} | HR: ${HR_PHONE}`;
         const pipelineFallback = resolvePipelineFirstFallback({
           query,
           session,
-          summaryAnswer,
+          summaryAnswer: null,
           faqAnswer: checkL1FAQ(query, { enrollmentPortalUrl: ENROLLMENT_PORTAL_URL, hrPhone: HR_PHONE, userState: session.userState }),
           ppoAnswerFactory: () => toPlainAssistantText(buildPpoClarificationFallback(session)),
           recommendationAnswer,
@@ -3178,10 +3308,35 @@ Answer directly from the IMMUTABLE CATALOG. Name the plan. State the exact figur
       logger.warn(`[REQ:${reqId}][STEP-11 GATE-FAIL] validation gate blocked response: ${validationGateFailures.join(', ')}`);
 
       if (pipelineFirstMode) {
-        const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
-        const summaryAnswer = isSummaryRequest(query)
-          ? toPlainAssistantText(compileSummary(session.decisionsTracker || {}, nameRef, ENROLLMENT_PORTAL_URL, ALL_BENEFITS_SHORT))
-          : null;
+        if (isSummaryRequest(query)) {
+          logger.info(`[REQ:${reqId}][STEP-11 FALLBACK] SUMMARY requested after validation gate failure`);
+          const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
+          const decisions = session.decisionsTracker || {};
+          const msg = compileSummary(decisions, nameRef, session.completedTopics, session.context?.topicHistory);
+          const plainMsg = toPlainAssistantText(msg);
+          session.lastBotMessage = plainMsg;
+          if (!session.messages) session.messages = [];
+          session.messages.push(
+            { role: 'user', content: query },
+            { role: 'assistant', content: plainMsg }
+          );
+          if (session.messages.length > 6) {
+            session.messages = session.messages.slice(-6);
+          }
+          await updateSession(sessionId, session);
+          return NextResponse.json({
+            answer: plainMsg,
+            tier: 'L1',
+            citations: result.chunks,
+            sessionContext: buildSessionContext(session),
+            metadata: {
+              category,
+              validationGate: { passed: false, failures: validationGateFailures, generationScore: finalGenQuality.score },
+              validation: { retrieval: pipelineResult.retrieval, reasoning: pipelineResult.reasoning, output: pipelineResult.output, overallPassed: pipelineResult.overallPassed },
+              intercept: 'summary-validation-fallback'
+            },
+          });
+        }
         const medicalAnswer = highConfidenceMedicalFallback
           ? buildMedicalPlanFallback(query, session)
           : null;
@@ -3189,7 +3344,7 @@ Answer directly from the IMMUTABLE CATALOG. Name the plan. State the exact figur
           query,
           session,
           interceptSuffix: '-validation',
-          summaryAnswer,
+          summaryAnswer: null,
           faqAnswer: checkL1FAQ(query, { enrollmentPortalUrl: ENROLLMENT_PORTAL_URL, hrPhone: HR_PHONE, userState: session.userState }),
           ppoAnswerFactory: () => toPlainAssistantText(buildPpoClarificationFallback(session)),
           medicalAnswer: medicalAnswer ? toPlainAssistantText(medicalAnswer) : null,
