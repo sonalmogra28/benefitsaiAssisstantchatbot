@@ -18,9 +18,12 @@ import { getCoverageTierForQuery, hasExplicitNoPregnancyOverride, isKaiserEligib
 import pricingUtils from '@/lib/rag/pricing-utils';
 
 function availableMedicalSummaries(session: Session): MedicalPlanSummary[] {
+  const kaiserEligible = isKaiserEligibleState(session.userState);
   return AMERIVET_MEDICAL_PLAN_SUMMARIES.filter((plan) => {
-    if (plan.planKey !== 'kaiser_standard_hmo') return true;
-    return isKaiserEligibleState(session.userState);
+    if (plan.planKey === 'kaiser_standard_hmo' || plan.planKey === 'kaiser_enhanced_hmo') {
+      return kaiserEligible;
+    }
+    return true;
   });
 }
 
@@ -28,6 +31,7 @@ const PLAN_KEY_TO_CATALOG_ID: Record<MedicalPlanSummary['planKey'], string> = {
   standard_hsa: 'bcbstx-standard-hsa',
   enhanced_hsa: 'bcbstx-enhanced-hsa',
   kaiser_standard_hmo: 'kaiser-standard-hmo',
+  kaiser_enhanced_hmo: 'kaiser-enhanced-hmo',
 };
 
 function normalizeCoverageTierKey(tier: string): BenefitTier {

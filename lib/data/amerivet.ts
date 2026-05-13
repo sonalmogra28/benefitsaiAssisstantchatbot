@@ -37,6 +37,7 @@ export interface BenefitPlan {
     coinsurance?: Record<string, number>;
     copays?: Record<string, number>;
     outOfPocketMax?: number;
+    outOfPocketMaxFamily?: number;
   };
   voluntaryType?: 'life' | 'disability' | 'supplemental';
 }
@@ -117,6 +118,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
           outOfNetwork: 0.5,
         },
         outOfPocketMax: 6350,
+        outOfPocketMaxFamily: 12700,
       },
       features: [
         'HSA-eligible plan (HDHP)',
@@ -170,6 +172,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
           outOfNetwork: 0.5,
         },
         outOfPocketMax: 5000,
+        outOfPocketMaxFamily: 9200,
       },
       features: [
         'HSA-eligible plan (HDHP)',
@@ -216,8 +219,8 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       coverage: {
         deductibles: {
-          individual: 2000,
-          family: 4000,
+          individual: 2500,
+          family: 5000,
         },
         coinsurance: {
           inNetwork: 0.3,
@@ -231,6 +234,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
           emergencyRoom: 500,
         },
         outOfPocketMax: 7500,
+        outOfPocketMaxFamily: 15000,
       },
       features: [
         'Copays for office visits — no deductible required: PCP $50 | Specialist $75 | Virtual $30 | Urgent Care $75',
@@ -290,6 +294,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
           emergencyRoom: 250,
         },
         outOfPocketMax: 4000,
+        outOfPocketMaxFamily: 8000,
       },
       features: [
         'Low copays: PCP $20 | Specialist $30 | Urgent Care $20 (CA/WA) or $30 (OR)',
@@ -346,6 +351,7 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
           emergencyRoom: 200,
         },
         outOfPocketMax: 2500,
+        outOfPocketMaxFamily: 5000,
       },
       features: [
         'Very low deductible: $500 individual / $1,000 family',
@@ -1013,7 +1019,8 @@ export function getCatalogForPrompt(stateCode?: string | null): string {
     for (const p of medPlans) {
       lines.push(`[${p.id}] ${p.name} | Provider: ${p.provider}`);
       lines.push(`  Premiums: Employee $${p.tiers.employeeOnly}/mo (${biw(p.tiers.employeeOnly)}/bi-wk) | +Spouse $${p.tiers.employeeSpouse}/mo | +Child $${p.tiers.employeeChildren}/mo | Family $${p.tiers.employeeFamily}/mo`);
-      lines.push(`  Deductible: $${p.benefits.deductible} ind | OOP Max: $${p.benefits.outOfPocketMax} ind | Coinsurance: ${p.benefits.coinsurance * 100}%`);
+      const familyOop = p.coverage?.outOfPocketMaxFamily ? ` / $${p.coverage.outOfPocketMaxFamily} family` : '';
+      lines.push(`  Deductible: $${p.benefits.deductible} ind / $${p.coverage?.deductibles?.family ?? '?'} family | OOP Max: $${p.benefits.outOfPocketMax} ind${familyOop} | Coinsurance: ${p.benefits.coinsurance * 100}%`);
       if (p.coverage?.copays && Object.keys(p.coverage.copays).length > 0) {
         const copayStr = Object.entries(p.coverage.copays).map(([k, v]) => `${k}: $${v}`).join(' | ');
         lines.push(`  Copays: ${copayStr}`);

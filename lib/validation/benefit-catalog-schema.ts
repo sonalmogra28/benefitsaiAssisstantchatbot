@@ -47,6 +47,7 @@ export const benefitPlanSchema = z.object({
       coinsurance: z.record(z.string(), z.number()).optional(),
       copays: z.record(z.string(), z.number()).optional(),
       outOfPocketMax: z.number().optional(),
+      outOfPocketMaxFamily: z.number().optional(),
     })
     .optional(),
   voluntaryType: z.enum(['life', 'disability', 'supplemental']).optional(),
