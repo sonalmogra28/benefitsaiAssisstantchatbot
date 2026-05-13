@@ -68,7 +68,7 @@ describe('medical-response-builders', () => {
       noPricingMode: true,
     });
 
-    expectContract(response, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO is available only in California, Georgia, Washington, and Oregon'], ['$']);
+    expectContract(response, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO is available only in California, Oregon, and Washington'], ['$']);
   });
 
   it('answers enhanced HSA deductible questions from the shared medical fallback', () => {
@@ -118,7 +118,7 @@ describe('medical-response-builders', () => {
   it('keeps dental annual max distinct from vision allowances in comparison tables', () => {
     const response = buildDentalVisionComparisonResponse(makeSession());
 
-    expectContract(response, ['BCBSTX Dental PPO', 'VSP Vision Plus', '$1500'], ['Vision annual max $1500']);
+    expectContract(response, ['BCBSTX Dental PPO', 'BCBSTX Vision Plan', '$1500'], ['Vision annual max $1500']);
   });
 
   it('compares all California medical options including Kaiser for individual coverage', () => {
@@ -127,7 +127,7 @@ describe('medical-response-builders', () => {
       makeSession({ userState: 'CA' }),
     );
 
-    expectContract(response, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO', '$6,500', '$5,500', '$4,500'], []);
+    expectContract(response, ['Standard HSA', 'Enhanced HSA', 'Kaiser Standard HMO', '$6,350', '$5,000', '$4,000'], []);
   });
 
   it('nudges frequent-care users toward evaluating Enhanced HSA first without making absolute claims', () => {

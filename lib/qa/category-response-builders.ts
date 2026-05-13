@@ -7,6 +7,7 @@ import {
   isKaiserEligibleForState,
   type AmerivetBenefitsPackage,
 } from '@/lib/data/amerivet-package';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 function buildTierPricingLines(tiers: { employeeOnly: number; employeeSpouse: number; employeeChildren: number; employeeFamily: number }) {
   return [
@@ -166,7 +167,12 @@ export function buildCategoryExplorationResponse({
     if (preventiveCovered !== null) msg += `- Preventive: ${preventiveCovered}% covered\n`;
     if (basicCovered !== null) msg += `- Basic services: ${basicCovered}% covered\n`;
     if (majorCovered !== null) msg += `- Major services: ${majorCovered}% covered\n`;
-    if (typeof orthoCopay === 'number') msg += `- Orthodontia copay: $${orthoCopay}\n`;
+    if (typeof orthoCopay === 'number') {
+      msg += `- Orthodontia copay: $${orthoCopay}\n`;
+    } else {
+      const orthodontiaFeature = dental.features?.find((f) => /orthodont/i.test(f));
+      if (orthodontiaFeature) msg += `- ${orthodontiaFeature}\n`;
+    }
     if (typeof outOfPocketMax === 'number') msg += `- Out-of-pocket max: $${outOfPocketMax}\n`;
     if (dental.features?.length) msg += `\nKey features:\n${dental.features.map((feature) => `- ${feature}`).join('\n')}\n`;
     if (dental.limitations?.length) msg += `\nLimitations:\n${dental.limitations.map((item) => `- ${item}`).join('\n')}\n`;
@@ -298,6 +304,13 @@ export function buildCategoryExplorationResponse({
     }
 
     msg += `\nVoluntary life rates are age-banded — your exact premium depends on your age and the coverage amount you elect in Workday: ${enrollmentPortalUrl}.`;
+
+    msg += `\n\n---\n\n`;
+    msg += `**Why term and whole life work well together:**\n\n`;
+    msg += `Term life insurance is designed to provide affordable protection during the years when your financial responsibilities are often highest, such as raising a family, paying a mortgage, or building your career. But term coverage typically ends later in life, often around ages 65 to 75. That can leave a gap at a time when your family may still need support for final expenses, legacy planning, estate needs, or ongoing financial protection.\n\n`;
+    msg += `Whole life insurance helps fill that gap by providing guaranteed lifetime protection, as long as premiums are paid. It is coverage designed to stay with you, not just for a set number of years, but for your entire life.\n\n`;
+    msg += `That is why a combination of term and whole life insurance can be so valuable. Term life can help protect your loved ones during your working years, while whole life can provide lasting protection for the years beyond. Together, they create a more complete plan that helps ensure your family has coverage when they need it most.`;
+
     msg += `\n\n${buildPackageNextStepPrompt('Life', session)}`;
     return msg;
   };
@@ -354,7 +367,7 @@ export function buildCategoryExplorationResponse({
     }
 
     if (wantsSupplemental && !wantsCritical && !wantsAccident && !wantsDisability) {
-      msg += `Supplemental benefits are optional coverages that sit alongside your main medical plan. For AmeriVet, that generally includes benefits like critical illness and accident protection.\n\n`;
+      msg += `Supplemental benefits are optional coverages that sit alongside your main medical plan. For ${COMPANY_NAME}, that generally includes benefits like critical illness and accident protection.\n\n`;
       msg += `They are typically meant to provide extra cash support when something significant happens, rather than replace your core medical coverage.\n`;
     }
 
@@ -415,7 +428,13 @@ export function buildDentalVisionComparisonResponse(
   msg += `| Preventive | ${preventiveCovered !== null ? `${preventiveCovered}% covered` : 'Covered'} | N/A |\n`;
   msg += `| Basic services | ${basicCovered !== null ? `${basicCovered}% covered` : 'Covered'} | N/A |\n`;
   msg += `| Major services | ${majorCovered !== null ? `${majorCovered}% covered` : 'Covered'} | N/A |\n`;
-  msg += `| Orthodontia | ${typeof dentalOrthoCopay === 'number' ? `$${dentalOrthoCopay} copay` : 'Available'} | Not applicable |\n`;
+  const dentalOrthoDisplay = typeof dentalOrthoCopay === 'number'
+    ? `$${dentalOrthoCopay} copay`
+    : (() => {
+        const feat = dental.features?.find((f) => /orthodont/i.test(f));
+        return feat ?? 'Available';
+      })();
+  msg += `| Orthodontia | ${dentalOrthoDisplay} | Not applicable |\n`;
   msg += `| Exam copay | N/A | ${typeof visionCopays.exam === 'number' ? `$${visionCopays.exam}` : 'Included'} |\n`;
   msg += `| Lenses copay | N/A | ${typeof visionCopays.lenses === 'number' ? `$${visionCopays.lenses}` : 'Included'} |\n`;
 

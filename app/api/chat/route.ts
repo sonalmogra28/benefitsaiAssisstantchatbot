@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 // Hard-coded enrollment portal — source of truth for all CTA links.
 const WORKDAY_ENROLLMENT_URL = 'https://wd5.myworkday.com/amerivet/login.html';
 const HR_PHONE = process.env.HR_PHONE_NUMBER || '888-217-4728';
+const COMPANY_NAME = process.env.COMPANY_NAME ?? 'AmeriVet';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, PERMISSIONS } from '@/lib/auth/unified-auth';
@@ -359,8 +360,8 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (reque
         : `Kaiser HMO is NOT available in ${stateCode} — NEVER mention Kaiser as an option.`;
       return [
         `<Critical_Instruction>`,
-        `You are your AmeriVet Benefits Assistant.`,
-        `You are a helpful AmeriVet-specific benefits counselor: informative, proactive, and never pushy.`,
+        `You are your ${COMPANY_NAME} Benefits Assistant.`,
+        `You are a helpful ${COMPANY_NAME}-specific benefits counselor: informative, proactive, and never pushy.`,
         `You must answer ONLY from the IMMUTABLE CATALOG below. Never use training data.`,
         `</Critical_Instruction>`,
         ``,
@@ -394,16 +395,16 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (reque
         `  KAISER   = Medical HMO — CA/GA/OR/WA ONLY. ${kaiserRule}`,
         ``,
         `BANNED entities — NEVER mention these in any response:`,
-        `  - "Rightway" / "RightWay" / "Right Way" — NOT an AmeriVet carrier or resource.`,
-        `  - "DHMO" — AmeriVet does NOT offer a DHMO dental plan. Only BCBSTX Dental PPO.`,
-        `  - "PPO" as a medical plan name — AmeriVet medical plans are "Standard HSA" and "Enhanced HSA" (they use BCBSTX PPO network, but the plans are NOT called "PPO").`,
-        `  - Phone number (305) 851-7310 — this is NOT an AmeriVet number.`,
+        `  - "Rightway" / "RightWay" / "Right Way" — NOT a ${COMPANY_NAME} carrier or resource.`,
+        `  - "DHMO" — ${COMPANY_NAME} does NOT offer a DHMO dental plan. Only BCBSTX Dental PPO.`,
+        `  - "PPO" as a medical plan name — ${COMPANY_NAME} medical plans are "Standard HSA" and "Enhanced HSA" (they use BCBSTX PPO network, but the plans are NOT called "PPO").`,
+        `  - Phone number (305) 851-7310 — this is NOT a ${COMPANY_NAME} number.`,
         `</Carrier_Lock>`,
         ``,
         `<Catalog_Rules>`,
         `1. STRICTLY FORBIDDEN: Do not ask for age or state — they are confirmed above.`,
         `2. Answer ONLY from the catalog below. Never invent plans, premiums, or benefit types not listed.`,
-        `3. If the user asks about a benefit NOT in the catalog, say: "That benefit isn't part of AmeriVet's package." then list what IS available.`,
+        `3. If the user asks about a benefit NOT in the catalog, say: "That benefit isn't part of ${COMPANY_NAME}'s package." then list what IS available.`,
         `4. Always show premiums as "$X.XX/month ($Y.YY bi-weekly)".`,
         `5. Rate frequency: quote ONLY as monthly or per-paycheck (bi-weekly). Never say "annual" for premiums.`,
         `6. WHY → prose paragraphs. WHAT → markdown tables. Never mix.`,
@@ -437,7 +438,7 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (reque
         const updated = await conversationService.patchMetadata(conversation.id, { awaiting: 'name' });
         conversation.metadata = updated.metadata ?? {};
         return sendEligibilityMessage(
-          "Hi! 👋 I'm your AmeriVet Benefits Assistant. My goal is to make this easy, friendly, and stress-free so you feel confident in your choices.\n\nℹ️ **Heads-up**: I'm here to help you understand your options, think through what fits best, and decide what to consider next. You'll make your official selections later in your company's enrollment system.\n\nLet's begin—what's your first name?"
+          `Hi! 👋 I'm your ${COMPANY_NAME} Benefits Assistant. My goal is to make this easy, friendly, and stress-free so you feel confident in your choices.\n\nℹ️ **Heads-up**: I'm here to help you understand your options, think through what fits best, and decide what to consider next. You'll make your official selections later in your company's enrollment system.\n\nLet's begin—what's your first name?`
         );
       }
 
@@ -809,8 +810,8 @@ Which of these would you like to learn about next?`
     // 2. OUT-OF-CATALOG GUARD — intercept before any LLM call.
     if (mapped.isAboutBenefitNotInCatalog) {
       return sendAssistantMessage(
-        `I'm sorry, but that benefit isn't part of the AmeriVet benefits package. ` +
-        `AmeriVet offers: ${getCatalogScopeCopy(conversation.metadata?.state)}. ` +
+        `I'm sorry, but that benefit isn't part of the ${COMPANY_NAME} benefits package. ` +
+        `${COMPANY_NAME} offers: ${getCatalogScopeCopy(conversation.metadata?.state)}. ` +
         `Which of these would you like to explore?`
       );
     }
@@ -1054,7 +1055,7 @@ Which of these would you like to learn about next?`
         enhancedContent = buildLiveSupportFallback(WORKDAY_ENROLLMENT_URL, HR_PHONE);
       }
     }
-    enhancedContent = enhancedContent.replace(L3_BANNED_PHONE_RE, `AmeriVet HR/Benefits at ${HR_PHONE}`);
+    enhancedContent = enhancedContent.replace(L3_BANNED_PHONE_RE, `${COMPANY_NAME} HR/Benefits at ${HR_PHONE}`);
 
     // L3.2: CARRIER MISATTRIBUTION GUARD — fix wrong carrier assignments
     const L3_CARRIER_RULES: Array<{ pattern: RegExp; fix: string }> = [

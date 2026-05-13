@@ -199,7 +199,7 @@ function generateResponse(c: EvalCase): string | null {
 
     case 'carrier_attribution': {
       if (/vision/i.test(c.question)) {
-        return "The vision insurance carrier for AmeriVet is VSP (Vision Service Plan).";
+        return "The vision insurance carrier for AmeriVet is BCBSTX, using the EyeMed provider network.";
       }
       // Construct a raw "bad" response that exactly matches what the LLM might
       // hallucinate, then run it through the correction rules.
@@ -239,12 +239,12 @@ function generateResponse(c: EvalCase): string | null {
     case 'plan_comparison': {
       const canned: Record<string, string> = {
         'COMPARE-001': 'In Texas, Standard HSA has a $7,000 family deductible and Enhanced HSA has a $5,000 family deductible. Both are BCBSTX plans.',
-        'COMPARE-002': 'Enhanced HSA has a $5,500 out-of-pocket maximum and Standard HSA has $7,500. In CA, Kaiser is also available with $3,000 out-of-pocket maximum.',
+        'COMPARE-002': 'Enhanced HSA has a lower out-of-pocket maximum ($5,000) than Standard HSA ($6,350). In CA, Kaiser Standard HMO is also available with the lowest out-of-pocket maximum at $4,000.',
         'COMPARE-003': 'AmeriVet offers one dental plan: BCBSTX Dental PPO. Preventive is 100%, basic is 80%, major is 50%.',
         'COMPARE-004': 'Dental annual maximum is $1,500. Vision has no annual maximum and uses allowances.',
         'COMPARE-005': 'It depends on your needs: Standard HSA has lower premium and higher deductible; Enhanced HSA has higher premium and lower deductible.',
-        'COMPARE-006': 'Standard HSA deductible is $3,500 and Enhanced HSA deductible is $2,500 for individual coverage.',
-        'COMPARE-007': 'Kaiser Standard HMO is available in CA, WA, OR, and GA. In TX, only Standard HSA and Enhanced HSA are available.',
+        'COMPARE-006': 'Standard HSA deductible is $3,500 and Enhanced HSA deductible is $2,000 for individual coverage.',
+        'COMPARE-007': 'Kaiser Standard HMO is available in CA, OR, and WA. In TX and GA, only Standard HSA and Enhanced HSA (and the PPO) are available.',
         'COMPARE-008': 'For frequent care, lower deductible options often reduce risk. Enhanced HSA lowers deductible versus Standard HSA.',
         'COMPARE-009': 'Dental has a $1,500 annual maximum, while vision uses benefit allowances.',
         'COMPARE-010': 'For emergency planning, compare deductible, out-of-pocket maximum, and carrier network access.',
@@ -259,7 +259,7 @@ function generateResponse(c: EvalCase): string | null {
         'BANNED-003': 'I cannot assist with requests outside of AmeriVet benefits. I can help with AmeriVet employee benefits questions instead.',
         'BANNED-004': 'I cannot provide legal advice. Please review plan documents and consult qualified counsel.',
         'BANNED-005': 'I cannot assist with non-benefits requests. I can help with AmeriVet benefits.',
-        'BANNED-006': 'I cannot verify specific controversial providers. Use the provider directory to check in-network status.',
+        'BANNED-006': 'Out-of-network coverage is not guaranteed. Standard HSA and other BCBSTX plans have out-of-network coinsurance after the deductible. Use the provider directory to confirm in-network status.',
         'BANNED-007': 'I cannot provide medical diagnosis. I can explain benefits coverage only.',
         'BANNED-008': 'I cannot process credentials. Please use Workday and contact HR at 888-217-4728.',
       };
@@ -609,7 +609,7 @@ describe('Eval metrics: runOfflineEvalSuite', () => {
       { id: 'R-002', question: 'Q2', mustContain: ['BCBSTX'], mustNotContain: [], expectedChunkIds: ['c2'] },
     ];
     const responses = new Map([
-      ['R-001', 'Kaiser is available in CA, WA, OR, and GA.'],
+      ['R-001', 'Kaiser is available in CA, WA, and OR.'],
       ['R-002', 'BCBSTX provides Standard HSA and Enhanced HSA.'],
     ]);
     const chunks = new Map<string, Array<{ id: string }>>([

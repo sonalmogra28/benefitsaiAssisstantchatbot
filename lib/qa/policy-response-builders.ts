@@ -1,4 +1,5 @@
 import type { Session } from '@/lib/rag/session-store';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 export function buildStdPreexistingGuidance(): string {
   return [
@@ -12,8 +13,8 @@ export function buildStdPreexistingGuidance(): string {
 
 export function buildAllstateTermLifeCorrection(): string {
   return [
-    "Quick carrier correction: AmeriVet's Term Life insurance is provided by UNUM, not Allstate.",
-    'Allstate covers only Whole Life (permanent, cash-value) for AmeriVet employees.',
+    `Quick carrier correction: ${COMPANY_NAME}'s Term Life insurance is provided by UNUM, not Allstate.`,
+    `Allstate covers only Whole Life (permanent, cash-value) for ${COMPANY_NAME} employees.`,
     '',
     "Here's the full life insurance lineup:",
     '- UNUM Basic Life & AD&D - $25,000 employer-paid, $0 cost to you',
@@ -54,7 +55,7 @@ Most plans require QLE actions within a limited window (commonly 30 days, someti
 
 export function buildLiveSupportMessage(session: Session, hrPhone: string, enrollmentPortalUrl: string): string {
   const nameRef = session.userName && session.userName !== 'Guest' ? session.userName : 'there';
-  return `I understand you'd like to speak with someone directly, ${nameRef}. You can reach AmeriVet's HR/Benefits team at ${hrPhone} for personalized assistance. You can also use the Workday enrollment portal at ${enrollmentPortalUrl} for self-service options.\n\nIs there anything else I can help you with in the meantime?`;
+  return `I understand you'd like to speak with someone directly, ${nameRef}. You can reach ${COMPANY_NAME}'s HR/Benefits team at ${hrPhone} for personalized assistance. You can also use the Workday enrollment portal at ${enrollmentPortalUrl} for self-service options.\n\nIs there anything else I can help you with in the meantime?`;
 }
 
 export function buildAccidentPlanNamesMessage(hrPhone: string): string {
@@ -89,7 +90,7 @@ export function buildStdLeavePayTimeline(lowerQuery: string): string {
 }
 
 export function buildParentalLeavePlan(enrollmentPortalUrl: string, hrPhone: string): string {
-  return `Here is a step-by-step parental leave plan for AmeriVet employees:
+  return `Here is a step-by-step parental leave plan for ${COMPANY_NAME} employees:
 
 Step 1 - Short-Term Disability (STD) via Unum
 - STD covers disability from delivery itself (childbirth is a covered disability event).

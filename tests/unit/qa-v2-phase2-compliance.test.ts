@@ -99,11 +99,12 @@ describe('Phase 2: compliance-sensitive deterministic handlers', () => {
       expect(['direct-support-v2', 'compliance-fact-v2']).toContain(
         (result.metadata as any)?.intercept,
       );
-      // CA, GA, OR, WA must all appear in the answer
+      // CA, OR, WA must all appear in the answer (GA removed for 2026)
       expect(result.answer).toMatch(/california/i);
-      expect(result.answer).toMatch(/georgia/i);
       expect(result.answer).toMatch(/oregon/i);
       expect(result.answer).toMatch(/washington/i);
+      // Georgia is NOT a Kaiser state for 2026
+      expect(result.answer).not.toMatch(/georgia.*kaiser|kaiser.*georgia/i);
     });
 
     it('tells a TX user Kaiser is not available in their state', async () => {
@@ -174,9 +175,9 @@ describe('Phase 2: compliance-sensitive deterministic handlers', () => {
 describe('Phase 2: post-generation catalog validator', () => {
   describe('validateLlmOutput', () => {
     it('passes for an answer containing only catalog amounts', () => {
-      // $86.84 = Standard HSA employee-only premium
+      // $108.55 = Standard HSA employee-only premium (2026)
       const result = validateLlmOutput(
-        'The Standard HSA plan costs $86.84/month for employee-only coverage.',
+        'The Standard HSA plan costs $108.55/month for employee-only coverage.',
         'TX',
       );
       expect(result.valid).toBe(true);

@@ -120,7 +120,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: 'yes - show me what i can get for vision',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
     ],
   },
@@ -264,7 +264,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: 'yes - show me what i can get for vision',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'what else should i consider?',
@@ -622,7 +622,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: "ok let's do that",
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
         mustNotContain: ['Tell me which area you want to focus on next'],
       },
     ],
@@ -837,7 +837,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       {
         user: 'is that more important than vision?',
         mustContain: ['separate add-or-not decisions'],
-        mustNotContain: ['Vision coverage: **VSP Vision Plus**', 'Tell me which area you want to focus on next'],
+        mustNotContain: ['Vision coverage: **BCBSTX Vision Plan**', 'Tell me which area you want to focus on next'],
       },
     ],
   },
@@ -1320,7 +1320,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
     turns: [
       {
         user: 'vision please',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: "how do i know if it's useful?",
@@ -1461,7 +1461,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: 'okay, tell me about my vision options',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'what does the vision plan cover for frames and contacts?',
@@ -1503,7 +1503,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: 'okay, tell me about my vision options',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'what does lasik discount mean?',
@@ -1740,7 +1740,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
     turns: [
       {
         user: 'vision please',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'what does frame allowance mean?',
@@ -1885,7 +1885,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
     turns: [
       {
         user: 'vision please',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'okay, and is that the only option?',
@@ -2097,7 +2097,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       },
       {
         user: 'okay, tell me about your vision options',
-        mustContain: ['Vision coverage: **VSP Vision Plus**'],
+        mustContain: ['Vision coverage: **BCBSTX Vision Plan**'],
       },
       {
         user: 'is that the only option?',
@@ -4584,7 +4584,7 @@ export const qaV2TranscriptDataset: QaV2TranscriptCase[] = [
       userState: 'OR',
       dataConfirmed: true,
       currentTopic: 'Medical',
-      lastBotMessage: 'Medical plan options (Employee Only):\n\n- Standard HSA (BCBSTX): $86.84/month\n- Enhanced HSA (BCBSTX): $160.36/month\n\nWant to compare plans or switch coverage tiers?',
+      lastBotMessage: 'Medical plan options (Employee Only):\n\n- Standard HSA (BCBSTX): $108.55/month\n- Enhanced HSA (BCBSTX): $200.45/month\n\nWant to compare plans or switch coverage tiers?',
     },
     turns: [
       {

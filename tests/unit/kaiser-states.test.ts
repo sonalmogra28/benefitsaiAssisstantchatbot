@@ -1,19 +1,20 @@
 /**
  * Kaiser State Availability — Regression Suite
  *
- * Purpose: Guard against the "Kaiser only in California" bug.
- * Kaiser Permanente is available to AmeriVet employees in CA, GA, WA, and OR.
+ * Purpose: Guard against Kaiser appearing in wrong states.
+ * Kaiser Permanente is available to AmeriVet employees in CA, OR, and WA only (2026).
+ * Georgia was removed from Kaiser availability for the 2026 plan year.
  * This test must run on every PR and deploy — it blocks Kaiser regression.
  */
 
 import { describe, it, expect } from 'vitest';
 import { getAmerivetPlansByRegion } from '../../lib/data/amerivet-package';
 
-const KAISER_STATES = ['CA', 'GA', 'WA', 'OR'];
-const NON_KAISER_STATES = ['TX', 'FL', 'NY', 'IL'];
+const KAISER_STATES = ['CA', 'WA', 'OR'];
+const NON_KAISER_STATES = ['TX', 'FL', 'NY', 'IL', 'GA'];
 
 describe('Kaiser state availability — regression suite', () => {
-  describe('Kaiser IS available in CA, GA, WA, and OR', () => {
+  describe('Kaiser IS available in CA, WA, and OR', () => {
     for (const state of KAISER_STATES) {
       it(`${state} user gets Kaiser plans`, () => {
         const plans = getAmerivetPlansByRegion(state);
@@ -23,7 +24,7 @@ describe('Kaiser state availability — regression suite', () => {
     }
   });
 
-  describe('Kaiser is NOT available outside CA/GA/WA/OR', () => {
+  describe('Kaiser is NOT available outside CA/WA/OR (including GA)', () => {
     for (const state of NON_KAISER_STATES) {
       it(`${state} user does NOT get Kaiser plans`, () => {
         const plans = getAmerivetPlansByRegion(state);

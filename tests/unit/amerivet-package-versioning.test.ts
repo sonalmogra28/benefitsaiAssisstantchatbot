@@ -168,12 +168,13 @@ describe('amerivet package versioning seam', () => {
 
   it('uses fixture medical plan names in shared PPO and Kaiser fallback copy', () => {
     const fixture = makeRenamedMedicalFixturePackage();
-    const ppoAnswer = buildPpoClarificationForState('GA', { benefitsPackage: fixture });
+    // Use CA — a Kaiser-eligible state for 2026 (GA was removed from Kaiser states in 2026)
+    const ppoAnswer = buildPpoClarificationForState('CA', { benefitsPackage: fixture });
     const redirect = buildKaiserUnavailableFallback(makeSession({ userState: 'NY' }), 'redirect', { benefitsPackage: fixture });
 
     expect(ppoAnswer).toContain('AmeriVet Saver HDHP');
     expect(ppoAnswer).toContain('AmeriVet Shield HDHP');
-    expect(ppoAnswer).toContain('AmeriVet Coordinated Care HMO in GA');
+    expect(ppoAnswer).toContain('AmeriVet Coordinated Care HMO');
     expect(redirect).toContain('AmeriVet Saver HDHP');
     expect(redirect).toContain('AmeriVet Shield HDHP');
     expect(redirect).not.toContain('Standard HSA');

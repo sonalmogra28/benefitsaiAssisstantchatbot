@@ -39,9 +39,9 @@ export class SimpleChatRouter {
   private static readonly MEDICAL_TRANSITION =
     "Now that we've covered medical, do you want to look at Dental, Vision, or other plans?";
   private static readonly DIVISION_PLAN_MAP: Record<string, string[]> = {
-    operations: ['bcbstx-standard-hsa', 'bcbstx-enhanced-hsa', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life'],
-    corporate: ['bcbstx-enhanced-hsa', 'kaiser-standard-hmo', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life'],
-    retail: ['kaiser-standard-hmo', 'bcbstx-standard-hsa', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life']
+    operations: ['bcbstx-standard-hsa', 'bcbstx-enhanced-hsa', 'bcbstx-dental', 'bcbstx-vision', 'unum-basic-life'],
+    corporate: ['bcbstx-enhanced-hsa', 'kaiser-standard-hmo', 'bcbstx-dental', 'bcbstx-vision', 'unum-basic-life'],
+    retail: ['kaiser-standard-hmo', 'bcbstx-standard-hsa', 'bcbstx-dental', 'bcbstx-vision', 'unum-basic-life']
   };
   private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 

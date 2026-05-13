@@ -32,9 +32,9 @@ describe('QA route spouse-tier follow-up', () => {
       coverageTierLock: 'Employee Only',
       lastBotMessage:
         'Medical plan options (Employee Only):\n' +
-        '- Standard HSA (BCBSTX): $86.84/month ($1,042.08/year)\n' +
-        '- Enhanced HSA (BCBSTX): $160.36/month ($1,924.32/year)\n\n' +
-        'Note: Kaiser Standard HMO is only available in CA, GA, WA, and OR.\n\n' +
+        '- Standard HSA (BCBSTX): $108.55/month ($1,302.60/year)\n' +
+        '- Enhanced HSA (BCBSTX): $200.45/month ($2,405.40/year)\n\n' +
+        'Note: Kaiser Standard HMO is only available in CA, OR, and WA.\n\n' +
         'Want to compare plans or switch coverage tiers?',
     });
 

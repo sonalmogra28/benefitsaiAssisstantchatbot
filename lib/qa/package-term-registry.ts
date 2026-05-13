@@ -1,3 +1,5 @@
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
+
 // Apr 21 Step 3: centralized term registry for short definition-asks.
 //
 // Problem this solves: the engine historically only knew how to answer a
@@ -42,14 +44,14 @@ type TermEntry = {
 
 const TERMS: TermEntry[] = [
   {
-    aliases: ['vsp', 'vsp vision plus', 'vsp vision', 'vision service plan'],
+    aliases: ['eyemed', 'bcbstx vision', 'vsp', 'vsp vision plus', 'vsp vision', 'vision service plan'],
     topicContexts: ['Vision'],
     build: () => [
-      `VSP stands for **Vision Service Plan**.`,
+      `${COMPANY_NAME}'s vision plan is through **BCBSTX**, using the **EyeMed** provider network.`,
       ``,
-      `In AmeriVet's package, VSP is the carrier behind the **VSP Vision Plus** plan — the vision coverage option.`,
+      `EyeMed has one of the largest vision networks in the country — you can find in-network eye doctors and optometrists at bcbstx.com.`,
       ``,
-      `So when you see VSP in the plan list, that is AmeriVet's vision carrier.`,
+      `Note: AmeriVet switched from VSP to BCBSTX/EyeMed for the 2026 plan year.`,
     ].join('\n'),
   },
   {
@@ -65,18 +67,18 @@ const TERMS: TermEntry[] = [
         : 'Life Insurance';
       const contextLine =
         topic === 'Life Insurance'
-          ? `In AmeriVet's package, Unum is the carrier behind the life insurance options (Basic Life & AD&D and Voluntary Term Life).`
+          ? `In ${COMPANY_NAME}'s package, Unum is the carrier behind the life insurance options (Basic Life & AD&D and Voluntary Term Life).`
           : topic === 'Disability'
-            ? `In AmeriVet's package, Unum is the carrier behind the disability options (Short-Term and Long-Term Disability).`
-            : `In AmeriVet's package, Unum is the carrier behind the Accident and AD&D coverage.`;
+            ? `In ${COMPANY_NAME}'s package, Unum is the carrier behind the disability options (Short-Term and Long-Term Disability).`
+            : `In ${COMPANY_NAME}'s package, Unum is the carrier behind the Accident and AD&D coverage.`;
       return [
         `Unum is an insurance carrier.`,
         ``,
         contextLine,
         ``,
-        `So when you see Unum in your benefits list, that is AmeriVet's supplemental protection carrier (life, disability, and accident/AD&D).`,
+        `So when you see Unum in your benefits list, that is ${COMPANY_NAME}'s supplemental protection carrier (life, disability, and accident/AD&D).`,
         ``,
-        `Note: **Allstate Critical Illness** is the plan for critical illness coverage at AmeriVet — not Unum.`,
+        `Note: **Allstate Critical Illness** is the plan for critical illness coverage at ${COMPANY_NAME} — not Unum.`,
       ].join('\n');
     },
   },
@@ -88,18 +90,18 @@ const TERMS: TermEntry[] = [
         return [
           `BCBSTX stands for **Blue Cross Blue Shield of Texas**.`,
           ``,
-          `In AmeriVet's package, BCBSTX is the carrier behind the **BCBSTX Dental PPO** — the dental coverage option.`,
+          `In ${COMPANY_NAME}'s package, BCBSTX is the carrier behind the **BCBSTX Dental PPO** — the dental coverage option.`,
           ``,
-          `Note: BCBSTX is also the carrier behind AmeriVet's Standard HSA and Enhanced HSA medical plans, so you will see the BCBSTX name on both the dental and medical sides of the package.`,
+          `Note: BCBSTX is also the carrier behind ${COMPANY_NAME}'s Standard HSA and Enhanced HSA medical plans, so you will see the BCBSTX name on both the dental and medical sides of the package.`,
         ].join('\n');
       }
       // Default / Medical context: preserve canonical medical answer.
       return [
         `BCBSTX stands for **Blue Cross Blue Shield of Texas**.`,
         ``,
-        `In AmeriVet's package, BCBSTX is the carrier behind the Standard HSA and Enhanced HSA medical plans.`,
+        `In ${COMPANY_NAME}'s package, BCBSTX is the carrier behind the Standard HSA and Enhanced HSA medical plans.`,
         ``,
-        `So when you see BCBSTX in the plan list, that is the PPO carrier side of AmeriVet's medical package rather than the Kaiser option.`,
+        `So when you see BCBSTX in the plan list, that is the PPO carrier side of ${COMPANY_NAME}'s medical package rather than the Kaiser option.`,
         `If you want, I can compare the BCBSTX plans against Kaiser next.`,
       ].join('\n');
     },

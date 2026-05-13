@@ -7,6 +7,7 @@ import {
   isKaiserEligibleForState,
   type AmerivetBenefitsPackage,
 } from '@/lib/data/amerivet-package';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 type KaiserUnavailableVariant = 'compare' | 'pricing' | 'redirect';
 type MedicalHelperOptions = {
@@ -181,16 +182,24 @@ export function buildPpoClarificationForState(
 ): string {
   const benefitsPackage = options?.benefitsPackage ?? getAmerivetBenefitsPackage();
   const { standard, enhanced, kaiser } = getMedicalPlansCatalog(benefitsPackage);
+  const ppoPlan = benefitsPackage.catalog.medicalPlans.find(
+    (p) => /ppo/i.test(p.name) && !/kaiser/i.test(p.name) && !/hsa/i.test(p.name),
+  );
   const basePlanNames = [standard?.name, enhanced?.name].filter(Boolean).join(' and ');
   const sharedProvider = standard?.provider && enhanced?.provider && standard.provider === enhanced.provider
     ? ` (${standard.provider})`
     : '';
 
   if (state && isKaiserEligibleForState(state, benefitsPackage) && kaiser) {
-    return `AmeriVet does not offer a standalone PPO medical plan. Your medical options are ${basePlanNames}${sharedProvider} plus ${kaiser.name} in ${state}. The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
+    const ppoNote = ppoPlan ? ` The **${ppoPlan.name}** is also available nationwide — it uses copays instead of a deductible but is NOT HSA-eligible.` : '';
+    return `${COMPANY_NAME} does not offer a standalone HDHP-PPO plan. Your medical options in ${state} are ${basePlanNames}${sharedProvider} plus ${kaiser.name}.${ppoNote} The HSA-compatible plans use a nationwide PPO network.`;
+  }
+  if (ppoPlan) {
+    const stateNote = state ? ` In ${state}, your medical options are ${basePlanNames}${sharedProvider} plus the **${ppoPlan.name}**.` : '';
+    return `${COMPANY_NAME} offers a **${ppoPlan.name}** as well as two HSA plans.${stateNote} The ${ppoPlan.name} uses copays and does not require meeting a deductible first, but it is NOT HSA-eligible. The HSA plans use a nationwide PPO network and cost less in premium.`;
   }
   const stateNote = state ? ` In ${state}, your medical options are ${basePlanNames}${sharedProvider}.` : '';
-  return `AmeriVet does not offer a standalone PPO medical plan.${stateNote} The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
+  return `${COMPANY_NAME} does not offer a standalone PPO medical plan.${stateNote} The HSA-compatible plans use a nationwide PPO network, but they are HDHP/HSA plans, not a traditional PPO.`;
 }
 
 export function buildPpoClarificationFallback(session: Pick<Session, 'userState'>): string {
@@ -221,15 +230,15 @@ export function buildKaiserUnavailableFallback(
   return `${kaiserName} is only available in ${kaiserCopy.nameList}. Since you're in ${stateLabel}, your medical options are **${standardName}** and **${enhancedName}**. Would you like to compare those two instead?`;
 }
 
+function isIntegratedPlan(plan: { id: string; name: string; provider: string }): boolean {
+  return /kaiser/i.test(plan.provider) || /kaiser/i.test(plan.name) || /\bhmo\b/i.test(plan.name) || /kaiser/i.test(plan.id);
+}
+
 function getMedicalPlansCatalog(benefitsPackage: AmerivetBenefitsPackage = getAmerivetBenefitsPackage()) {
   const medicalPlans = benefitsPackage.catalog.medicalPlans;
-  const integratedPlan = medicalPlans.find((plan) =>
-    /kaiser/i.test(plan.provider)
-    || /kaiser/i.test(plan.name)
-    || /\bhmo\b/i.test(plan.name)
-    || /kaiser/i.test(plan.id),
-  ) || null;
-  const hsaLikePlans = medicalPlans.filter((plan) => !integratedPlan || plan.id !== integratedPlan.id);
+  // Exclude ALL Kaiser/HMO plans from the HSA comparison set
+  const integratedPlan = medicalPlans.find(isIntegratedPlan) || null;
+  const hsaLikePlans = medicalPlans.filter((plan) => !isIntegratedPlan(plan));
   const byPremium = [...hsaLikePlans].sort((a, b) => a.premiums.employee.monthly - b.premiums.employee.monthly);
   const byDeductible = [...hsaLikePlans].sort((a, b) => a.benefits.deductible - b.benefits.deductible);
   const standard = byPremium[0] || hsaLikePlans[0] || null;

@@ -26,7 +26,7 @@ describe('buildMedicalPlanDetailAnswer', () => {
   it('answers specialist questions generically from the plan-summary layer', () => {
     const answer = buildMedicalPlanDetailAnswer("what's the specialist copay on the enhanced plan?", baseSession);
     expect(answer).toContain('Enhanced HSA');
-    expect(answer).toContain('$40');
+    expect(answer).toContain('20%');
   });
 
   it('returns rx note when rx tiers are not yet structured', () => {

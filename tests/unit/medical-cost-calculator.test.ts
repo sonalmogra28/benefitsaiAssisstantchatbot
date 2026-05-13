@@ -19,18 +19,18 @@ describe('medical cost calculator helpers', () => {
   });
 
   it('uses actual package premiums for each coverage tier', () => {
-    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-only')).toBe(86.84);
-    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-spouse')).toBe(210.52);
-    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-children')).toBe(190.31);
-    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-family')).toBe(321.45);
+    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-only')).toBe(108.55);
+    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-spouse')).toBe(631.17);
+    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-children')).toBe(539.35);
+    expect(getCalculatorPlanMonthlyPremium(standard, 'employee-family')).toBe(695.39);
   });
 
   it('builds pricing objects that preserve actual package tier amounts', () => {
     const pricing = buildCalculatorPlanPricing(standard);
 
-    expect(pricing.monthlyByCoverage['employee-only']).toBe(86.84);
-    expect(pricing.monthlyByCoverage['employee-spouse']).toBe(210.52);
-    expect(pricing.monthlyByCoverage['employee-children']).toBe(190.31);
-    expect(pricing.monthlyByCoverage['employee-family']).toBe(321.45);
+    expect(pricing.monthlyByCoverage['employee-only']).toBe(108.55);
+    expect(pricing.monthlyByCoverage['employee-spouse']).toBe(631.17);
+    expect(pricing.monthlyByCoverage['employee-children']).toBe(539.35);
+    expect(pricing.monthlyByCoverage['employee-family']).toBe(695.39);
   });
 });

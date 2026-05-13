@@ -75,7 +75,8 @@ export interface AmerivetBenefitsCatalog {
   };
 }
 
-export const KAISER_AVAILABLE_STATE_CODES = ['CA', 'GA', 'OR', 'WA'] as const;
+// Kaiser is available in CA, OR, and WA only. Georgia is NOT a Kaiser state for 2026.
+export const KAISER_AVAILABLE_STATE_CODES = ['CA', 'OR', 'WA'] as const;
 
 const biweekly = (monthly: number) => Number(((monthly * 12) / 26).toFixed(2));
 
@@ -83,28 +84,28 @@ const createPlan = (plan: BenefitPlan): BenefitPlan => plan;
 
 export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
   medicalPlans: [
+    // ── BCBSTX: Standard HSA ─────────────────────────────────────────────────
     createPlan({
       id: 'bcbstx-standard-hsa',
       name: 'Standard HSA',
       provider: 'BCBSTX',
       type: 'medical',
-      description: 'High-deductible health plan with HSA compatibility.',
+      description: 'High-deductible HSA plan with embedded individual deductibles and the lowest employee premium of the three BCBSTX options.',
       regionalAvailability: ['nationwide'],
       premiums: {
-        employee: { monthly: 86.84, biweekly: biweekly(86.84) },
-        employer: { monthly: 520.0, biweekly: biweekly(520.0) },
+        employee: { monthly: 108.55, biweekly: biweekly(108.55) },
       },
       tiers: {
-        employeeOnly: 86.84,
-        employeeSpouse: 210.52,
-        employeeChildren: 190.31,
-        employeeFamily: 321.45,
+        employeeOnly: 108.55,
+        employeeSpouse: 631.17,
+        employeeChildren: 539.35,
+        employeeFamily: 695.39,
       },
       benefits: {
         deductible: 3500,
-        outOfPocketMax: 6500,
+        outOfPocketMax: 6350,
         coinsurance: 0.2,
-        description: 'Covers preventive care at 100% and includes nationwide PPO network.',
+        description: 'Embedded deductibles: each person meets their own $3,500 before plan pays. 20% coinsurance after deductible. Preventive care 100% covered.',
       },
       coverage: {
         deductibles: {
@@ -113,52 +114,51 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         },
         coinsurance: {
           inNetwork: 0.2,
-          outOfNetwork: 0.4,
+          outOfNetwork: 0.5,
         },
-        copays: {
-          primaryCare: 0,
-          specialist: 0,
-          virtualVisit: 0,
-        },
-        outOfPocketMax: 6500,
+        outOfPocketMax: 6350,
       },
       features: [
-        'HSA eligible plan',
-        'Nationwide PPO network',
-        'Telehealth visits included',
-        'Preventive care covered at 100%',
+        'HSA-eligible plan (HDHP)',
+        'Embedded individual deductibles — each person meets $3,500, not the full family deductible',
+        'AmeriVet contributes $750/yr to your HSA (individual) or $1,250/yr (family)',
+        '20% coinsurance after deductible for all services',
+        'Preventive care covered at 100% with no deductible',
+        'Nationwide Blue Choice PPO network — access in and out of Texas',
+        'Prescription drugs subject to calendar-year deductible (waived for preventive drugs)',
       ],
       limitations: [
-        'Higher deductible before plan pays',
-        'Out-of-network coverage limited to 60%',
+        'Must meet individual deductible before plan covers non-preventive services',
+        'Out-of-network: 50% coinsurance and higher deductibles apply',
+        'HSA ineligible if enrolled in PPO or Kaiser plan',
       ],
       eligibility: {
         employeeType: 'full-time',
         minHours: 30,
       },
     }),
+    // ── BCBSTX: Enhanced HSA ─────────────────────────────────────────────────
     createPlan({
       id: 'bcbstx-enhanced-hsa',
       name: 'Enhanced HSA',
       provider: 'BCBSTX',
       type: 'medical',
-      description: 'Enhanced coverage with richer employer contributions.',
+      description: 'HSA plan with a lower individual deductible ($2,000) but an aggregate family deductible — the full family amount must be met before coinsurance applies for any family member.',
       regionalAvailability: ['nationwide'],
       premiums: {
-        employee: { monthly: 160.36, biweekly: biweekly(160.36) },
-        employer: { monthly: 540.0, biweekly: biweekly(540.0) },
+        employee: { monthly: 200.45, biweekly: biweekly(200.45) },
       },
       tiers: {
-        employeeOnly: 160.36,
-        employeeSpouse: 295.42,
-        employeeChildren: 275.1,
-        employeeFamily: 412.37,
+        employeeOnly: 200.45,
+        employeeSpouse: 858.68,
+        employeeChildren: 742.21,
+        employeeFamily: 927.73,
       },
       benefits: {
         deductible: 2000,
-        outOfPocketMax: 5500,
+        outOfPocketMax: 5000,
         coinsurance: 0.2,
-        description: 'Lower deductible with enhanced employer HSA contribution.',
+        description: 'Aggregate deductible: full family deductible must be met before coinsurance applies if dependents are covered. Lower individual deductible than Standard HSA.',
       },
       coverage: {
         deductibles: {
@@ -167,73 +167,199 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         },
         coinsurance: {
           inNetwork: 0.2,
-          outOfNetwork: 0.4,
+          outOfNetwork: 0.5,
         },
-        copays: {
-          primaryCare: 20,
-          specialist: 40,
-          urgentCare: 75,
-        },
-        outOfPocketMax: 5500,
+        outOfPocketMax: 5000,
       },
       features: [
-        'Enhanced HSA contribution',
-        'Nationwide provider access',
+        'HSA-eligible plan (HDHP)',
+        'Lower individual deductible than Standard HSA ($2,000 vs $3,500)',
+        'AGGREGATE family deductible — full $4,000 family deductible must be met before any family member gets coinsurance',
+        'AmeriVet contributes $500/yr to your HSA (individual) or $1,000/yr (family)',
+        '20% coinsurance after deductible for all services',
+        'Preventive care covered at 100% with no deductible',
+        'Nationwide Blue Choice PPO network',
       ],
       limitations: [
-        'Out-of-network deductible applies separately',
+        'Aggregate deductible: if you have dependents, the full family deductible must be met before the plan pays coinsurance for anyone',
+        'Higher premium than Standard HSA (~$882/yr more for individual coverage)',
+        'Out-of-network: 50% coinsurance and higher deductibles apply',
+        'HSA ineligible if enrolled in PPO or Kaiser plan',
       ],
       eligibility: {
         employeeType: 'full-time',
         minHours: 30,
       },
     }),
+    // ── BCBSTX: PPO ──────────────────────────────────────────────────────────
+    createPlan({
+      id: 'bcbstx-ppo',
+      name: 'BCBSTX PPO',
+      provider: 'BCBSTX',
+      type: 'medical',
+      description: 'Traditional PPO with copays for office visits and prescriptions — no deductible required for copay services. Highest premium of the three BCBSTX options. NOT HSA-eligible.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 334.28, biweekly: biweekly(334.28) },
+      },
+      tiers: {
+        employeeOnly: 334.28,
+        employeeSpouse: 1068.82,
+        employeeChildren: 1038.90,
+        employeeFamily: 1273.35,
+      },
+      benefits: {
+        deductible: 2500,
+        outOfPocketMax: 7500,
+        coinsurance: 0.3,
+        description: 'Embedded individual deductibles ($2,500 per person). 30% coinsurance after deductible. Copays for office visits and prescriptions do not require meeting the deductible first.',
+      },
+      coverage: {
+        deductibles: {
+          individual: 2000,
+          family: 4000,
+        },
+        coinsurance: {
+          inNetwork: 0.3,
+          outOfNetwork: 0.5,
+        },
+        copays: {
+          primaryCare: 50,
+          specialist: 75,
+          virtualVisit: 30,
+          urgentCare: 75,
+          emergencyRoom: 500,
+        },
+        outOfPocketMax: 7500,
+      },
+      features: [
+        'Copays for office visits — no deductible required: PCP $50 | Specialist $75 | Virtual $30 | Urgent Care $75',
+        'ER: $500 copay then 30% coinsurance after deductible',
+        'Prescription drug coverage before deductible (copay-based)',
+        'Embedded individual deductibles ($2,500 per person)',
+        '30% coinsurance for major services after deductible',
+        'Nationwide Blue Choice PPO network',
+        'NOT HSA-eligible — cannot contribute to or use an HSA with this plan',
+      ],
+      limitations: [
+        'Highest premium of all three BCBSTX options',
+        'Highest out-of-pocket maximum ($7,500 individual)',
+        '30% coinsurance (vs 20% on HSA plans)',
+        'No HSA access — cannot open or contribute to an HSA while enrolled',
+      ],
+      eligibility: {
+        employeeType: 'full-time',
+        minHours: 30,
+      },
+    }),
+    // ── KAISER: Standard HMO (CA, OR, WA only) ───────────────────────────────
     createPlan({
       id: 'kaiser-standard-hmo',
       name: 'Kaiser Standard HMO',
       provider: 'Kaiser',
       type: 'medical',
-      description: 'HMO plan with low copays and integrated care available in California, Georgia, Washington, and Oregon.',
-      regionalAvailability: ['California', 'Georgia', 'Washington', 'Oregon'],
+      description: 'HMO plan with low copays and integrated care. Available ONLY in California, Oregon, and Washington.',
+      regionalAvailability: ['California', 'Oregon', 'Washington'],
       premiums: {
-        employee: { monthly: 142.17, biweekly: biweekly(142.17) },
-        employer: { monthly: 515.0, biweekly: biweekly(515.0) },
+        employee: { monthly: 202.54, biweekly: biweekly(202.54) },
       },
       tiers: {
-        employeeOnly: 142.17,
-        employeeSpouse: 268.45,
-        employeeChildren: 245.92,
-        employeeFamily: 386.12,
+        employeeOnly: 202.54,
+        employeeSpouse: 1108.32,
+        employeeChildren: 927.46,
+        employeeFamily: 1200.84,
       },
       benefits: {
-        deductible: 1000,
-        outOfPocketMax: 4500,
-        coinsurance: 0.1,
-        description: 'Integrated HMO with Kaiser facilities across California, Georgia, Washington, and Oregon.',
+        deductible: 2000,
+        outOfPocketMax: 4000,
+        coinsurance: 0.2,
+        description: 'Integrated HMO with Kaiser facilities. $2,000 individual deductible. 20% coinsurance after deductible. Low copays for office visits.',
       },
       coverage: {
         deductibles: {
-          individual: 1000,
-          family: 2000,
+          individual: 2000,
+          family: 4000,
         },
         coinsurance: {
-          inNetwork: 0.1,
+          inNetwork: 0.2,
         },
         copays: {
           primaryCare: 20,
-          specialist: 45,
+          specialist: 30,
+          urgentCare: 20,
           emergencyRoom: 250,
         },
-        outOfPocketMax: 4500,
+        outOfPocketMax: 4000,
       },
       features: [
-        'Integrated Kaiser network',
-        'Low copays for office visits',
-        'Care team coordination',
+        'Low copays: PCP $20 | Specialist $30 | Urgent Care $20 (CA/WA) or $30 (OR)',
+        'Preventive care and virtual visits covered at 100%',
+        'ER: $250 copay after deductible then 20% (CA/WA); $250 copay, no deductible (OR)',
+        'Integrated Kaiser network — care team coordination',
+        'Available ONLY in California, Oregon, and Washington',
       ],
       limitations: [
         'No out-of-network coverage except emergencies',
-        'Available only in California, Georgia, Washington, and Oregon service areas',
+        'Must use Kaiser facilities and providers only',
+        'Available ONLY in California, Oregon, and Washington — not available in Georgia or any other state',
+      ],
+      eligibility: {
+        employeeType: 'full-time',
+        minHours: 30,
+      },
+    }),
+    // ── KAISER: Enhanced HMO (CA, OR, WA only) ───────────────────────────────
+    createPlan({
+      id: 'kaiser-enhanced-hmo',
+      name: 'Kaiser Enhanced HMO',
+      provider: 'Kaiser',
+      type: 'medical',
+      description: 'Premium Kaiser HMO with a much lower deductible ($500 individual) and lower OOP max. Available ONLY in California, Oregon, and Washington.',
+      regionalAvailability: ['California', 'Oregon', 'Washington'],
+      premiums: {
+        employee: { monthly: 391.32, biweekly: biweekly(391.32) },
+      },
+      tiers: {
+        employeeOnly: 391.32,
+        employeeSpouse: 1296.23,
+        employeeChildren: 1275.80,
+        employeeFamily: 1663.97,
+      },
+      benefits: {
+        deductible: 500,
+        outOfPocketMax: 2500,
+        coinsurance: 0.2,
+        description: 'Lower deductible ($500) and lower OOP max ($2,500) than the Standard HMO. 20% coinsurance after deductible. Low copays for office visits.',
+      },
+      coverage: {
+        deductibles: {
+          individual: 500,
+          family: 1000,
+        },
+        coinsurance: {
+          inNetwork: 0.2,
+        },
+        copays: {
+          primaryCare: 20,
+          specialist: 30,
+          urgentCare: 20,
+          emergencyRoom: 200,
+        },
+        outOfPocketMax: 2500,
+      },
+      features: [
+        'Very low deductible: $500 individual / $1,000 family',
+        'Low OOP maximum: $2,500 individual / $5,000 family',
+        'Low copays: PCP $20 | Specialist $30 | Urgent Care $20',
+        'ER: $200 copay after deductible then 20% (CA/WA); $200 copay, no deductible (OR)',
+        'Preventive care and virtual visits covered at 100%',
+        'Available ONLY in California, Oregon, and Washington',
+      ],
+      limitations: [
+        'No out-of-network coverage except emergencies',
+        'Must use Kaiser facilities and providers only',
+        'Highest premium of the Kaiser options',
+        'Available ONLY in California, Oregon, and Washington',
       ],
       eligibility: {
         employeeType: 'full-time',
@@ -241,27 +367,28 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
     }),
   ],
+  // ── DENTAL ─────────────────────────────────────────────────────────────────
   dentalPlan: createPlan({
     id: 'bcbstx-dental',
     name: 'BCBSTX Dental PPO',
     provider: 'BCBSTX',
     type: 'dental',
-    description: 'Comprehensive PPO dental coverage with orthodontia rider.',
+    description: 'Dental PPO using the BlueCare network. Preventive 100%, basic 80%, major 50%, orthodontia 50% for children to age 19.',
     regionalAvailability: ['nationwide'],
     premiums: {
-      employee: { monthly: 28.9, biweekly: biweekly(28.9) },
+      employee: { monthly: 28.90, biweekly: biweekly(28.90) },
     },
     tiers: {
-      employeeOnly: 28.9,
-      employeeSpouse: 57.12,
-      employeeChildren: 72.45,
+      employeeOnly: 28.90,
+      employeeSpouse: 57.17,
+      employeeChildren: 75.04,
       employeeFamily: 113.93,
     },
     benefits: {
       deductible: 50,
       outOfPocketMax: 1500,
       coinsurance: 0.2,
-      description: 'Includes preventive care and major services coverage.',
+      description: 'Individual deductible $50 / family $150. Calendar-year maximum $1,500 (BlueMaximum Advantage can increase to $2,100 over 3 years).',
     },
     coverage: {
       deductibles: {
@@ -276,39 +403,44 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       outOfPocketMax: 1500,
     },
     features: [
-      'Preventive care covered at 100%',
-      'Orthodontia: 50% covered, up to $1,000 lifetime maximum',
-      'Nationwide PPO network',
+      'Preventive care (cleanings, exams, x-rays) covered at 100%',
+      'Basic services (fillings, extractions): 20% after $50 deductible',
+      'Major services (crowns, bridges): 50% after deductible',
+      'Orthodontia: 50% covered, $1,000 lifetime maximum (children up to age 19)',
+      'BlueMaximum Advantage: earn $200/yr extra benefit (up to $600 over 3 years, raising annual max to $2,100)',
+      'BlueCare network — nationwide dentist access',
     ],
     limitations: [
-      'Waiting period for major services is 6 months',
+      'Orthodontia limited to children age 19 and under',
+      'Out-of-network dentists have a negotiated fee schedule; you may owe more',
     ],
     eligibility: {
       employeeType: 'all',
       minHours: 20,
     },
   }),
+  // ── VISION ─────────────────────────────────────────────────────────────────
   visionPlan: createPlan({
-    id: 'vsp-vision-plus',
-    name: 'VSP Vision Plus',
-    provider: 'VSP',
+    id: 'bcbstx-vision',
+    name: 'BCBSTX Vision Plan',
+    provider: 'BCBSTX',
     type: 'vision',
-    description: 'Premium vision coverage with allowance for frames and contacts.',
+    description: 'Vision coverage through the EyeMed Vision Network. Annual eye exam, lenses, frames, and contact allowances.',
     regionalAvailability: ['nationwide'],
     premiums: {
-      employee: { monthly: 12.4, biweekly: biweekly(12.4) },
+      employee: { monthly: 5.24, biweekly: biweekly(5.24) },
     },
     tiers: {
-      employeeOnly: 12.4,
-      employeeSpouse: 22.6,
-      employeeChildren: 20.1,
-      employeeFamily: 31.5,
+      employeeOnly: 5.24,
+      employeeSpouse: 9.95,
+      employeeChildren: 10.48,
+      employeeFamily: 15.41,
     },
     benefits: {
       deductible: 0,
       outOfPocketMax: 0,
       coinsurance: 0,
-      description: 'Eye exams every 12 months with generous frame allowance.',
+      description: 'Eye exam annually with $10 copay. Lenses with $25 copay. $130 frame allowance plus 20% off balance. Contact allowance $130.',
     },
     coverage: {
       copays: {
@@ -317,18 +449,24 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
     },
     features: [
-      '$200 frame allowance (every 12 months)',
-      'Contact lens allowance — confirm exact amount in Workday',
-      'LASIK discounts available through VSP network',
+      'Eye exam: $10 copay (once per calendar year)',
+      'Lenses: $25 copay (once per calendar year)',
+      'Frames: $130 allowance + 20% off balance (once per calendar year)',
+      'Contacts (conventional/disposable): $130 allowance (once per calendar year)',
+      'Medically necessary contacts: paid in full',
+      'EyeMed Vision Network — nationwide coverage',
     ],
     limitations: [
-      'Frame allowance every 12 months',
+      'Benefits are once per calendar year',
+      'Out-of-network coverage is a reimbursement (lower amounts)',
+      'Cannot combine frames and contact lens benefit in same year',
     ],
     eligibility: {
       employeeType: 'all',
       minHours: 20,
     },
   }),
+  // ── VOLUNTARY PLANS ────────────────────────────────────────────────────────
   voluntaryPlans: [
     // ── UNUM: Basic Life & AD&D (Employer-Paid) ─────────────────────────────
     createPlan({
@@ -336,10 +474,10 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       name: 'Unum Basic Life & AD&D',
       provider: 'Unum',
       type: 'voluntary',
-      description: 'Employer-paid basic life and AD&D coverage — $25,000 flat benefit.',
+      description: 'Employer-paid basic life and AD&D coverage — $25,000 flat benefit at no cost to employee.',
       regionalAvailability: ['nationwide'],
       premiums: {
-        employee: { monthly: 0, biweekly: 0 },          // Employer-paid
+        employee: { monthly: 0, biweekly: 0 },
         employer: { monthly: 15.75, biweekly: biweekly(15.75) },
       },
       tiers: {
@@ -355,12 +493,15 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         description: '$25,000 employer-paid basic life and accidental death & dismemberment.',
       },
       features: [
-        '$25,000 flat life benefit — employer-paid',
-        'Includes Accidental Death & Dismemberment (AD&D)',
+        '$25,000 flat life benefit — employer-paid, no cost to employee',
+        '$25,000 AD&D benefit — also employer-paid',
         'All benefits-eligible employees automatically enrolled',
+        'Benefits reduce beginning at age 65',
       ],
       limitations: [
-        'Coverage amount is a flat $25,000 — not salary-based',
+        'Flat $25,000 — not salary-based',
+        'Benefits reduced at age 65',
+        'Ends when employment ends — not portable',
       ],
       eligibility: {
         employeeType: 'all',
@@ -368,16 +509,16 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       voluntaryType: 'life',
     }),
-    // ── UNUM: Voluntary Term Life ────────────────────────────────────────────
+    // ── UNUM: Voluntary Term Life & AD&D ────────────────────────────────────
     createPlan({
       id: 'unum-voluntary-life',
-      name: 'Unum Voluntary Term Life',
+      name: 'Unum Voluntary Term Life & AD&D',
       provider: 'Unum',
       type: 'voluntary',
-      description: 'Employee-paid voluntary term life insurance — age-banded rates.',
+      description: 'Employee-paid voluntary term life and AD&D — age-banded rates per $1,000 of coverage.',
       regionalAvailability: ['nationwide'],
       premiums: {
-        employee: { monthly: 0, biweekly: 0 },          // Age-banded; placeholder
+        employee: { monthly: 0, biweekly: 0 },
       },
       tiers: {
         employeeOnly: 0,
@@ -389,17 +530,20 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         deductible: 0,
         outOfPocketMax: 0,
         coinsurance: 0,
-        description: 'Voluntary term life: 1x–5x salary up to $500,000. Spouse and child coverage available.',
+        description: 'Employee: $10,000 increments up to $500,000. Spouse: $5,000 increments up to $250,000. Child: up to $10,000.',
       },
       features: [
-        'Coverage: 1x to 5x annual salary (up to $500,000)',
-        'Guaranteed Issue: up to $200,000 during initial open enrollment only — not available in subsequent annual enrollment periods',
-        'Spouse and dependent child coverage available',
-        'Portable — can continue coverage after leaving AmeriVet',
+        'Employee coverage: $10,000 increments up to $500,000',
+        'Guaranteed Issue (no health questions): $200,000 at initial enrollment',
+        'Spouse: $5,000 increments up to $250,000 (not to exceed 100% of employee amount); GI $25,000',
+        'Child: up to $10,000 (live birth to age 26); GI $10,000',
+        'Age-banded rates per $1,000 (e.g., under 30: $0.10/mo per $1,000)',
+        'Portable — can continue coverage after leaving employment',
       ],
       limitations: [
         'Age-banded pricing — rates increase with age',
-        'Evidence of insurability required above guaranteed issue amount',
+        'Evidence of insurability (EOI) required above Guarantee Issue amounts',
+        'Benefits reduce beginning at age 65',
       ],
       eligibility: {
         employeeType: 'all',
@@ -407,16 +551,16 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       voluntaryType: 'life',
     }),
-    // ── ALLSTATE: Whole Life (Permanent) ─────────────────────────────────────
+    // ── ALLSTATE: Group Whole Life ────────────────────────────────────────────
     createPlan({
       id: 'allstate-whole-life',
-      name: 'Allstate Whole Life',
+      name: 'Allstate Group Whole Life',
       provider: 'Allstate',
       type: 'voluntary',
-      description: 'Permanent whole life insurance with cash value — rates locked at enrollment age.',
+      description: 'Permanent whole life insurance with guaranteed premiums and cash value buildup. $20,000–$100,000 coverage. Fully paid up at age 95.',
       regionalAvailability: ['nationwide'],
       premiums: {
-        employee: { monthly: 0, biweekly: 0 },          // Age-banded; placeholder
+        employee: { monthly: 0, biweekly: 0 },
       },
       tiers: {
         employeeOnly: 0,
@@ -428,16 +572,20 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
         deductible: 0,
         outOfPocketMax: 0,
         coinsurance: 0,
-        description: 'Permanent whole life insurance that builds cash value over time.',
+        description: 'Permanent coverage $20,000–$100,000 (GI $100,000). Builds cash value. Premiums locked at enrollment age.',
       },
       features: [
+        'Coverage $20,000–$100,000; Guarantee Issue $100,000 at initial enrollment (no medical questions)',
         'Permanent coverage — does not expire as long as premiums are paid',
-        'Builds cash value over time (tax-deferred growth)',
-        'Rates locked at your enrollment age',
-        'Portable — you keep the policy if you leave AmeriVet',
+        'Builds cash value over time; fully paid up at age 95',
+        'Premiums locked at enrollment age — never increase',
+        'Portable — rates do not change when you leave the group',
+        'Accelerated death benefit for terminal illness (up to 75%) and long-term care',
+        'Available for employees age 18–70 and qualifying spouses',
       ],
       limitations: [
-        'Age-banded pricing — locked at enrollment age',
+        'Open enrollment requires EOI if not enrolling as a new hire within 31 days',
+        'Working spouse GI: $20,000 | Non-working spouse GI: $10,000',
         'Higher premium than term life for equivalent face value',
       ],
       eligibility: {
@@ -446,19 +594,246 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
       },
       voluntaryType: 'life',
     }),
+    // ── UNUM: Short-Term Disability (Voluntary, Employee-Paid) ───────────────
+    createPlan({
+      id: 'unum-std',
+      name: 'Unum Short-Term Disability',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'disability',
+      description: 'Voluntary short-term disability — employee-paid at group rates. Replaces 60% of weekly earnings up to $2,000/week for up to 26 weeks.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Replaces 60% of pre-disability weekly earnings (up to $2,000/week maximum) for up to 26 weeks.',
+      },
+      features: [
+        'Replaces 60% of pre-disability weekly earnings',
+        'Maximum weekly benefit: $2,000',
+        'Benefits begin on day 15 (14-day elimination period for both illness and injury)',
+        'Maximum benefit period: 26 weeks',
+        'Employee-paid at group rates (age-banded: <54 = $0.710/mo per $10 weekly benefit)',
+        'Benefit is tax-free when employee pays premiums with after-tax dollars',
+      ],
+      limitations: [
+        'Does not replace 100% of salary — replaces 60%',
+        'Benefit period capped at 26 weeks; LTD picks up after',
+        'Pre-existing conditions (within 3 months prior to coverage) excluded during first 12 months',
+        'Voluntary — must elect and pay for coverage; not automatic',
+      ],
+      eligibility: {
+        employeeType: 'full-time',
+        minHours: 30,
+      },
+    }),
+    // ── UNUM: Long-Term Disability (Voluntary, Employee-Paid) ────────────────
+    createPlan({
+      id: 'unum-ltd',
+      name: 'Unum Long-Term Disability',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'disability',
+      description: 'Voluntary long-term disability — employee-paid at group rates. Replaces 60% of monthly earnings (up to $5,000/month) after 180-day elimination period.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Replaces 60% of monthly earnings (up to $5,000/month) once STD ends. 180-day elimination period.',
+      },
+      features: [
+        'Replaces 60% of pre-disability monthly earnings',
+        'Maximum monthly benefit: $5,000',
+        '180-day elimination period (begins after STD period ends)',
+        'Maximum pre-disability annual earnings covered: $100,000',
+        'Benefit period: to age 65 or Social Security Normal Retirement Age',
+        'Employee-paid at group rates (age-banded)',
+        'Benefit is tax-free when employee pays premiums with after-tax dollars',
+      ],
+      limitations: [
+        'Does not replace 100% of salary — replaces 60%',
+        'Only activates after the 180-day elimination period (STD must exhaust first)',
+        'Pre-existing conditions (within 3 months prior to coverage) excluded during first 12 months',
+        'Voluntary — must elect and pay for coverage; not automatic',
+      ],
+      eligibility: {
+        employeeType: 'full-time',
+        minHours: 30,
+      },
+    }),
+    // ── ALLSTATE: Critical Illness ────────────────────────────────────────────
+    createPlan({
+      id: 'allstate-critical-illness',
+      name: 'Allstate Critical Illness',
+      provider: 'Allstate',
+      type: 'voluntary',
+      voluntaryType: 'supplemental',
+      description: 'Lump-sum cash benefit on diagnosis of a covered critical illness (heart attack, stroke, cancer, organ failure, ALS, and more). Choose $10,000, $20,000, or $30,000.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Pays lump-sum benefit upon diagnosis of a covered critical illness.',
+      },
+      features: [
+        'Choose $10,000, $20,000, or $30,000 coverage; Guarantee Issue $30,000 (no health questions at initial enrollment)',
+        'Pays lump sum on diagnosis — use the money for anything (deductible, travel, lost wages)',
+        'Covers: heart attack, stroke, major organ failure, end-stage kidney failure, ALS (100%)',
+        'Also covers: Alzheimer\'s (50%), MS (30%), Parkinson\'s (100%), cancer (100% for major types)',
+        'Spouse can be added at 50% of your elected amount (GI $15,000)',
+        'Dependent children covered at 50% at no additional cost (up to age 26)',
+        'Be Well Benefit: $50 per covered person/year for annual exams and screenings',
+      ],
+      limitations: [
+        'Age-banded rates — increase with age',
+        'Only specific named illnesses are covered (not general illness)',
+        'Some progressive diseases pay at less than 100% (e.g., MS at 30%)',
+      ],
+      eligibility: {
+        employeeType: 'all',
+        minHours: 20,
+      },
+    }),
+    // ── ACCIDENT INSURANCE ────────────────────────────────────────────────────
+    createPlan({
+      id: 'accident-insurance',
+      name: 'Accident Insurance',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'supplemental',
+      description: 'Pays fixed cash benefits for covered accident-related injuries and treatment. Two plan options: Plan 1 (higher benefits) and Plan 2 (lower cost).',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 0, biweekly: 0 },
+      },
+      tiers: {
+        employeeOnly: 0,
+        employeeSpouse: 0,
+        employeeChildren: 0,
+        employeeFamily: 0,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Plan 1: Employee Only $22.49/mo. Plan 2: Employee Only $15.75/mo.',
+      },
+      features: [
+        'Two plan options — Plan 1 (higher benefits): Employee $22.49/mo; Plan 2: Employee $15.75/mo',
+        'Plan 1 pays: ER $300 | Wrist fracture $550 | Knee cartilage $200 | Stitches $200 | Chiropractic $50',
+        'Plan 2 pays: ER $200 | Wrist fracture $450 | Knee cartilage $150 | Stitches $150 | Chiropractic $40',
+        'Pays directly to you — use for deductible, lost wages, or anything',
+        'Be Well Benefit: up to $75 reimbursement for preventive exams under both plans',
+        'Can elect coverage for dependents',
+      ],
+      limitations: [
+        'Only covers accidents — not illness',
+        'Specific injury types listed in policy; general sprains/strains have specific payout amounts',
+      ],
+      eligibility: {
+        employeeType: 'all',
+        minHours: 20,
+      },
+    }),
+    // ── HOSPITAL INDEMNITY ────────────────────────────────────────────────────
+    createPlan({
+      id: 'hospital-indemnity',
+      name: 'Hospital Indemnity Insurance',
+      provider: 'Unum',
+      type: 'voluntary',
+      voluntaryType: 'supplemental',
+      description: 'Pays fixed cash benefits for hospital admission, ICU, and daily hospital stays — regardless of what your health plan covers.',
+      regionalAvailability: ['nationwide'],
+      premiums: {
+        employee: { monthly: 21.24, biweekly: biweekly(21.24) },
+      },
+      tiers: {
+        employeeOnly: 21.24,
+        employeeSpouse: 34.85,
+        employeeChildren: 33.32,
+        employeeFamily: 46.93,
+      },
+      benefits: {
+        deductible: 0,
+        outOfPocketMax: 0,
+        coinsurance: 0,
+        description: 'Hospital admission: $1,000 | ICU admission: $1,000 | Daily inpatient: $200/day (up to 31 days) | ICU daily: $200/day (up to 15 days)',
+      },
+      features: [
+        'Hospital admission: $1,000 (up to once per year)',
+        'ICU admission: $1,000 (up to once per year)',
+        'Daily inpatient stay: $200/day (up to 31 days per year)',
+        'ICU daily stay: $200/day (up to 15 days per year)',
+        'Be Well Benefit: $50/covered person/year for preventive screenings',
+        'Pays in addition to your health insurance — cash goes directly to you',
+        'Covers hospitalization for any reason: illness, injury, surgery, or childbirth',
+      ],
+      limitations: [
+        'You or spouse must enroll before age 70 to be eligible',
+        'Employee must elect own coverage before adding spouse or children',
+      ],
+      eligibility: {
+        employeeType: 'all',
+        minHours: 20,
+      },
+    }),
   ],
+  // ── REGIONAL PLAN AVAILABILITY ─────────────────────────────────────────────
   regionalPlans: {
-    California: ['kaiser-standard-hmo'],
-    Georgia: ['kaiser-standard-hmo'],
-    Oregon: ['kaiser-standard-hmo'],
-    Washington: ['kaiser-standard-hmo'],
-    nationwide: ['bcbstx-standard-hsa', 'bcbstx-enhanced-hsa', 'bcbstx-dental', 'vsp-vision-plus', 'unum-basic-life', 'unum-voluntary-life', 'allstate-whole-life'],
+    California: ['kaiser-standard-hmo', 'kaiser-enhanced-hmo'],
+    Oregon: ['kaiser-standard-hmo', 'kaiser-enhanced-hmo'],
+    Washington: ['kaiser-standard-hmo', 'kaiser-enhanced-hmo'],
+    nationwide: [
+      'bcbstx-standard-hsa',
+      'bcbstx-enhanced-hsa',
+      'bcbstx-ppo',
+      'bcbstx-dental',
+      'bcbstx-vision',
+      'unum-basic-life',
+      'unum-voluntary-life',
+      'allstate-whole-life',
+      'unum-std',
+      'unum-ltd',
+      'allstate-critical-illness',
+      'accident-insurance',
+      'hospital-indemnity',
+    ],
   },
   openEnrollment: {
-    year: '2024-2025',
-    startDate: '2024-09-15',
-    endDate: '2024-09-30',
-    effectiveDate: '2024-10-01',
+    year: '2026',
+    startDate: '2025-09-01',
+    endDate: '2025-09-30',
+    effectiveDate: '2026-01-01',
   },
   eligibility: {
     fullTimeHours: 30,
@@ -472,17 +847,20 @@ export const amerivetBenefits2024_2025: AmerivetBenefitsCatalog = {
   },
   specialCoverage: {
     hsa: {
-      effectiveDate: '2025-01-01',
+      effectiveDate: '2026-01-01',
+      // AmeriVet's contributions differ by plan AND tier:
+      // Standard HSA: $750 (individual) / $1,250 (family tiers)
+      // Enhanced HSA: $500 (individual) / $1,000 (family tiers)
       employerContribution: {
-        "Employee Only": 750,
-        "Employee + Spouse": 1000,
-        "Employee + Child(ren)": 1000,
-        "Employee + Family": 1250,
+        'Standard HSA - Individual (Employee Only)': 750,
+        'Standard HSA - Family (Employee + Spouse/Child/Family)': 1250,
+        'Enhanced HSA - Individual (Employee Only)': 500,
+        'Enhanced HSA - Family (Employee + Spouse/Child/Family)': 1000,
       },
     },
     commuter: {
-      effectiveDate: '2025-01-01',
-      monthlyBenefit: 300,
+      effectiveDate: '2026-01-01',
+      monthlyBenefit: 315,
     },
   },
 };
@@ -619,12 +997,12 @@ export function getCatalogForPrompt(stateCode?: string | null): string {
     `  gym membership, wellness reimbursement, student loan repayment, long-term care, cancer-only plans.`,
     '',
     '── CARRIER LOCK (immutable — never re-assign a carrier to a different plan type) ──',
-    '  UNUM       = Basic Life & AD&D, Voluntary Term Life, Short-Term Disability, Long-Term Disability ONLY.',
-    '  ALLSTATE   = Group Whole Life (Permanent), Accident Insurance, Critical Illness ONLY.',
-    '  BCBSTX     = Medical plans (Standard HSA, Enhanced HSA) and Dental PPO ONLY.',
-    '  VSP        = Vision plan ONLY.',
-    '  KAISER     = Medical HMO — California, Oregon, Washington ONLY. NEVER mention in any other state.',
-    '  RIGHTWAY   — NOT an AmeriVet carrier. NEVER mention Rightway in any response.',
+    '  UNUM       = Basic Life & AD&D, Voluntary Term Life, Short-Term Disability, Long-Term Disability, Accident Insurance, Hospital Indemnity ONLY.',
+    '  ALLSTATE   = Group Whole Life (Permanent), Critical Illness ONLY.',
+    '  BCBSTX     = Medical plans (Standard HSA, Enhanced HSA, PPO), Dental PPO, AND Vision Plan (EyeMed network) ONLY.',
+    '  KAISER     = Medical HMO — California, Oregon, Washington ONLY. NEVER mention Kaiser for any other state including Georgia.',
+    '  RIGHTWAY   — NOT an AmeriVet benefit. NEVER mention Rightway in any response.',
+    '  QUANTUM HEALTH — Navigation/care coordinator service (NOT a medical plan). Available Jan 1, 2026. Phone: 866-499-5170.',
     '',
   ];
 
@@ -635,7 +1013,11 @@ export function getCatalogForPrompt(stateCode?: string | null): string {
     for (const p of medPlans) {
       lines.push(`[${p.id}] ${p.name} | Provider: ${p.provider}`);
       lines.push(`  Premiums: Employee $${p.tiers.employeeOnly}/mo (${biw(p.tiers.employeeOnly)}/bi-wk) | +Spouse $${p.tiers.employeeSpouse}/mo | +Child $${p.tiers.employeeChildren}/mo | Family $${p.tiers.employeeFamily}/mo`);
-      lines.push(`  Deductible: $${p.benefits.deductible} | OOP Max: $${p.benefits.outOfPocketMax} | Coinsurance: ${p.benefits.coinsurance * 100}%`);
+      lines.push(`  Deductible: $${p.benefits.deductible} ind | OOP Max: $${p.benefits.outOfPocketMax} ind | Coinsurance: ${p.benefits.coinsurance * 100}%`);
+      if (p.coverage?.copays && Object.keys(p.coverage.copays).length > 0) {
+        const copayStr = Object.entries(p.coverage.copays).map(([k, v]) => `${k}: $${v}`).join(' | ');
+        lines.push(`  Copays: ${copayStr}`);
+      }
       lines.push(`  Key features: ${p.features.slice(0, 3).join(' | ')}`);
       if (p.limitations.length) lines.push(`  Limitations: ${p.limitations[0]}`);
       lines.push('');
@@ -648,33 +1030,50 @@ export function getCatalogForPrompt(stateCode?: string | null): string {
   lines.push(`[${d.id}] ${d.name} | Provider: ${d.provider}`);
   lines.push(`  Premiums: Employee $${d.tiers.employeeOnly}/mo | +Spouse $${d.tiers.employeeSpouse}/mo | +Child $${d.tiers.employeeChildren}/mo | Family $${d.tiers.employeeFamily}/mo`);
   lines.push(`  Deductible: $${d.benefits.deductible}/individual | Annual Max: $${d.benefits.outOfPocketMax}`);
-  lines.push(`  Key features: ${d.features.join(' | ')}`);
+  lines.push(`  Key features: ${d.features.slice(0, 4).join(' | ')}`);
   lines.push('');
 
   // ── Vision ─────────────────────────────────────────────────────────────────
   const v = catalog.visionPlan;
   lines.push('── VISION PLAN ─────────────────────────────────────────────────────────────');
-  lines.push(`[${v.id}] ${v.name} | Provider: ${v.provider}`);
+  lines.push(`[${v.id}] ${v.name} | Provider: ${v.provider} (EyeMed network)`);
   lines.push(`  Premiums: Employee $${v.tiers.employeeOnly}/mo | +Spouse $${v.tiers.employeeSpouse}/mo | +Child $${v.tiers.employeeChildren}/mo | Family $${v.tiers.employeeFamily}/mo`);
   lines.push(`  Key features: ${v.features.join(' | ')}`);
   lines.push('');
 
-  // ── Voluntary / Life ───────────────────────────────────────────────────────
+  // ── HSA Employer Contributions ─────────────────────────────────────────────
+  const hsa = catalog.specialCoverage.hsa;
+  lines.push('── HSA EMPLOYER CONTRIBUTIONS ──────────────────────────────────────────────');
+  if (typeof hsa.employerContribution === 'object') {
+    for (const [key, val] of Object.entries(hsa.employerContribution)) {
+      lines.push(`  ${key}: $${val}/yr`);
+    }
+  } else {
+    lines.push(`  All tiers: $${hsa.employerContribution}/yr`);
+  }
+  lines.push(`  NOTE: PPO plan and Kaiser plans are NOT HSA-eligible.`);
+  lines.push('');
+
+  // ── Voluntary / Life & Disability ─────────────────────────────────────────
   const volPlans = availablePlans.filter(p => p.type === 'voluntary');
   if (volPlans.length) {
-    lines.push('── VOLUNTARY / LIFE & DISABILITY ───────────────────────────────────────────');
+    lines.push('── VOLUNTARY / SUPPLEMENTAL PLANS ──────────────────────────────────────────');
     for (const p of volPlans) {
       lines.push(`[${p.id}] ${p.name} | Provider: ${p.provider}`);
-      lines.push(`  Premiums: Employee $${p.tiers.employeeOnly}/mo | +Spouse $${p.tiers.employeeSpouse}/mo | Family $${p.tiers.employeeFamily}/mo`);
-      lines.push(`  Key features: ${p.features.join(' | ')}`);
+      if (p.tiers.employeeOnly > 0) {
+        lines.push(`  Premiums: Employee $${p.tiers.employeeOnly}/mo | +Spouse $${p.tiers.employeeSpouse}/mo | Family $${p.tiers.employeeFamily}/mo`);
+      } else {
+        lines.push(`  Premiums: Age-banded or variable — see plan details`);
+      }
+      lines.push(`  Key features: ${p.features.slice(0, 3).join(' | ')}`);
       lines.push('');
     }
   }
 
   // ── Special Accounts ───────────────────────────────────────────────────────
-  lines.push('── SPECIAL ACCOUNTS ────────────────────────────────────────────────────────');
-  lines.push(`HSA: Employer contributes $${catalog.specialCoverage.hsa.employerContribution}/yr`);
-  lines.push(`Commuter: $${catalog.specialCoverage.commuter.monthlyBenefit}/mo benefit`);
+  lines.push('── SPENDING ACCOUNTS & COMMUTER ────────────────────────────────────────────');
+  lines.push(`Healthcare FSA: $3,200/yr max (must not have HSA) | Dependent Care FSA: $5,000/yr`);
+  lines.push(`Commuter Benefits (WEX): up to $${catalog.specialCoverage.commuter.monthlyBenefit}/mo pretax`);
   lines.push('');
 
   // ── Enrollment Window ──────────────────────────────────────────────────────

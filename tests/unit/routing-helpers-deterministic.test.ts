@@ -21,26 +21,29 @@ describe('routing-helpers deterministic routing guards', () => {
     expect(isKaiserAvailabilityQuestion('Tell me more about Kaiser benefits')).toBe(false);
   });
 
-  it('returns the Georgia-inclusive Kaiser FAQ answer', () => {
+  it('returns the CA/OR/WA-only Kaiser FAQ answer (GA removed for 2026)', () => {
     const answer = checkL1FAQ('Which states offer Kaiser?', {
       enrollmentPortalUrl: 'https://example.com/workday',
       hrPhone: '888-217-4728',
     });
 
-    expect(answer).toContain('Georgia (GA)');
+    expect(answer).not.toContain('Georgia (GA)');
     expect(answer).toContain('Washington (WA)');
     expect(answer).toContain('Oregon (OR)');
+    expect(answer).toContain('California (CA)');
   });
 
   it('returns state-specific Kaiser availability guidance when a state is present', () => {
-    expect(buildKaiserAvailabilityFaqAnswer('GA')).toContain('available in GA');
+    expect(buildKaiserAvailabilityFaqAnswer('GA')).toContain('not available in GA');
     expect(buildKaiserAvailabilityFaqAnswer('TX')).toContain('not available in TX');
+    expect(buildKaiserAvailabilityFaqAnswer('CA')).toContain('available in CA');
   });
 
-  it('shares the same PPO clarification wording for GA users', () => {
+  it('PPO clarification for GA users correctly describes the BCBSTX PPO and nationwide HSA plans', () => {
     const answer = buildPpoClarificationForState('GA');
 
-    expect(answer).toContain('Kaiser Standard HMO in GA');
-    expect(answer).toContain('does not offer a standalone PPO medical plan');
+    // AmeriVet now has a BCBSTX PPO plan (added for 2026)
+    expect(answer).toContain('BCBSTX PPO');
+    expect(answer).toContain('nationwide PPO network');
   });
 });

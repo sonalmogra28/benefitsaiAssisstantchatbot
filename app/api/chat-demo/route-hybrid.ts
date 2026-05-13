@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { hybridLLMRouter } from '@/lib/services/hybrid-llm-router';
 import { getAmerivetPackageCopySnapshot } from '@/lib/data/amerivet-package-copy';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 type SessionStep = 'start' | 'awaiting_state' | 'awaiting_dept' | 'active_chat';
 
@@ -26,7 +27,7 @@ const fallbackVoluntaryBenefits = [...packageCopy.lifePlanNames, ...packageCopy.
   .join(', ');
 
 // Sprint 2 & 3 content and persona configuration
-const WELCOME_MESSAGE = `**Welcome! I'm your AmeriVet Benefits Assistant.**
+const WELCOME_MESSAGE = `**Welcome! I'm your ${COMPANY_NAME} Benefits Assistant.**
 
 I'm here to help you compare plans, check eligibility, and understand your options.
 
@@ -35,7 +36,7 @@ Warning: I am not your enrollment platform. Once you decide, I'll give you the l
 To get started, what **state** do you live in?`;
 
 const SYSTEM_PROMPT = `
-You are your AmeriVet Benefits Assistant, a proactive virtual benefits assistant for AmeriVet.
+You are your ${COMPANY_NAME} Benefits Assistant, a proactive virtual benefits assistant for ${COMPANY_NAME}.
 Goal: guide employees to the right plans using the provided context and the user's state/department filters.
 
 CORE BEHAVIORS
@@ -309,7 +310,7 @@ I'll review your benefits document and summarize the key points:
 **Document Details**
 - File: ${fileName}
 - Type: Benefits summary / plan details
-- Provider: AmeriVet Benefits
+- Provider: ${COMPANY_NAME} Benefits
 - Coverage Period: ${packageCopy.openEnrollment.year}
 
 **What I Typically Look For**
@@ -354,7 +355,7 @@ I'll review your benefits document and summarize the key points:
   }
 
   return respond(
-    `**AmeriVet Benefits Assistant (fallback mode)**
+    `**${COMPANY_NAME} Benefits Assistant (fallback mode)**
 
 I can help you with:
 - Plan information: ${packageCopy.medicalPlanNames.join(', ')}, ${packageCopy.dentalPlanName}, ${packageCopy.visionPlanName}

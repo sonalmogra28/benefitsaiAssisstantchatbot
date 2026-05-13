@@ -37,7 +37,7 @@ const AMERIVET_PACKAGES: Record<string, AmerivetBenefitsPackage> = {
   [DEFAULT_AMERIVET_PACKAGE_ID]: DEFAULT_AMERIVET_PACKAGE,
 };
 
-const KAISER_DISPLAY_ORDER = ['CA', 'GA', 'WA', 'OR'] as const;
+const KAISER_DISPLAY_ORDER = ['CA', 'OR', 'WA'] as const;
 
 function sortStateCodesForDisplay(codes: readonly string[]): string[] {
   const seen = new Set<string>();
@@ -229,10 +229,11 @@ export function getAmerivetCatalogForPrompt(
     '── CARRIER LOCK (immutable — never re-assign a carrier to a different plan type) ──',
     '  UNUM       = Basic Life & AD&D, Voluntary Term Life, Short-Term Disability, Long-Term Disability ONLY.',
     '  ALLSTATE   = Group Whole Life (Permanent), Accident Insurance, Critical Illness ONLY.',
-    '  BCBSTX     = Medical plans (Standard HSA, Enhanced HSA) and Dental PPO ONLY.',
-    '  VSP        = Vision plan ONLY.',
-    '  KAISER     = Medical HMO — California, Georgia, Oregon, Washington ONLY. NEVER mention in any other state.',
+    '  BCBSTX     = Medical plans (Standard HSA, Enhanced HSA, PPO), Dental PPO, AND Vision Plan (EyeMed network) ONLY.',
+    '  EYEMED     = Vision network under BCBSTX Vision Plan — same carrier umbrella as BCBSTX.',
+    '  KAISER     = Medical HMO — California, Oregon, Washington ONLY. NEVER mention Kaiser for Georgia or any other state.',
     '  RIGHTWAY   — NOT an AmeriVet carrier. NEVER mention Rightway in any response.',
+    '  QUANTUM HEALTH — Care navigation service starting Jan 1 2026. Not a carrier; helps employees navigate benefits.',
     '',
   ];
 

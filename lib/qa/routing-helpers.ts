@@ -5,6 +5,7 @@ import {
 import { extractUserSlots } from '@/lib/rag/query-understanding';
 import { cityToStateMap } from '@/lib/schemas/onboarding';
 import type { IntentDomain } from '@/lib/intent-digest';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 const ACTIVE_PACKAGE = getAmerivetBenefitsPackage();
 const KAISER_COPY = getKaiserAvailabilityCopy(ACTIVE_PACKAGE);
@@ -20,26 +21,62 @@ type L1FAQEntry = {
   answer: (args: L1FAQArgs) => string;
 };
 
+const PROVIDER_DIRECTORY_PATTERNS: RegExp[] = [
+  /\bfind\s+(?:an?\s+)?(?:in[- ]network\s+)?(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\bin[- ]network\s+(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\b(?:where|how)\s+(?:can|do|should)\s+i\s+find\s+(?:an?\s+)?(?:in[- ]network\s+)?(?:optometrist|dentist|doctor|physician|provider|specialist|therapist|orthodontist|dermatologist|cardiologist|surgeon|pediatrician|ob[- ]?gyn)\b/i,
+  /\bprovider\s+(?:directory|search|lookup|locator|finder)\b/i,
+  /\bfind\s+a\s+provider\b/i,
+  /\bnetwork\s+(?:provider|doctor|dentist|physician|specialist)\b/i,
+  /\bfind\s+(?:an?\s+)?in[- ]network\b/i,
+  /\bhow\s+(?:do|can)\s+i\s+(?:search|look\s+up|locate|find)\s+(?:a\s+)?(?:provider|doctor|dentist|specialist)\b/i,
+];
+
+const PROVIDER_DIRECTORY_EXCLUSIONS: RegExp[] = [
+  /\bis\s+my\s+(?:doctor|dentist|optometrist|provider|specialist)\s+in[- ]network\b/i,
+  /\bdoes\s+my\s+plan\s+cover\s+(?:providers?|doctors?)\s+in\b/i,
+  /\bam\s+i\s+covered\b/i,
+];
+
+const PROVIDER_DIRECTORY_ANSWER = `I can't look up individual providers — that requires the carrier's live provider directory, which I don't have access to.
+
+Here's where to search by plan:
+- **Medical (BCBSTX plans)**: bcbstx.com → Find a Doctor
+- **Medical (Kaiser)**: kp.org/care → Find a Doctor
+- **Dental (BCBSTX Dental PPO)**: bcbstx.com → Find a Dentist
+- **Vision (BCBSTX / EyeMed network)**: bcbstx.com → Find a Doctor (Vision)
+
+All searches let you filter by specialty and ZIP code. Is there anything else I can help with — like comparing plan costs or checking what a service covers?`;
+
+export function isProviderDirectoryQuery(query: string): boolean {
+  if (PROVIDER_DIRECTORY_EXCLUSIONS.some(p => p.test(query))) return false;
+  return PROVIDER_DIRECTORY_PATTERNS.some(p => p.test(query));
+}
+
 const L1_FAQ: L1FAQEntry[] = [
   {
+    patterns: PROVIDER_DIRECTORY_PATTERNS,
+    answer: () => PROVIDER_DIRECTORY_ANSWER,
+  },
+  {
     patterns: [/\b(hr\s*(phone|number|contact|line)|phone\s*number.*hr|call\s*(hr|human\s*resources)|hr\s*hotline|how\s*do\s*i\s*(call|reach|contact)\s*(hr|amerivet))\b/i],
-    answer: ({ enrollmentPortalUrl, hrPhone }) => `AmeriVet HR/Benefits can be reached at ${hrPhone}. For self-service enrollment, visit ${enrollmentPortalUrl}.`,
+    answer: ({ enrollmentPortalUrl, hrPhone }) => `${COMPANY_NAME} HR/Benefits can be reached at ${hrPhone}. For self-service enrollment, visit ${enrollmentPortalUrl}.`,
   },
   {
     patterns: [/\b(where\s*do\s*i\s*(enroll|sign\s*up|register)|enrollment\s*(portal|link|url|site|page)|workday\s*(link|url|portal)|how\s*do\s*i\s*(access|open|find)\s*(workday|the\s*portal|enrollment))\b/i],
-    answer: ({ enrollmentPortalUrl, hrPhone }) => `The AmeriVet benefits enrollment portal is Workday: ${enrollmentPortalUrl}\n\nYou can also call HR at ${hrPhone} for guided enrollment support.`,
+    answer: ({ enrollmentPortalUrl, hrPhone }) => `The ${COMPANY_NAME} benefits enrollment portal is Workday: ${enrollmentPortalUrl}\n\nYou can also call HR at ${hrPhone} for guided enrollment support.`,
   },
   {
     patterns: [/\bright\s*way\b|\brightway\b/i],
-    answer: ({ enrollmentPortalUrl, hrPhone }) => `Rightway is not an AmeriVet benefits resource and is not part of the AmeriVet benefits package.\n\nFor benefits navigation support, please contact AmeriVet HR/Benefits at ${hrPhone} or visit ${enrollmentPortalUrl}.`,
+    answer: ({ enrollmentPortalUrl, hrPhone }) => `Rightway is not part of the ${COMPANY_NAME} benefits package and is not a supported navigation resource.\n\nFor benefits navigation support, please contact ${COMPANY_NAME} HR/Benefits at ${hrPhone} or visit ${enrollmentPortalUrl}.`,
   },
   {
     patterns: [/\bkaiser\b.*\b(only|available|states?|where|which\s+states?|limited|regions?)\b|\b(only|available|states?|where|which\s+states?|limited|regions?)\b.*\bkaiser\b/i],
-    answer: () => `Kaiser HMO is only available in ${KAISER_COPY.nameAndCodeList} through AmeriVet. It is not available in any other state. In all other states, your medical options are Standard HSA and Enhanced HSA (both through BCBS of Texas, nationwide PPO network).`,
+    answer: () => `Kaiser HMO is only available in ${KAISER_COPY.nameAndCodeList} through ${COMPANY_NAME}. It is not available in any other state. In all other states, your medical options are Standard HSA and Enhanced HSA (both through BCBS of Texas, nationwide PPO network).`,
   },
   {
     patterns: [/\b(receptionist|office\s*(staff|personnel|directory)|name\s*of.*(?:dentist|doctor|office|staff)|staff\s*(name|list|directory)|who\s*is\s*(?:the|my)\s*(?:dentist|doctor|hr\s*rep|benefits\s*rep))\b/i],
-    answer: ({ hrPhone }) => `I don't have that specific internal personnel data. For office-level contacts or staff directories, please reach out to AmeriVet HR at ${hrPhone}.`,
+    answer: ({ hrPhone }) => `I don't have that specific internal personnel data. For office-level contacts or staff directories, please reach out to ${COMPANY_NAME} HR at ${hrPhone}.`,
   },
 ];
 
@@ -201,12 +238,12 @@ export function buildKaiserAvailabilityFaqAnswer(userState?: string | null): str
   if (userState) {
     const normalized = userState.toUpperCase();
     if (KAISER_STATE_CODES.has(normalized)) {
-      return `Yes — Kaiser HMO is available in ${normalized}. AmeriVet offers Kaiser in ${KAISER_COPY.nameAndCodeList}.`;
+      return `Yes — Kaiser HMO is available in ${normalized}. ${COMPANY_NAME} offers Kaiser in ${KAISER_COPY.nameAndCodeList}.`;
     }
     return `Kaiser HMO is only available in ${KAISER_COPY.nameAndCodeList} — it is not available in ${normalized}. In ${normalized}, your medical options are Standard HSA and Enhanced HSA through BCBSTX.`;
   }
 
-  return `Kaiser HMO is only available in ${KAISER_COPY.nameAndCodeList} through AmeriVet. It is not available in any other state. In all other states, your medical options are Standard HSA and Enhanced HSA (both through BCBS of Texas, nationwide PPO network).`;
+  return `Kaiser HMO is only available in ${KAISER_COPY.nameAndCodeList} through ${COMPANY_NAME}. It is not available in any other state. In all other states, your medical options are Standard HSA and Enhanced HSA (both through BCBS of Texas, nationwide PPO network).`;
 }
 
 export function isLikelyFollowUpMessage(normalizedMessage: string): boolean {
@@ -325,6 +362,10 @@ export function checkL1FAQ(query: string, args: L1FAQArgs): string | null {
     const queryState = resolveQueryStateForFaq(query);
     const fallbackState = args.userState?.trim().toUpperCase() || undefined;
     return buildKaiserAvailabilityFaqAnswer(queryState ?? fallbackState);
+  }
+
+  if (isProviderDirectoryQuery(query)) {
+    return PROVIDER_DIRECTORY_ANSWER;
   }
 
   const lower = query.toLowerCase();

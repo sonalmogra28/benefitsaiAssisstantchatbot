@@ -28,7 +28,7 @@ describe('category-response-builders', () => {
     expect(response).toContain('Medical plan options');
     expect(response).toContain('Standard HSA');
     expect(response).toContain('Enhanced HSA');
-    expect(response).toContain('Kaiser Standard HMO is only available in CA, GA, WA, and OR.');
+    expect(response).toContain('Kaiser Standard HMO is only available in CA, OR, and WA.');
   });
 
   it('returns a deterministic benefits overview', () => {

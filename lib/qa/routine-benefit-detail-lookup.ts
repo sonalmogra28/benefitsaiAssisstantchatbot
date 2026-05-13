@@ -1,6 +1,7 @@
 import { getAmerivetBenefitsPackage } from '@/lib/data/amerivet-package';
 import type { Session } from '@/lib/rag/session-store';
 import { getCoverageTierForQuery } from '@/lib/qa/medical-helpers';
+import { COMPANY_NAME } from '@/lib/qa/tenant-context';
 
 function normalizeCoverageTierKey(tier: string) {
   switch (tier) {
@@ -68,22 +69,16 @@ export function buildRoutineBenefitDetailAnswer(
     const premium = dental.tiers[tierKey];
 
     if (/\borthodont(?:ia|ic|ics)?\b|\bbraces\b/i.test(lower)) {
-      const isAffirmativeAsk = /^\s*(?:do(?:es)?|is|are|can|will)\b/i.test(lower)
-        || /\bcover(?:s|ed)?\b/i.test(lower)
-        || /\b(?:included|include)\b/i.test(lower);
-      const leadIn = isAffirmativeAsk
-        ? `Yes — orthodontia is covered on AmeriVet's dental plan. Here's what to know:`
-        : `For braces, the practical question is not just whether orthodontia exists on the plan, but how much of the cost the plan actually helps with.`;
+      const orthodontiaFeature = dental.features.find((f) => /orthodont/i.test(f));
       return [
-        leadIn,
+        `Yes — orthodontia is covered on ${COMPANY_NAME}'s dental plan.`,
         ``,
-        `${dental.name}: orthodontia is included rather than excluded outright.`,
-        '',
-        typeof orthoCopay === 'number' ? `- Orthodontia copay: $${orthoCopay}` : '',
-        typeof orthoCopay === 'number' ? `- In plain language, orthodontia copay is $${orthoCopay}` : '',
-        '- This is more helpful than a dental plan with no orthodontic benefit at all',
-        '- You still need to confirm any age limits, waiting periods, and orthodontic maximums in Workday before counting on a specific dollar outcome',
-      ].filter(Boolean).join('\n');
+        orthodontiaFeature
+          ? `${dental.name}: ${orthodontiaFeature}.`
+          : `${dental.name}: orthodontia is included.`,
+        ``,
+        `- Age limits and waiting periods may apply — confirm details in Workday before counting on a specific dollar outcome`,
+      ].join('\n');
     }
 
     if (/\b(waiting\s+period|how\s+long\s+before|when\s+does\s+major\s+service)\b/i.test(lower)) {
@@ -112,7 +107,7 @@ export function buildRoutineBenefitDetailAnswer(
 
     if (/\b(what\s+does\s+preventive\s+care\s+mean|what\s+is\s+preventive\s+care|what\s+does\s+preventive\s+mean)\b/i.test(lower)) {
       return [
-        `In AmeriVet's dental plan, preventive care usually means the routine care people expect to use to avoid bigger problems later.`,
+        `In ${COMPANY_NAME}'s dental plan, preventive care usually means the routine care people expect to use to avoid bigger problems later.`,
         ``,
         `That typically includes things like cleanings, exams, and preventive x-rays under the plan's preventive bucket.`,
         preventiveCovered !== null ? `Source-backed detail: preventive care is ${preventiveCovered}% covered.` : '',
@@ -122,7 +117,7 @@ export function buildRoutineBenefitDetailAnswer(
 
     if (/\b(what\s+are\s+basic\s+services|what\s+does\s+basic\s+services\s+mean|what\s+are\s+major\s+services|what\s+does\s+major\s+services\s+mean)\b/i.test(lower)) {
       return [
-        `In AmeriVet's dental plan, the difference is basically about how simple versus expensive the procedure is.`,
+        `In ${COMPANY_NAME}'s dental plan, the difference is basically about how simple versus expensive the procedure is.`,
         ``,
         `- Basic services usually mean more routine restorative work like fillings`,
         `- Major services usually mean bigger-ticket dental work like crowns, bridges, or more involved treatment`,
@@ -165,7 +160,7 @@ export function buildRoutineBenefitDetailAnswer(
       return [
         `The frame allowance is the amount the vision plan helps toward frames before you are paying the rest yourself.`,
         ``,
-        `In AmeriVet's VSP Vision Plus plan, the source-backed perk is a $200 frame allowance.`,
+        `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), the frame allowance is **$130**, plus 20% off any balance above that.`,
         `So the practical question is whether your household actually buys glasses often enough for that allowance to matter.`,
       ].join('\n');
     }
@@ -175,7 +170,7 @@ export function buildRoutineBenefitDetailAnswer(
       return [
         `The LASIK discount means the vision plan gives you a discount arrangement for LASIK rather than treating it like standard medical coverage.`,
         ``,
-        lasikFeature ? `In AmeriVet's VSP Vision Plus plan: ${lasikFeature}` : `In AmeriVet's VSP Vision Plus plan, LASIK is mentioned as a discount feature rather than a full traditional coverage benefit.`,
+        lasikFeature ? `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network): ${lasikFeature}` : `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), LASIK is mentioned as a discount feature rather than a full traditional coverage benefit.`,
         `So this is more of a perk than a reason by itself to choose the plan unless someone in the household is already planning vision correction.`,
       ].join('\n');
     }
