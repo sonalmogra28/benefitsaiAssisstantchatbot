@@ -288,7 +288,8 @@ export function buildCategoryExplorationResponse({
     // knows about it before we discuss voluntary add-ons.
     if (basic) {
       msg += `**What's already included at no cost to you:**\n`;
-      msg += `${basic.name} — a flat **$25,000** life and AD&D benefit, fully employer-paid. `;
+      const basicAmt = basic.features.find((f) => /flat life benefit/i.test(f))?.match(/\$[\d,]+/)?.[0] ?? '$25,000';
+      msg += `${basic.name} — a flat **${basicAmt}** life and AD&D benefit, fully employer-paid. `;
       msg += `Every benefits-eligible employee is automatically enrolled; nothing to opt into.\n\n`;
     }
 

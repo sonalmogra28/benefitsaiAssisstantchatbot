@@ -353,6 +353,8 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (reque
     /** ANALYST MODE: all slots confirmed → inject full catalog + strict grounding rules. */
     const constructAnalystPrompt = (meta: Record<string, any>): string => {
       const catalogText = getAmerivetCatalogForPrompt(meta.state as string | null, ACTIVE_AMERIVET_PACKAGE);
+      const _stdPlan = getAmerivetBenefitsPackage().catalog.voluntaryPlans.find((p) => p.id === 'unum-std');
+      const _stdSalaryPct = _stdPlan?.features.find((f) => /replaces?.*(?:salary|earnings)/i.test(f))?.match(/(\d+)%/)?.[1] ?? '60';
       const stateCode = (meta.state as string | null) ?? 'UNKNOWN';
       const kaiserEligible = KAISER_ELIGIBLE_STATES.has(stateCode);
       const kaiserRule = kaiserEligible
@@ -417,7 +419,7 @@ export const POST = withAuth(undefined, [PERMISSIONS.CHAT_WITH_AI])(async (reque
         `13. Direct Refusal: If user asks "Which is best?" without providing usage level (Low/Moderate/High), ask for it before answering.`,
         `14. For "contact" / "support" / "help" queries, direct users to HR/Benefits team ONLY — NOT to Rightway.`,
         `15. IRS COMPLIANCE (Pub 969): If user mentions spouse + FSA + HSA in any context, you MUST warn that a general-purpose Healthcare FSA disqualifies HSA contributions. The ONLY workaround is a Limited Purpose FSA (LPFSA) covering dental/vision only. NEVER show HSA contribution details without this warning when spouse FSA is mentioned.`,
-        `16. STD ≠ Medical Cost: "How much will I get paid on leave?" is an STD/income question (UNUM, 60% salary). "What are maternity costs?" is a medical plan question (deductible, OOP). NEVER conflate these two intents.`,
+        `16. STD ≠ Medical Cost: "How much will I get paid on leave?" is an STD/income question (UNUM, ${_stdSalaryPct}% salary). "What are maternity costs?" is a medical plan question (deductible, OOP). NEVER conflate these two intents.`,
         `</Catalog_Rules>`,
         ``,
         catalogText,
@@ -761,6 +763,8 @@ Which of these would you like to learn about next?`
     );
 
     if (stdLeavePayIntent) {
+      const stdPlanForIntercept = getAmerivetBenefitsPackage().catalog.voluntaryPlans.find((p) => p.id === 'unum-std');
+      const stdPctIntercept = stdPlanForIntercept?.features.find((f) => /replaces?.*(?:salary|earnings)/i.test(f))?.match(/(\d+)%/)?.[1] ?? '60';
       const salaryMatch = normalizedMessage.match(/\$?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]{4,6})\s*\/?\s*(?:month|mo)/);
       const salary = salaryMatch ? Number(salaryMatch[1].replace(/,/g, '')) : null;
       let mathLine: string;
@@ -773,11 +777,11 @@ Which of these would you like to learn about next?`
       return sendAssistantMessage(
         `**Leave Pay Timeline — Maternity / FMLA + UNUM STD:**\n\n` +
         `- **Weeks 1–2 (Elimination Period):** STD benefit is not yet active. Use PTO or this period may be unpaid, depending on your employer leave policy.\n` +
-        `- **Weeks 3–6 (STD Active — UNUM):** UNUM pays 60% of your pre-disability base earnings. FMLA runs concurrently, providing job protection.\n` +
+        `- **Weeks 3–6 (STD Active — UNUM):** UNUM pays ${stdPctIntercept}% of your pre-disability base earnings. FMLA runs concurrently, providing job protection.\n` +
         `- **Weeks 7–8 (if physician-certified):** STD may continue through week 8 for vaginal delivery or week 10 for C-section, subject to claim approval.\n` +
         `- **FMLA (all 12 weeks):** Job-protected leave — FMLA does NOT supply pay on its own; income comes from STD and any PTO coordination.\n\n` +
         `**Key distinctions:**\n` +
-        `- STD = income replacement (60% of base pay via UNUM).\n` +
+        `- STD = income replacement (${stdPctIntercept}% of base pay via UNUM).\n` +
         `- FMLA = job protection (federal law, concurrent with STD, unpaid on its own).\n` +
         `- Medical out-of-pocket costs (deductible, OOP max) are a **separate question** from leave pay.\n\n` +
         `${mathLine}\n\n` +

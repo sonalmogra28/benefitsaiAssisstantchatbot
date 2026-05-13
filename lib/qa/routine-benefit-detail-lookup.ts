@@ -160,7 +160,7 @@ export function buildRoutineBenefitDetailAnswer(
       return [
         `The frame allowance is the amount the vision plan helps toward frames before you are paying the rest yourself.`,
         ``,
-        `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), the frame allowance is **$130**, plus 20% off any balance above that.`,
+        `In ${COMPANY_NAME}'s BCBSTX Vision Plan (EyeMed network), the frame allowance is **${vision.features.find((f) => /frames?.*allowance/i.test(f))?.match(/\$[\d,]+/)?.[0] ?? '$130'}**, plus 20% off any balance above that.`,
         `So the practical question is whether your household actually buys glasses often enough for that allowance to matter.`,
       ].join('\n');
     }

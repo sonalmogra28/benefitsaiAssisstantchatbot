@@ -279,6 +279,11 @@ export function isNonMedicalDetailQuestion(topic: string, query: string): boolea
 export function buildNonMedicalDetailAnswer(topic: string, query: string, session: Session): string | null {
   const lower = query.toLowerCase();
   const { basic, term, whole } = getLifePlans();
+  const basicLifeAmt = basic ? (extractFeatureFact(basic.features, /flat life benefit/i)?.match(/\$[\d,]+/)?.[0] ?? '$25,000') : '$25,000';
+  const termGIFact = term ? extractFeatureFact(term.features, /guaranteed issue.*initial enrollment/i) : undefined;
+  const termGIAmt = termGIFact?.match(/\$[\d,]+/)?.[0] ?? '$200,000';
+  const termMaxFact = term ? extractFeatureFact(term.features, /^Employee coverage:/i) : undefined;
+  const termMaxAmt = termMaxFact?.match(/\$[\d,]+/g)?.[1] ?? '$500,000';
   const costQuestion = /\b(how\s+much|cost|costs|price|prices|rate|rates|premium|premiums)\b/i.test(lower);
   const explicitCostQuestion = isExplicitPricingQuestion(lower);
   const asksAboutLife = /\b(life(?:\s+insurance)?|term life|voluntary term(?:\s+life)?|whole life|basic life|voluntary life)\b/i.test(lower);
@@ -322,11 +327,11 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         `Yes. You can add more life insurance on top of the employer-paid base.`,
         ``,
         `Here is the practical layering in ${COMPANY_NAME}'s package:`,
-        `- **${basic?.name || 'Basic Life & AD&D'}** is the included $25,000 employer-paid base — everyone eligible gets that automatically`,
-        `- **${term?.name || 'Voluntary Term Life'}** is the main way to buy more coverage — the current summary lists it at 1x to 5x annual salary up to $500,000, employee-paid and age-banded, with guaranteed issue up to $200,000 during initial open enrollment`,
+        `- **${basic?.name || 'Basic Life & AD&D'}** is the included ${basicLifeAmt} employer-paid base — everyone eligible gets that automatically`,
+        `- **${term?.name || 'Voluntary Term Life'}** is the main way to buy more coverage — the current summary lists it at 1x to 5x annual salary up to ${termMaxAmt}, employee-paid and age-banded, with guaranteed issue up to ${termGIAmt} during initial open enrollment`,
         `- **${whole?.name || 'Whole Life'}** is the permanent cash-value option you can layer on top as well, with rates locked at your enrollment age`,
         ``,
-        `So the short version is: the **$25,000** base is only the starting point — if that feels too small, voluntary term life is usually the cleaner first layer, and whole life is worth adding only if permanent coverage plus cash value is part of the goal.`,
+        `So the short version is: the **${basicLifeAmt}** base is only the starting point — if that feels too small, voluntary term life is usually the cleaner first layer, and whole life is worth adding only if permanent coverage plus cash value is part of the goal.`,
       ].join('\n');
     }
 
@@ -336,7 +341,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         ``,
         `What that means in practice:`,
         `- it is **employer-paid**`,
-        `- the current summary lists it as a **$25,000** flat life benefit`,
+        `- the current summary lists it as a **${basicLifeAmt}** flat life benefit`,
         `- all benefits-eligible employees are automatically enrolled in that base coverage`,
         ``,
         `So the real follow-up decision is whether that included amount feels sufficient, or whether you want to add **${term?.name || 'Voluntary Term Life'}** or **${whole?.name || 'Whole Life'}** on top.`,
@@ -360,7 +365,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Guaranteed issue means there is an amount you can elect during open enrollment without going through full medical underwriting.`,
         ``,
-        `In ${COMPANY_NAME}'s current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is up to $200,000 — but only during initial open enrollment. This is not available in subsequent annual enrollment periods.`,
+        `In ${COMPANY_NAME}'s current summary for ${term?.name || 'Voluntary Term Life'}, guaranteed issue is up to ${termGIAmt} — but only during initial open enrollment. This is not available in subsequent annual enrollment periods.`,
         ``,
         `The practical point is that guaranteed issue makes it easier to add term life without extra health questions, at least up to the stated limit. If you miss this window, you will need to go through medical underwriting for amounts above the basic employer-paid coverage.`,
       ].join('\n');
@@ -398,8 +403,8 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
       return [
         `Here is the practical difference across ${COMPANY_NAME}'s life-insurance amounts:`,
         ``,
-        `- ${basic?.name || 'Basic Life'} is the employer-paid base benefit, and the current summary lists it at $25,000`,
-        `- ${term?.name || 'Voluntary Term Life'} is the employee-paid extra layer, and the current summary says coverage can be 1x to 5x annual salary up to $500,000`,
+        `- ${basic?.name || 'Basic Life'} is the employer-paid base benefit, and the current summary lists it at ${basicLifeAmt}`,
+        `- ${term?.name || 'Voluntary Term Life'} is the employee-paid extra layer, and the current summary says coverage can be 1x to 5x annual salary up to ${termMaxAmt}`,
         `- ${term?.name || 'Voluntary Term Life'} is also the life option whose summary says spouse and dependent child coverage are available`,
         `- ${whole?.name || 'Whole Life'} is the permanent option with cash value, so the practical decision there is more about permanent coverage than maximizing the term amount`,
         ``,
@@ -414,7 +419,7 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         `- treat **${basic?.name || 'Basic Life'}** as the included starting point, not the finished answer if other people rely on your income`,
         `- use **${term?.name || 'Voluntary Term Life'}** as the first extra layer when the goal is more straightforward household protection`,
         `- use **${whole?.name || 'Whole Life'}** only if you specifically want permanent coverage plus the cash-value design, not just more income replacement`,
-        `- the more your household depends on your paycheck, debts, or childcare costs, the less likely that the included **$25,000** base benefit is enough by itself`,
+        `- the more your household depends on your paycheck, debts, or childcare costs, the less likely that the included **${basicLifeAmt}** base benefit is enough by itself`,
         ``,
         `So my practical take is: if other people rely on your income, start by tightening up **voluntary term life** before worrying about whole life. I can also help you think through whether the included base benefit sounds clearly too small for your situation.`,
       ].join('\n');
@@ -460,14 +465,20 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
 
   if (topic === 'Disability') {
     const { std, ltd } = getDisabilityPlans();
-    const stdSalaryFact = std ? extractFeatureFact(std.features, /replaces?.*salary/i) : undefined;
+    const stdSalaryFact = std ? extractFeatureFact(std.features, /replaces?.*(?:salary|earnings)/i) : undefined;
     const stdDurationFact = std ? extractFeatureFact(std.features, /benefit period/i) : undefined;
-    const ltdSalaryFact = ltd ? extractFeatureFact(ltd.features, /replaces?.*salary/i) : undefined;
+    const ltdSalaryFact = ltd ? extractFeatureFact(ltd.features, /replaces?.*(?:salary|earnings)/i) : undefined;
     const ltdDurationFact = ltd ? extractFeatureFact(ltd.features, /benefit period/i) : undefined;
 
     const stdSalaryPct = stdSalaryFact?.match(/(\d+)%/)?.[1] ?? '60';
     const stdWeeks = stdDurationFact?.match(/(\d+)\s*weeks/i)?.[1] ?? '26';
     const ltdSalaryPct = ltdSalaryFact?.match(/(\d+)%/)?.[1] ?? '60';
+    const stdElimFact = std ? extractFeatureFact(std.features, /elimination period/i) : undefined;
+    const stdElimPeriod = stdElimFact?.match(/\d+-day/)?.[0] ?? '14-day';
+    const ltdElimFact = ltd ? extractFeatureFact(ltd.features, /^\d+-day elimination/i) : undefined;
+    const ltdElimPeriod = ltdElimFact?.match(/\d+-day/)?.[0] ?? '180-day';
+    const ltdMaxFact = ltd ? extractFeatureFact(ltd.features, /maximum monthly benefit/i) : undefined;
+    const ltdMaxAmt = ltdMaxFact?.match(/\$[\d,]+/)?.[0] ?? '$5,000';
 
     if (costQuestion) {
       const employerPaid = std?.features.some((f) => /employer.?paid/i.test(f));
@@ -487,8 +498,8 @@ export function buildNonMedicalDetailAnswer(topic: string, query: string, sessio
         `Rates are **age-banded**, so the exact cost depends on your age at enrollment. You can see your specific rate in Workday during open enrollment.`,
         ``,
         `What the coverage provides:`,
-        `- **STD:** replaces ${stdSalaryPct}% of salary for up to ${stdWeeks} weeks (14-day elimination period for illness and injury)`,
-        `- **LTD:** replaces ${ltdSalaryPct}% of salary after STD ends; 180-day elimination period; maximum $5,000/month`,
+        `- **STD:** replaces ${stdSalaryPct}% of salary for up to ${stdWeeks} weeks (${stdElimPeriod} elimination period)`,
+        `- **LTD:** replaces ${ltdSalaryPct}% of salary after STD ends; ${ltdElimPeriod} elimination period; maximum ${ltdMaxAmt}/month`,
       ].join('\n');
     }
 

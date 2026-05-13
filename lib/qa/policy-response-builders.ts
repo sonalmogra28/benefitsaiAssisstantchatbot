@@ -1,5 +1,28 @@
 import type { Session } from '@/lib/rag/session-store';
 import { COMPANY_NAME } from '@/lib/qa/tenant-context';
+import { getAmerivetBenefitsPackage } from '@/lib/data/amerivet-package';
+
+function findFeatureFact(features: string[], pattern: RegExp): string | undefined {
+  return features.find((f) => pattern.test(f));
+}
+
+function getStdFacts() {
+  const std = getAmerivetBenefitsPackage().catalog.voluntaryPlans.find((p) => p.id === 'unum-std');
+  const salaryFact = std ? findFeatureFact(std.features, /replaces?.*(?:salary|earnings)/i) : undefined;
+  const durationFact = std ? findFeatureFact(std.features, /benefit period/i) : undefined;
+  const elimFact = std ? findFeatureFact(std.features, /elimination period/i) : undefined;
+  return {
+    salaryPct: salaryFact?.match(/(\d+)%/)?.[1] ?? '60',
+    weeks: durationFact?.match(/(\d+)\s*weeks/i)?.[1] ?? '26',
+    elimPeriod: elimFact?.match(/\d+-day/)?.[0] ?? '14-day',
+  };
+}
+
+function getBasicLifeAmt(): string {
+  const lifePlans = getAmerivetBenefitsPackage().catalog.voluntaryPlans.filter((p) => p.voluntaryType === 'life');
+  const basic = lifePlans.find((p) => /basic life/i.test(p.name));
+  return findFeatureFact(basic?.features ?? [], /flat life benefit/i)?.match(/\$[\d,]+/)?.[0] ?? '$25,000';
+}
 
 export function buildStdPreexistingGuidance(): string {
   return [
@@ -17,7 +40,7 @@ export function buildAllstateTermLifeCorrection(): string {
     `Allstate covers only Whole Life (permanent, cash-value) for ${COMPANY_NAME} employees.`,
     '',
     "Here's the full life insurance lineup:",
-    '- UNUM Basic Life & AD&D - $25,000 employer-paid, $0 cost to you',
+    `- UNUM Basic Life & AD&D - ${getBasicLifeAmt()} employer-paid, $0 cost to you`,
     '- UNUM Voluntary Term Life - employee can elect 1x-5x salary (age-banded pricing; add spouse/child coverage available)',
     '- Allstate Whole Life - permanent coverage with cash-value accumulation; employee-paid',
     '',
@@ -63,23 +86,25 @@ export function buildAccidentPlanNamesMessage(hrPhone: string): string {
 }
 
 export function buildStdLeavePayTimeline(lowerQuery: string): string {
+  const stdFacts = getStdFacts();
+  const stdRate = Number(stdFacts.salaryPct) / 100;
   const salaryMatch = lowerQuery.match(/\$?\s*([0-9]{1,3}(?:,[0-9]{3})*|[0-9]{4,6})\s*\/?\s*month/);
   const salary = salaryMatch ? Number(salaryMatch[1].replace(/,/g, '')) : null;
-  const stdMonthly = salary ? (salary * 0.6).toFixed(2) : null;
+  const stdMonthly = salary ? (salary * stdRate).toFixed(2) : null;
   const mathLine = stdMonthly
-    ? `With a salary of $${salary?.toLocaleString()}/month, UNUM STD pays $${stdMonthly}/month during the STD-active weeks (once the 2-week elimination period is satisfied).`
+    ? `With a salary of $${salary?.toLocaleString()}/month, UNUM STD pays $${stdMonthly}/month during the STD-active weeks (once the ${stdFacts.elimPeriod} elimination period is satisfied).`
     : 'Share your monthly salary if you want a precise dollar calculation.';
 
   return [
     'Leave Pay Timeline - Maternity / FMLA + UNUM STD:',
     '',
-    '- Weeks 1-2 (Elimination Period): STD benefit is not yet active. Use PTO or this period may be unpaid, depending on your employer leave policy.',
-    '- Weeks 3-6 (STD Active - UNUM): UNUM pays 60% of your pre-disability base earnings. FMLA runs concurrently, providing job protection.',
+    `- Weeks 1-2 (Elimination Period): STD benefit is not yet active. Use PTO or this period may be unpaid, depending on your employer leave policy.`,
+    `- Weeks 3-6 (STD Active - UNUM): UNUM pays ${stdFacts.salaryPct}% of your pre-disability base earnings. FMLA runs concurrently, providing job protection.`,
     '- Weeks 7-8 (if physician-certified): STD may continue through week 8 for vaginal delivery or week 10 for C-section, subject to claim approval.',
     '- FMLA (all 12 weeks): Job-protected leave - FMLA does NOT supply pay on its own; income comes from STD and any PTO coordination.',
     '',
     'Key distinctions:',
-    '- STD = income replacement (60% of base pay via UNUM).',
+    `- STD = income replacement (${stdFacts.salaryPct}% of base pay via UNUM).`,
     '- FMLA = job protection (federal law, concurrent with STD, unpaid on its own).',
     '- Medical out-of-pocket costs (deductible, OOP max) are a separate question from leave pay.',
     '',
@@ -90,12 +115,13 @@ export function buildStdLeavePayTimeline(lowerQuery: string): string {
 }
 
 export function buildParentalLeavePlan(enrollmentPortalUrl: string, hrPhone: string): string {
+  const stdFacts = getStdFacts();
   return `Here is a step-by-step parental leave plan for ${COMPANY_NAME} employees:
 
 Step 1 - Short-Term Disability (STD) via Unum
 - STD covers disability from delivery itself (childbirth is a covered disability event).
-- Standard benefit: 60% of weekly salary after the elimination period (typically 7 days for illness).
-- Duration: up to 26 weeks from the qualifying disability date.
+- Standard benefit: ${stdFacts.salaryPct}% of weekly salary after the elimination period (${stdFacts.elimPeriod} elimination period).
+- Duration: up to ${stdFacts.weeks} weeks from the qualifying disability date.
 - File your STD claim with Unum before your due date. Unum will coordinate with your OB to confirm delivery date and disability period.
 
 Step 2 - FMLA (Federal Family and Medical Leave Act)
@@ -110,7 +136,7 @@ Step 3 - Company / Employer Paid Leave (if applicable)
 - PTO/vacation can typically be used to top up pay during any unpaid FMLA weeks.
 
 Pay overlap edge cases:
-- STD + FMLA overlap: You receive STD pay (60% salary) while FMLA job protection runs at the same time.
+- STD + FMLA overlap: You receive STD pay (${stdFacts.salaryPct}% salary) while FMLA job protection runs at the same time.
 - If employer leave and STD overlap: most plans offset - you receive the higher of the two, not both added together. Confirm with Unum and HR.
 - PTO coordination: some plans require you to exhaust PTO before STD begins. Check your STD certificate.
 - Return-to-work: after FMLA expires, additional leave (bonding, non-medical) is at employer discretion and is unpaid unless a separate policy applies.
