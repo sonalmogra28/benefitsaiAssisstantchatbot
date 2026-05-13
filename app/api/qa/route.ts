@@ -83,7 +83,6 @@ import {
 } from '@/lib/qa/fallback-decision-router';
 import {
   checkL1FAQ,
-  compileSummary,
   deriveConversationTopic,
   isOtherChoicesMessage,
   isPackageGuidanceMessage,
